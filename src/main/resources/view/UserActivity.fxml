@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.app.controller.UserActivityController"
+            style="-fx-background-color:#f8fafc;">
+
+    <top>
+        <Label text="%myActivity"
+               style="-fx-font-size:20px; -fx-font-weight:bold; -fx-padding:15;"/>
+    </top>
+
+    <center>
+
+        <VBox spacing="20" style="-fx-padding:20;">
+
+            <!-- MY TICKETS -->
+            <Label text="%myTickets" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+<TextField fx:id="txtSearchTickets"
+           promptText="%searchTickets"
+           prefWidth="100"/>
+            <TableView fx:id="tableMyTickets" prefHeight="200">
+
+                <columns>
+
+                    <TableColumn fx:id="colRef" text="%reference" prefWidth="150"/>
+                    <TableColumn fx:id="colTitle" text="%title" prefWidth="250"/>
+                    <TableColumn fx:id="colStatus" text="%status" prefWidth="120"/>
+                    <TableColumn fx:id="colView" text="%view" prefWidth="90"/>
+                    <TableColumn fx:id="colEdit" text="%edit" prefWidth="90"/>
+
+                </columns>
+
+            </TableView>
+
+
+            <!-- MY SHARED FILES -->
+            <Label text="%mySharedFiles" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+<TextField fx:id="txtSearchMyFiles"
+           promptText="searchFiles"
+           prefWidth="100"/>
+            <TableView fx:id="tableMyFiles" prefHeight="200">
+
+                <columns>
+
+                    <TableColumn fx:id="colFileName" text="%fileName" prefWidth="250"/>
+                    <TableColumn fx:id="colRole" text="%role" prefWidth="120"/>
+                    <TableColumn fx:id="colDate" text="%date" prefWidth="150"/>
+
+                </columns>
+
+            </TableView>
+
+
+            <!-- RECEIVED FILES -->
+            
+
+        </VBox>
+
+    </center>
+
+</BorderPane>

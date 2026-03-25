@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.ui.UserManagementController"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            style="-fx-background-color:#f1f5f9;">
+
+    <content>
+
+        <VBox spacing="15" style="-fx-padding:20;">
+
+            <Label text="%userManagement"
+                   style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+
+            <TextField fx:id="txtSearch"
+                       promptText="%searchUserRole"
+                       onKeyReleased="#handleSearch"/>
+
+            <TableView fx:id="tableUsers"
+                       VBox.vgrow="ALWAYS">
+
+                <columns>
+                    <TableColumn fx:id="colId" text="%id"/>
+                    <TableColumn fx:id="colUsername" text="%username"/>
+                    <TableColumn fx:id="colRole" text="%role"/>
+                    <TableColumn fx:id="colActive" text="%active"/>
+                    <TableColumn fx:id="colSousDirection" text="%sousDirection"/>
+                    <TableColumn fx:id="colDelete" text="Delete" prefWidth="100"/>
+                </columns>
+
+            </TableView>
+
+            <FlowPane hgap="10"
+          vgap="10"
+          alignment="CENTER_RIGHT">
+
+    <!-- CREATE -->
+    <Button text="%createUser"
+            onAction="#handleCreate"
+            style="-fx-background-color:#2ecc71; -fx-text-fill:white; -fx-font-weight:bold; -fx-background-radius:6;"/>
+
+    <!-- EDIT -->
+    <Button fx:id="editButton"
+            text="%edit"
+            onAction="#handleEdit"
+            style="-fx-background-color:#3498db; -fx-text-fill:white; -fx-font-weight:bold; -fx-background-radius:6;"/>
+
+    <!-- ENABLE / DISABLE -->
+    <Button fx:id="enableDisableButton"
+            text="%enableDisable"
+            onAction="#handleToggleActive"
+            style="-fx-background-color:#f39c12; -fx-text-fill:white; -fx-font-weight:bold; -fx-background-radius:6;"/>
+
+    <!-- CHANGE ROLE -->
+    <Button fx:id="changeRoleButton"
+            text="%changeRole"
+            onAction="#handleChangeRole"
+            style="-fx-background-color:#9b59b6; -fx-text-fill:white; -fx-font-weight:bold; -fx-background-radius:6;"/>
+
+    <!-- RESET PASSWORD -->
+    <Button fx:id="resetPasswordButton"
+            text="%resetPassword"
+            onAction="#handleResetPassword"
+            style="-fx-background-color:#7f8c8d; -fx-text-fill:white; -fx-font-weight:bold; -fx-background-radius:6;"/>
+
+    
+
+</FlowPane>
+
+        </VBox>
+
+    </content>
+
+</ScrollPane>

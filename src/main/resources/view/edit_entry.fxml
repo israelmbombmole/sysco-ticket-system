@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.app.ui.EditEntryController"
+      spacing="15"
+      style="-fx-padding:20;">
+
+    
+    <Label text="%editEntry"
+           style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+    <GridPane hgap="10" vgap="10">
+
+        <columnConstraints>
+            <ColumnConstraints prefWidth="150"/>
+            <ColumnConstraints prefWidth="300"/>
+        </columnConstraints>
+
+        <!-- 1 -->
+        <Label text="%dateEnregistrement" GridPane.rowIndex="0"/>
+        <DatePicker fx:id="dpDateEnreg"
+                    GridPane.rowIndex="0"
+                    GridPane.columnIndex="1"/>
+
+        <!-- 2 -->
+        <Label text="%expediteur" GridPane.rowIndex="1"/>
+        <TextField fx:id="txtExpediteur"
+                   GridPane.rowIndex="1"
+                   GridPane.columnIndex="1"/>
+
+        <!-- 3 -->
+        <Label text="%objet" GridPane.rowIndex="2"/>
+        <TextArea fx:id="txtObjet"
+                  GridPane.rowIndex="2"
+                  GridPane.columnIndex="1"
+                  prefHeight="120"/>
+
+        <!-- 4 -->
+        <Label text="%sousDirection" GridPane.rowIndex="3"/>
+        <ComboBox fx:id="cbSousDirection"
+                  GridPane.rowIndex="3"
+                  GridPane.columnIndex="1"/>
+
+        <!-- 5 -->
+        <Label text="%cotation" GridPane.rowIndex="4"/>
+        <TextField fx:id="txtCotation"
+                   GridPane.rowIndex="4"
+                   GridPane.columnIndex="1"/>
+
+        <!-- 6 -->
+        <Label text="%dateCotation" GridPane.rowIndex="5"/>
+        <DatePicker fx:id="dpDateCotation"
+                    GridPane.rowIndex="5"
+                    GridPane.columnIndex="1"/>
+
+    </GridPane>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="%save" onAction="#handleSave"/>
+        <Button text="%save"
+                onAction="#handleExit"
+                style="-fx-background-color:#d9534f; -fx-text-fill:white;"/>
+    </HBox>
+
+</VBox>

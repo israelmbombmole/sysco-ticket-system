@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.app.controller.TicketDetailsController"
+           style="-fx-background-color:#eef2f7;">
+
+    <ScrollPane fitToWidth="true"
+                vbarPolicy="AS_NEEDED"
+                hbarPolicy="NEVER"
+                style="-fx-background-color:transparent;">
+
+        <VBox alignment="TOP_CENTER" spacing="20" style="-fx-padding:40;">
+
+            <!-- EXPORT BUTTON -->
+            <HBox spacing="10" alignment="CENTER_RIGHT" maxWidth="1000">
+                <Button text="%ExportPDF"
+                        onAction="#handleExportPDF"
+                        style="-fx-background-color:#7c3aed;
+                               -fx-text-fill:white;
+                               -fx-padding:8 18;
+                               -fx-font-weight:bold;
+                               -fx-background-radius:6;"/>
+            </HBox>
+
+            <VBox fx:id="ticketContainer"
+                  spacing="25"
+                  maxWidth="1000"
+                  style="-fx-background-color:white;
+                         -fx-padding:35;
+                         -fx-border-color:#d1d5db;
+                         -fx-border-width:1;
+                         -fx-border-radius:6;
+                         -fx-background-radius:6;">
+
+                <!-- HEADER -->
+                <VBox spacing="8">
+                    <Label fx:id="lblStatus"
+                           style="-fx-font-size:13px;
+                                  -fx-text-fill:#6b7280;
+                                  -fx-font-weight:bold;"/>
+
+                    <Label fx:id="lblReference"
+                           style="-fx-font-size:14px;
+                                  -fx-font-weight:bold;
+                                  -fx-text-fill:#374151;"/>
+
+                    <Label fx:id="lblTitle"
+                           style="-fx-font-size:22px;
+                                  -fx-font-weight:bold;
+                                  -fx-text-fill:#111827;"/>
+
+                    <HBox spacing="40">
+                        <Label fx:id="lblCreatedBy"/>
+                        <Label fx:id="lblUpdatedBy"/>
+                    </HBox>
+                </VBox>
+
+                <Separator/>
+
+                <!-- INFORMATION -->
+                <VBox spacing="15">
+                    <Label text="Ticket Information"
+                           style="-fx-font-size:16px;
+                                  -fx-font-weight:bold;"/>
+
+                    <GridPane hgap="40" vgap="15">
+
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="35"/>
+                            <ColumnConstraints percentWidth="65"/>
+                        </columnConstraints>
+
+                        <Label text="%Priorité" GridPane.rowIndex="0"/>
+                        <Label fx:id="lblPriority" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                        <Label text="%SLA" GridPane.rowIndex="1"/>
+                        <Label fx:id="lblSla" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                        <Label text="%Agentassigné" GridPane.rowIndex="2"/>
+                        <Label fx:id="lblAssigned" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                        <Label text="%Datededébut" GridPane.rowIndex="3"/>
+                        <Label fx:id="lblStarted" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                        <Label text="%Datedeclôture" GridPane.rowIndex="4"/>
+                        <Label fx:id="lblClosed" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                        <Label text="%Duréederésolution" GridPane.rowIndex="5"/>
+                        <Label fx:id="lblResolution" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+                    </GridPane>
+                </VBox>
+
+                <Separator/>
+
+                <!-- DESCRIPTION -->
+                <VBox spacing="10">
+                    <Label text="Description"
+                           style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+                    <TextArea fx:id="txtDescription"
+                              editable="false"
+                              wrapText="true"
+                              prefRowCount="5"/>
+                </VBox>
+
+                <Separator/>
+
+                <!-- TASKS -->
+                <VBox spacing="10">
+
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Tasks"
+                               style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+                        <Button text="+ Add Task"
+                                onAction="#handleAddTask"
+                                style="-fx-background-color:#10b981;
+                                       -fx-text-fill:white;
+                                       -fx-font-weight:bold;"/>
+                    </HBox>
+
+                    <TreeTableView fx:id="taskTree" prefHeight="250">
+
+                        <columns>
+                            <TreeTableColumn fx:id="colTask" text="Task" prefWidth="350"/>
+                            <TreeTableColumn fx:id="colUser" text="Assigned To" prefWidth="200"/>
+                            <TreeTableColumn fx:id="colStatus" text="Status" prefWidth="120"/>
+                            <TreeTableColumn fx:id="colStart" text="Start"/>
+                            <TreeTableColumn fx:id="colClose" text="Close"/>
+                            <TreeTableColumn fx:id="colDuration" text="Duration"/>
+                        </columns>
+
+                    </TreeTableView>
+
+                </VBox>
+
+                <Separator/>
+
+                <!-- ATTACHMENTS -->
+                <VBox fx:id="attachmentFrame"
+                      spacing="12"
+                      visible="false"
+                      managed="false">
+
+                    <Label text="Attachments" style="-fx-font-weight:bold;"/>
+                    <ListView fx:id="attachmentList" prefHeight="140"/>
+
+                    <ImageView fx:id="attachmentImage"
+                               fitWidth="450"
+                               preserveRatio="true"
+                               visible="false"
+                               managed="false"/>
+                </VBox>
+
+                <Separator/>
+
+                <!-- ACTIVITY -->
+                <VBox spacing="10">
+
+                    <Label text="Activity / Comments"
+                           style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+                    <ScrollPane fitToWidth="true" prefHeight="200">
+                        <VBox fx:id="timelineContainer" spacing="10"/>
+                    </ScrollPane>
+
+                    <HBox spacing="10">
+                        <TextField fx:id="txtNewComment"
+                                   HBox.hgrow="ALWAYS"
+                                   promptText="Write a comment..."
+                                   onAction="#handleAddComment"/>
+
+                        <Button text="%Ajouter"
+                                onAction="#handleAddComment"/>
+                    </HBox>
+
+                </VBox>
+
+            </VBox>
+
+        </VBox>
+
+    </ScrollPane>
+
+</StackPane>

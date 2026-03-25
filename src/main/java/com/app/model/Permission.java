@@ -1,0 +1,17 @@
+package com.app.model;
+
+public enum Permission {
+
+    DASHBOARD,
+    DATA_ENTRY,
+    DATA_MANAGEMENT,
+    DATASHARE,
+    MY_ACTIVITY,
+    TICKET_MONITORING,
+    TICKET_MANAGEMENT,
+    FILE_SHARE_MANAGEMENT,
+    USER_MANAGEMENT,
+    LOGIN_AUDIT,
+    FILE_SHARE_AUDIT,
+    CREATE_TICKET
+}

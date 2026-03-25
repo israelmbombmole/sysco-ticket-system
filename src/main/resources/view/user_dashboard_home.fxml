@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.chart.PieChart?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.controller.UserDashboardController"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            style="-fx-background-color:#f4f6f9;">
+
+    <content>
+
+        <VBox spacing="25" style="-fx-padding:30;">
+
+            <Label text="%userDashboard"
+                   style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+
+            <FlowPane hgap="20"
+                      vgap="20">
+
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%totalTickets"/>
+                    <Label fx:id="lblTotalTickets"
+                           style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%openTickets"/>
+                    <Label fx:id="lblOpenTickets"
+                           style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%inProgress"/>
+                    <Label fx:id="lblInProgressTickets"
+                           style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%closedTickets"/>
+                    <Label fx:id="lblClosedTickets"
+                           style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+                </VBox>
+
+            </FlowPane>
+
+            <VBox styleClass="card">
+                <Label text="%ticketDistribution"
+                       style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+                <PieChart fx:id="adminPieChart"
+                          minHeight="300"/>
+            </VBox>
+
+        </VBox>
+
+    </content>
+
+</ScrollPane>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.ui.EditUserController"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            style="-fx-background:#eef2f7;">
+
+    <content>
+
+        <VBox spacing="20"
+              alignment="TOP_CENTER"
+              maxWidth="600"
+              style="-fx-padding:25;">
+
+    <!-- TITLE -->
+    <Label text="User Form"
+           style="-fx-font-size:20px; -fx-font-weight:bold; -fx-text-fill:#2c3e50;" />
+
+    <!-- FORM CARD -->
+    <VBox spacing="15"
+          maxWidth="450"
+          style="-fx-background-color:#f8f9fb; -fx-padding:20; -fx-background-radius:10; -fx-border-color:#e0e6ed;">
+
+        <GridPane hgap="10" vgap="12">
+
+            <columnConstraints>
+                <ColumnConstraints percentWidth="40"/>
+                <ColumnConstraints percentWidth="60"/>
+            </columnConstraints>
+
+            <!-- Username -->
+            <Label text="Username" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <TextField fx:id="txtUsername"
+                       promptText="Enter username"
+                       GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+            <!-- Password (CREATE ONLY) -->
+            <Label text="Password" fx:id="lblPassword"
+                   GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <PasswordField fx:id="txtPassword"
+                           promptText="Enter password"
+                           GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+            <!-- Role -->
+            <Label text="Role" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+            <ComboBox fx:id="cmbRole"
+                      GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+            <!-- Email -->
+            <Label text="Email (DIRECTEUR)" fx:id="lblEmail"
+                   GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+            <TextField fx:id="txtEmail"
+                       GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+            <!-- Active -->
+            <Label text="Active" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+            <CheckBox fx:id="chkActive"
+                      GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+            <!-- Sous Direction -->
+            <Label text="Sous Direction" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+            <ComboBox fx:id="cmbSousDirection"
+                      GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+            <!-- Direction -->
+            <Label text="Direction (AUTRE)" fx:id="lblDirection"
+                   GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+            <ComboBox fx:id="cmbDirection"
+                      GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+
+        </GridPane>
+
+        <!-- ================= PERMISSIONS ================= -->
+        <VBox spacing="8">
+
+            <Label text="Permissions" style="-fx-font-weight:bold;"/>
+
+            <Button text="Select All"
+                    onAction="#handleSelectAll"
+                    style="-fx-background-color:#3498db; -fx-text-fill:white;"/>
+
+            <VBox spacing="5">
+
+                <CheckBox fx:id="chkDashboard" text="Dashboard"/>
+                <CheckBox fx:id="chkDataEntry" text="Data Entry"/>
+                <CheckBox fx:id="chkDataManagement" text="Data Management"/>
+                <CheckBox fx:id="chkDataShare" text="DataShare"/>
+                <CheckBox fx:id="chkMyActivity" text="My Activity"/>
+                <CheckBox fx:id="chkTicketMonitoring" text="Ticket Monitoring"/>
+                <CheckBox fx:id="chkTicketManagement" text="Ticket Management"/>
+                <CheckBox fx:id="chkFileShareManagement" text="File Share Management"/>
+                <CheckBox fx:id="chkUserManagement" text="User Management"/>
+                <CheckBox fx:id="chkLoginAudit" text="Login Audit"/>
+                <CheckBox fx:id="chkFileShareAudit" text="File Share Audit"/>
+                <CheckBox fx:id="chkCreateTicket" text="Create Ticket"/>
+
+            </VBox>
+
+        </VBox>
+
+        <!-- ACTION BUTTONS -->
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+
+            <Button text="Cancel"
+                    onAction="#handleCancel"
+                    style="-fx-background-color:#e74c3c; -fx-text-fill:white;"/>
+
+            <Button text="Save"
+                    onAction="#handleSave"
+                    style="-fx-background-color:#2ecc71; -fx-text-fill:white;"/>
+
+        </HBox>
+
+    </VBox>
+
+        </VBox>
+
+    </content>
+</ScrollPane>

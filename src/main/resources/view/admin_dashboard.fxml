@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.chart.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.controller.AdminDashboardController"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            style="-fx-background:#eef2f7;">
+
+    <content>
+
+        <VBox spacing="25" style="-fx-padding:30;">
+
+            <!-- ================= GLOBAL STAT CARDS ================= -->
+            <FlowPane hgap="20" vgap="20" prefWrapLength="1000">
+
+                <VBox styleClass="card" minWidth="200">
+                    <Label text="%TotalTickets" styleClass="muted-text"/>
+                    <Label fx:id="lblTotalTickets" styleClass="stat-number"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="200">
+                    <Label text="%Open" styleClass="muted-text"/>
+                    <Label fx:id="lblOpenTickets"
+                           style="-fx-font-size:22px; -fx-font-weight:bold; -fx-text-fill:#f97316;"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="200">
+                    <Label text="%Assigned" styleClass="muted-text"/>
+                    <Label fx:id="lblAssignedTickets"
+                           style="-fx-font-size:22px; -fx-font-weight:bold; -fx-text-fill:#eab308;"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="200">
+                    <Label text="%Closed" styleClass="muted-text"/>
+                    <Label fx:id="lblClosedTickets"
+                           style="-fx-font-size:22px; -fx-font-weight:bold; -fx-text-fill:#22c55e;"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="200">
+                    <Label text="%TotalAgents" styleClass="muted-text"/>
+                    <Label fx:id="lblTotalAgents"
+                           style="-fx-font-size:22px; -fx-font-weight:bold; -fx-text-fill:#2563eb;"/>
+                </VBox>
+
+            </FlowPane>
+
+            <!-- ================= SLA & ESCALATION CARDS ================= -->
+            <FlowPane hgap="20" vgap="20" prefWrapLength="1000">
+
+                <VBox styleClass="card" minWidth="250">
+                    <Label text="%slaCompliance" styleClass="muted-text"/>
+                    <Label fx:id="lblSlaCompliance"
+                           style="-fx-font-size:22px; -fx-font-weight:bold; -fx-text-fill:#16a34a;"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="250">
+                    <Label text="%SLABreaches" styleClass="muted-text"/>
+                    <Label fx:id="lblSlaBreaches"
+                           style="-fx-font-size:22px; -fx-font-weight:bold; -fx-text-fill:#dc2626;"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="250">
+                    <Label text="%escalations" styleClass="muted-text"/>
+                    <Label fx:id="lblEscalations"
+                           style="-fx-font-size:22px; -fx-font-weight:bold; -fx-text-fill:#7c3aed;"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="250">
+                    <Label text="%avgResolution" styleClass="muted-text"/>
+                    <Label fx:id="lblAvgResolution"
+                           style="-fx-font-size:22px; -fx-font-weight:bold; -fx-text-fill:#0ea5e9;"/>
+                </VBox>
+
+                <VBox styleClass="card" minWidth="250">
+                    <Label text="%TopPerformingAgent" styleClass="muted-text"/>
+                    <Label fx:id="lblTopAgent"
+                           style="-fx-font-size:22px; -fx-font-weight:bold; -fx-text-fill:#9333ea;"/>
+                </VBox>
+
+            </FlowPane>
+
+            <!-- ================= CHART SECTION ================= -->
+            <HBox spacing="25">
+
+                <VBox styleClass="card" HBox.hgrow="ALWAYS">
+                    <Label text="%TicketDistribution" styleClass="title-medium"/>
+                    <PieChart fx:id="ticketChart" minHeight="300"/>
+                </VBox>
+
+                <VBox styleClass="card" HBox.hgrow="ALWAYS">
+                    <Label text="%SLAOverview" styleClass="title-medium"/>
+                    <PieChart fx:id="slaChart" minHeight="300"/>
+                </VBox>
+
+            </HBox>
+
+            <!-- ================= AGENT PERFORMANCE ================= -->
+            <VBox styleClass="card">
+                <Label text="%AgentPerformance" styleClass="title-medium"/>
+                <BarChart fx:id="agentPerformanceChart"
+                          categoryGap="20"
+                          barGap="5"
+                          minHeight="300">
+                    <xAxis>
+                        <CategoryAxis label="Agent"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="Closed Tickets"/>
+                    </yAxis>
+                </BarChart>
+            </VBox>
+
+
+            <!-- ================= ADMIN ACTIONS ================= -->
+<HBox spacing="10">
+
+    
+
+</HBox>
+
+
+            <!-- ================= RECENT TICKETS TABLE ================= -->
+            <VBox styleClass="card">
+                <Label text="%RecentTickets" styleClass="title-medium"/>
+
+                <TableView fx:id="recentTicketsTable" prefHeight="300">
+
+                    <columns>
+                        <TableColumn fx:id="colId" text="%ID"/>
+                        <TableColumn fx:id="colTitle" text="%Title"/>
+                        <TableColumn fx:id="colStatus" text="%Status"/>
+                        <TableColumn fx:id="colCreated" text="%Created"/>
+                    </columns>
+
+                </TableView>
+
+            </VBox>
+
+        </VBox>
+
+    </content>
+
+</ScrollPane>

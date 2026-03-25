@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.controller.ExternalTicketEditController"
+            style="-fx-background-color:#f8fafc;">
+
+    <center>
+
+        <VBox spacing="20"
+              alignment="TOP_CENTER"
+              style="-fx-padding:30;">
+
+            <!-- Title -->
+            <Label text="Edit External Ticket"
+                   style="-fx-font-size:22px; -fx-font-weight:bold;"/>
+
+            <!-- Card -->
+            <VBox spacing="15"
+                  maxWidth="520"
+                  style="-fx-background-color:white;
+                         -fx-padding:25;
+                         -fx-background-radius:10;
+                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.1),10,0,0,4);">
+
+                <!-- Ticket Title -->
+                <VBox spacing="5">
+                    <Label text="Title"/>
+                    <TextField fx:id="txtTitle"/>
+                </VBox>
+
+                <!-- Description -->
+                <VBox spacing="5">
+                    <Label text="Description"/>
+                    <TextArea fx:id="txtDescription"
+                              prefRowCount="4"/>
+                </VBox>
+
+                <!-- Priority -->
+                <VBox spacing="5">
+                    <Label text="Priority"/>
+                    <ComboBox fx:id="cmbPriority"/>
+                </VBox>
+
+                <!-- Department -->
+                <VBox spacing="5">
+                    <Label text="Department"/>
+                    <ComboBox fx:id="cmbDepartment"/>
+                </VBox>
+
+                <!-- Attachments -->
+                <VBox spacing="5">
+
+                    <Label text="Attachments"/>
+
+                    <HBox spacing="10">
+
+                        <ListView fx:id="attachmentList"
+                                  prefHeight="80"
+                                  prefWidth="350"/>
+
+                        <VBox spacing="5">
+
+                            <Button text="Add Files"
+                                    onAction="#handleBrowseFiles"
+                                    style="-fx-background-color:#2f80ed;
+                                           -fx-text-fill:white;
+                                           -fx-font-weight:bold;"/>
+
+                            <Button text="Remove"
+                                    onAction="#handleRemoveFile"
+                                    style="-fx-background-color:#ef4444;
+                                           -fx-text-fill:white;
+                                           -fx-font-weight:bold;"/>
+
+                        </VBox>
+
+                    </HBox>
+
+                </VBox>
+
+                <!-- Buttons -->
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+
+                    <Button text="Clear"
+                            onAction="#handleClear"
+                            style="-fx-background-color:#e5e7eb;"/>
+
+                    <Button fx:id="btnUpdate"
+                            text="Update Ticket"
+                            onAction="#handleUpdate"
+                            style="-fx-background-color:#2f80ed;
+                                   -fx-text-fill:white;"/>
+
+                </HBox>
+
+            </VBox>
+
+        </VBox>
+
+    </center>
+
+</BorderPane>

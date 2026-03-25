@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.app.controller.TaskDetailsController"
+           style="-fx-background-color:#eef2f7;">
+
+    <!-- ✅ GLOBAL SCROLL -->
+    <ScrollPane fitToWidth="true"
+                vbarPolicy="AS_NEEDED"
+                hbarPolicy="NEVER"
+                style="-fx-background-color:transparent;">
+
+        <VBox alignment="TOP_CENTER"
+              spacing="20"
+              style="-fx-padding:30;">
+            <Button text="← Back"
+        onAction="#handleBack"
+        style="-fx-background-color:#6b7280; -fx-text-fill:white;"/>
+
+            <VBox spacing="20"
+                  maxWidth="800"
+                  fillWidth="true"
+                  style="-fx-background-color:white;
+                         -fx-padding:30;
+                         -fx-border-color:#d1d5db;
+                         -fx-border-radius:8;
+                         -fx-background-radius:8;">
+
+                <!-- HEADER -->
+                <Label fx:id="lblTitle"
+                       style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+
+                <Label fx:id="lblAssigned"/>
+
+                <!-- STATUS -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Status:"/>
+                    <ComboBox fx:id="cmbStatus" prefWidth="200"/>
+                </HBox>
+
+                <!-- PROGRESS -->
+                <VBox spacing="5">
+                    <Label text="Progress"/>
+                    <Slider fx:id="sliderProgress" min="0" max="100"/>
+                    <Label fx:id="lblProgress"/>
+                </VBox>
+
+                <!-- DESCRIPTION -->
+                <VBox spacing="5">
+                    <Label text="Description"/>
+                    <TextArea fx:id="txtDescription"
+                              prefRowCount="4"
+                              wrapText="true"/>
+                </VBox>
+
+                <!-- ATTACHMENTS -->
+                <VBox spacing="10">
+
+                    <Label text="Attachments"
+                           style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+                    <HBox spacing="15">
+
+                        <!-- FILE LIST -->
+                        <ListView fx:id="attachmentList"
+                                  prefWidth="260"
+                                  prefHeight="200"/>
+
+                        <!-- PREVIEW + ACTIONS -->
+                        <VBox spacing="10">
+
+                            <StackPane fx:id="previewContainer"
+                                       prefWidth="400"
+                                       prefHeight="200"
+                                       style="-fx-background-color:#f3f4f6; -fx-padding:10; -fx-background-radius:6;">
+
+                                <Label fx:id="lblPreviewPlaceholder"
+                                       text="Select a file to preview"
+                                       style="-fx-text-fill:gray;"/>
+                            </StackPane>
+
+                            <!-- ACTION BUTTONS -->
+                            <HBox spacing="10" alignment="CENTER">
+
+                                <Button text="Open"
+                                        onAction="#handleOpenAttachment"
+                                        style="-fx-background-color:#3b82f6; -fx-text-fill:white;"/>
+
+                                <Button text="Download"
+                                        onAction="#handleDownloadAttachment"
+                                        style="-fx-background-color:#10b981; -fx-text-fill:white;"/>
+
+                            </HBox>
+
+                        </VBox>
+
+                    </HBox>
+
+                </VBox>
+
+                <!-- 🔥 TASK LIST (NEW SECTION) -->
+                <VBox spacing="10">
+
+                    <Label text="Tasks"
+                           style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+                    <TableView fx:id="tableTasks" prefHeight="200">
+
+                        <columns>
+                            <TableColumn fx:id="colTitle" text="Title"/>
+                            <TableColumn fx:id="colAssigned" text="Assigned To"/>
+                            <TableColumn fx:id="colStatus" text="Status"/>
+                        </columns>
+
+                    </TableView>
+
+                </VBox>
+                
+                <!-- 🔥 ESCALATIONS -->
+                <VBox spacing="10">
+
+                    <Label text="Escalations"
+                           style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+                    <VBox fx:id="escalationBox"
+                          spacing="8"
+                          style="-fx-background-color:#fff7ed;
+                                 -fx-padding:10;
+                                 -fx-background-radius:6;
+                                 -fx-border-color:#fed7aa;
+                                 -fx-border-radius:6;">
+
+                        <Label fx:id="lblNoEscalation"
+                               text="No escalation"
+                               style="-fx-text-fill:gray;"/>
+
+                    </VBox>
+
+                </VBox>
+
+                <!-- ACTIVITY / COMMENTS -->
+                <VBox spacing="10">
+
+                    <Label text="Activity / Comments"
+                           style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+                    <ScrollPane fitToWidth="true"
+                                prefHeight="400"
+                                vbarPolicy="AS_NEEDED"
+                                style="-fx-background:#f9fafb; -fx-background-radius:6;">
+
+                        <VBox fx:id="timelineContainer"
+                              spacing="12"
+                              style="-fx-padding:10;"/>
+                    </ScrollPane>
+
+                    <HBox spacing="10">
+
+                        <TextField fx:id="txtNewComment"
+                                   HBox.hgrow="ALWAYS"
+                                   promptText="Write a comment..."
+                                   onAction="#handleAddComment"/>
+
+                        <Button text="Add"
+                                onAction="#handleAddComment"
+                                style="-fx-background-color:#3b82f6; -fx-text-fill:white;"/>
+
+                    </HBox>
+
+                </VBox>
+
+            </VBox>
+
+        </VBox>
+
+    </ScrollPane>
+
+</StackPane>

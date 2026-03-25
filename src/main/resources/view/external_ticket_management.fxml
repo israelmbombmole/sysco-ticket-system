@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.app.controller.ExternalTicketManagementController"
+            style="-fx-background-color:#f8fafc;">
+
+    <center>
+        <VBox spacing="20" style="-fx-padding:20;">
+
+            <Label text="%ExternalTicketManagement"
+                   style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+
+            <TableView fx:id="tableTickets" prefHeight="400">
+
+                <columns>
+
+                    <TableColumn fx:id="colId" text="%ID" prefWidth="60"/>
+                    <TableColumn fx:id="colTitle" text="%Title" prefWidth="200"/>
+                    <TableColumn fx:id="colPriority" text="%Priority" prefWidth="100"/>
+                    <TableColumn fx:id="colDepartment" text="%Department" prefWidth="180"/>
+                    <TableColumn fx:id="colStatus" text="%Status" prefWidth="120"/>
+
+                </columns>
+
+            </TableView>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+
+                <ComboBox fx:id="cmbAgents"
+                          promptText="Select Agent"/>
+
+                <Button text="%Assign"
+                        onAction="#handleAssign"
+                        style="-fx-background-color:#2f80ed;
+                               -fx-text-fill:white;"/>
+
+                <Button text="%Escalate"
+                        onAction="#handleEscalate"
+                        style="-fx-background-color:#f97316;
+                               -fx-text-fill:white;"/>
+
+            </HBox>
+
+        </VBox>
+    </center>
+
+</BorderPane>

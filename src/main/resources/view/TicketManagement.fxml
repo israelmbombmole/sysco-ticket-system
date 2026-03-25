@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<VBox spacing="15"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.app.controller.TicketManagementController"
+      style="-fx-padding:20;">
+
+    <!-- HEADER -->
+    <HBox spacing="10">
+
+        <Label text="%ticketManagement"
+               style="-fx-font-size:22px; -fx-font-weight:bold;" />
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <TextField fx:id="txtSearch"
+                   promptText="Search ticket..."
+                   prefWidth="250"/>
+
+        <Button text="%Search"
+                onAction="#handleSearch"/>
+
+        <Button text="%Refresh"
+                onAction="#loadTickets"/>
+
+    </HBox>
+
+
+    <!-- FILTERS -->
+    <HBox spacing="10">
+
+        <Label text="%Status"/>
+
+        <ComboBox fx:id="cmbStatus"
+                  prefWidth="150"/>
+
+        <Label text="%Agent"/>
+
+        <ComboBox fx:id="cmbAgent"
+                  prefWidth="200"/>
+
+        <Button text="%ApplyFilter"
+                onAction="#handleFilter"/>
+
+    </HBox>
+
+
+    <!-- TICKET TABLE -->
+    <TableView fx:id="tableTickets"
+               VBox.vgrow="ALWAYS">
+
+        <columns>
+
+    <TableColumn fx:id="colTicketId"
+                 text="%Ticket"
+                 prefWidth="130"/>
+
+    <TableColumn fx:id="colTitle"
+                 text="%Title"
+                 prefWidth="250"/>
+
+    <TableColumn fx:id="colStatus"
+                 text="%Status"
+                 prefWidth="120"/>
+
+    <TableColumn fx:id="colType"
+                 text="%Type"
+                 prefWidth="120"/>
+
+    <TableColumn fx:id="colPriority"
+                 text="%Priority"
+                 prefWidth="100"/>
+
+    <TableColumn fx:id="colAgent"
+                 text="%Agent"
+                 prefWidth="150"/>
+
+    <TableColumn fx:id="colCreated"
+                 text="%Created"
+                 prefWidth="170"/>
+
+    <!-- ACTION BUTTON COLUMNS -->
+
+    <TableColumn fx:id="colEscalate"
+                 text="%Escalate"
+                 prefWidth="100"/>
+
+    <TableColumn fx:id="colView"
+             text="%View"
+             prefWidth="100"/>
+
+<TableColumn fx:id="colEdit"
+             text="%Edit"
+             prefWidth="100"/>
+
+<TableColumn fx:id="colClose"
+             text="%Close"
+             prefWidth="100"/>
+
+<TableColumn fx:id="colDelete"
+             text="%Delete"
+             prefWidth="100"/>
+
+</columns>
+
+    </TableView>
+    <HBox alignment="CENTER_LEFT" spacing="8">
+
+    <ProgressIndicator fx:id="progressEscalation"
+                       prefWidth="20"
+                       prefHeight="20"
+                       visible="false"/>
+
+    <Label fx:id="lblEscalationStatus"
+           text="⏳ Escalation en cours..."
+           visible="false"
+           style="-fx-text-fill:#ff9800; -fx-font-weight:bold;"/>
+
+</HBox>
+
+
+</VBox>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.app.ui.DataShareController"
+            style="-fx-background-color:#f8fafc;">
+
+    <!-- HEADER -->
+    <top>
+        <Label text="%dataShare"
+               style="-fx-font-size:20px; -fx-font-weight:bold; -fx-padding:15;"/>
+    </top>
+
+    <center>
+        <VBox spacing="20" style="-fx-padding:20;">
+
+            <!-- FILE SELECTION -->
+            <VBox spacing="8">
+
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="%selectedFile"/>
+
+                    <Button text="%browse"
+                            onAction="#handleBrowse"/>
+
+                    <Button text="%remove"
+                            onAction="#handleRemoveFile"/>
+                </HBox>
+                
+
+                <!-- MULTIPLE FILE LIST -->
+                 <ListView fx:id="fileList"
+              prefHeight="200"
+              style="-fx-background-color:white;"/>
+
+            </VBox>
+
+            <!-- EXPIRATION -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="%expirationDate"/>
+                <DatePicker fx:id="dateExpiration"/>
+            </HBox>
+
+            <!-- RECIPIENTS TITLE -->
+            <Label text="%selectRecipients"
+                   style="-fx-font-size:14px; -fx-font-weight:bold;"/>
+
+            <!-- RECIPIENT SEARCH -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="%Search"/>
+                <TextField fx:id="txtSearchRecipients"
+                           promptText="Search recipients..."
+                           prefWidth="250"/>
+            </HBox>
+
+            <!-- RECIPIENT LIST -->
+            <ScrollPane prefHeight="200" fitToWidth="true">
+                <VBox fx:id="recipientsContainer"
+                      spacing="8"
+                      style="-fx-padding:10;"/>
+            </ScrollPane>
+
+            <!-- SHARE BUTTON -->
+            <Button text="%shareFile"
+                    onAction="#handleShare"
+                    style="-fx-background-color:#2ecc71; -fx-text-fill:white; -fx-font-size:14px;"
+                    prefWidth="150"/>
+
+            <Separator/>
+
+            <!-- FILES TITLE -->
+            <Label text="%filesSharedWithMe"
+                   style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+
+            <!-- FILE SEARCH -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="%Search"/>
+                <TextField fx:id="txtSearchFiles"
+                           promptText="%Searchfiles"
+                           prefWidth="250"/>
+            </HBox>
+
+            <!-- FILE TABLE -->
+            <TableView fx:id="tableInbox" prefHeight="250">
+
+                <columns>
+
+                    <TableColumn fx:id="colFileName"
+                                 text="%fileName"
+                                 prefWidth="250"/>
+
+                    <TableColumn fx:id="colSharedBy"
+                                 text="%sharedBy"
+                                 prefWidth="150"/>
+
+                    <TableColumn fx:id="colRole"
+                                 text="%role"
+                                 prefWidth="120"/>
+
+                    <TableColumn fx:id="colDate"
+                                 text="%date"
+                                 prefWidth="120"/>
+
+                    <TableColumn fx:id="colTime"
+                                 text="%time"
+                                 prefWidth="120"/>
+
+                </columns>
+
+            </TableView>
+            
+
+        </VBox>
+    </center>
+
+</BorderPane>

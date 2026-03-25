@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="20" style="-fx-padding:20; -fx-background-color:#f5f7fb;"
+      xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.app.controller.MyWorkController">
+
+    <!-- TITLE -->
+    <Label text="My Work"
+           style="-fx-font-size:22px; -fx-font-weight:bold;" />
+
+    <!-- ================= TICKETS ================= -->
+    <VBox spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;">
+        <Label text="My Tickets" style="-fx-font-size:16px; -fx-font-weight:bold;" />
+
+        <TableView fx:id="tableTickets" prefHeight="250">
+
+            <columns>
+                <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
+                <TableColumn fx:id="colTitle" text="Title" prefWidth="200"/>
+                <TableColumn fx:id="colStatus" text="Status" prefWidth="120"/>
+                <TableColumn fx:id="colPriority" text="Priority" prefWidth="100"/>
+                <TableColumn fx:id="colStart" text="Start" prefWidth="150"/>
+                <TableColumn fx:id="colClose" text="Close" prefWidth="150"/>
+                <TableColumn fx:id="colResolution" text="Duration" prefWidth="120"/>
+                <TableColumn fx:id="colAction" text="Action" prefWidth="120"/>
+            </columns>
+
+        </TableView>
+    </VBox>
+
+    <!-- ================= TASKS ================= -->
+    <VBox spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;">
+        <Label text="My Tasks" style="-fx-font-size:16px; -fx-font-weight:bold;" />
+
+        <TableView fx:id="tableTasks" prefHeight="300">
+
+            <columns>
+                <TableColumn fx:id="colTaskId" text="ID" prefWidth="60"/>
+                <TableColumn fx:id="colTaskTitle" text="Title" prefWidth="220"/>
+                <TableColumn fx:id="colTaskStatus" text="Status" prefWidth="120"/>
+                <TableColumn fx:id="colTaskStart" text="Start" prefWidth="150"/>
+                <TableColumn fx:id="colTaskClose" text="Close" prefWidth="150"/>
+                <TableColumn fx:id="colTaskResolution" text="Duration" prefWidth="120"/>
+                <TableColumn fx:id="colTaskAction" text="Action" prefWidth="200"/>
+            </columns>
+
+        </TableView>
+    </VBox>
+
+</VBox>

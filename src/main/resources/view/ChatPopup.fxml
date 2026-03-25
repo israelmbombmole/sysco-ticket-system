@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.app.controller.ChatPopupController"
+            style="-fx-background-color:#e5e7eb;">
+
+    <!-- LEFT: USERS -->
+    <left>
+        <VBox prefWidth="260"
+              style="-fx-background-color:#f3f4f6;">
+
+            <Label text="%users"
+                   style="-fx-font-size:16px; -fx-font-weight:bold; -fx-padding:15 10 10 15;"/>
+
+            <ListView fx:id="userList"
+                      VBox.vgrow="ALWAYS"
+                      style="-fx-background-color:white;"/>
+        </VBox>
+    </left>
+
+    <!-- CENTER: CHAT AREA -->
+    <center>
+        <BorderPane style="-fx-background-color:#e5e7eb;">
+
+            <!-- Chat Header -->
+            <top>
+                <HBox fx:id="chatHeader"
+                      alignment="CENTER_LEFT"
+                      style="-fx-background-color:white; -fx-padding:15; -fx-border-color:#e5e7eb; -fx-border-width:0 0 1 0;">
+
+                    <Label fx:id="lblChatUser"
+                           text="%selectUser"
+                           style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+                </HBox>
+            </top>
+
+            <!-- Messages Area -->
+            <center>
+                <ScrollPane fx:id="scrollPane"
+                            fitToWidth="true"
+                            style="-fx-background-color:transparent;"
+                            BorderPane.alignment="CENTER">
+
+                    <content>
+                        <VBox fx:id="messageContainer"
+                              spacing="10"
+                              style="-fx-padding:15;"/>
+                    </content>
+
+                </ScrollPane>
+            </center>
+
+            <!-- Input Area -->
+            <bottom>
+                <HBox spacing="10"
+                      alignment="CENTER_LEFT"
+                      style="-fx-padding:15; -fx-background-color:white; -fx-border-color:#e5e7eb; -fx-border-width:1 0 0 0;">
+
+                    <TextField fx:id="txtMessage"
+                               HBox.hgrow="ALWAYS"
+                               promptText="%typeMessage"
+                               style="-fx-background-radius:20; -fx-padding:10 15 10 15;"/>
+
+                    <Button fx:id="btnSend"
+                            text="%send"
+                            onAction="#handleSend"
+                            style="-fx-background-color:#2563eb; -fx-text-fill:white; -fx-background-radius:20; -fx-padding:8 18 8 18;"/>
+                </HBox>
+            </bottom>
+
+        </BorderPane>
+    </center>
+
+</BorderPane>

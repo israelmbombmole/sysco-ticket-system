@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.geometry.*?>
+
+<VBox spacing="25"
+      alignment="CENTER"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.app.controller.ExternalDashboardController">
+
+    <padding>
+        <Insets top="30" right="30" bottom="30" left="30"/>
+    </padding>
+
+    <!-- TITLE -->
+    <Label text="%ExternalDashboard"
+           style="-fx-font-size:22px; -fx-font-weight:bold;"/>
+
+    <!-- STATISTICS -->
+    <HBox spacing="40" alignment="CENTER">
+
+        <VBox alignment="CENTER">
+            <Label text="TicketsLogged"/>
+            <Label fx:id="lblTickets"
+                   text="0"
+                   style="-fx-font-size:28px; -fx-font-weight:bold;"/>
+        </VBox>
+
+        
+
+        <VBox alignment="CENTER">
+            <Label text="Messages"/>
+            <Label fx:id="lblMessages"
+                   text="0"
+                   style="-fx-font-size:28px; -fx-font-weight:bold;"/>
+        </VBox>
+
+    </HBox>
+
+    <!-- GRAPH -->
+    <PieChart fx:id="ticketChart"
+              title="%MyTicketsStatus"
+              prefWidth="400"
+              prefHeight="300"/>
+
+</VBox>

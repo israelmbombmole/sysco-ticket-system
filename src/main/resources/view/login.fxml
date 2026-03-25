@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.image.*?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.app.controller.LoginController"
+           style="-fx-background-color: linear-gradient(to right,#4b5cc4,#6a82fb);">
+
+    <HBox alignment="CENTER" spacing="60">
+
+        <!-- ================= LOGIN CARD ================= -->
+
+        <VBox spacing="20"
+      alignment="CENTER"
+      prefWidth="420"
+      prefHeight="420"
+      maxWidth="420"
+      maxHeight="420"
+      style="
+             -fx-background-color:white;
+             -fx-background-radius:30;
+             -fx-border-radius:30;
+             -fx-padding:40;
+             -fx-effect:dropshadow(three-pass-box,rgba(0,0,0,0.25),20,0,0,10);
+      ">
+
+            <!-- SYSTEM TITLE -->
+
+            <Label text="SYSCO"
+                   style="-fx-font-size:32px;
+                          -fx-font-weight:bold;
+                          -fx-text-fill:#2c3e50;"/>
+
+            <Label text="Connexion utilisateur"
+                   style="-fx-font-size:16px;
+                          -fx-text-fill:#555;"/>
+
+            <!-- USERNAME -->
+
+            <TextField fx:id="txtUsername"
+                       promptText="Nom d'utilisateur"
+                       prefWidth="280"
+                       style="
+                              -fx-background-radius:8;
+                              -fx-padding:10;
+                       "/>
+
+            <!-- PASSWORD -->
+
+            <PasswordField fx:id="txtPassword"
+                           promptText="Mot de passe"
+                           prefWidth="280"
+                           style="
+                                  -fx-background-radius:8;
+                                  -fx-padding:10;
+                           "/>
+
+            <!-- LOGIN BUTTON -->
+
+            <Button fx:id="btnLogin"
+                    text="SE CONNECTER"
+                    defaultButton="true"
+                    prefWidth="280"
+                    onAction="#handleLogin"
+                    style="
+                           -fx-background-color:#5b73d1;
+                           -fx-text-fill:white;
+                           -fx-font-size:14px;
+                           -fx-background-radius:10;
+                    "/>
+
+            <!-- PROGRESS BAR -->
+
+            <ProgressBar fx:id="progressBar"
+                         prefWidth="280"
+                         visible="false"
+                         progress="0"/>
+
+            <!-- MESSAGE -->
+
+            <Label fx:id="lblMessage"
+                   style="-fx-text-fill:red;
+                          -fx-font-size:12px;"/>
+
+        </VBox>
+
+
+        <!-- ================= RIGHT PANEL ================= -->
+
+        <StackPane prefWidth="500">
+
+            <VBox alignment="CENTER" spacing="20">
+
+                <!-- DGDA LOGO (NOT ROUNDED) -->
+
+                <ImageView fitHeight="180"
+                           preserveRatio="true">
+
+                    <image>
+                        <Image url="@/images/dgda.png"/>
+                    </image>
+
+                </ImageView>
+
+                <Label text="Direction Générale des Douanes et Accises"
+                       style="
+                              -fx-font-size:22px;
+                              -fx-font-weight:bold;
+                              -fx-text-fill:white;
+                              -fx-wrap-text:true;
+                              -fx-text-alignment:center;
+                       "/>
+
+                <Label text="Direction des Systèmes et Technologies d’Information"
+                    
+                       style="
+                              -fx-font-size:16px;
+                              -fx-text-fill:white;
+                              -fx-wrap-text:true;
+                              -fx-text-alignment:center;
+                       "/>
+                
+                <Label text="Sous-direction de Maintenance et Application (SDMA)"
+                    
+                       style="
+                              -fx-font-size:14px;
+                              -fx-text-fill:white;
+                              -fx-wrap-text:true;
+                              -fx-text-alignment:center;
+                       "/>
+                
+                
+
+                <Label text="Ce système est réservé aux utilisateurs autorisés. Toutes les activités sont surveillées et enregistrées. Tout accès non autorisé ou toute utilisation abusive peut entraîner des sanctions disciplinaires, voire des poursuites judiciaires. En vous connectant, vous consentez à cette surveillance."
+       wrapText="true"
+       maxWidth="420"
+       style="
+              -fx-text-fill:white;
+              -fx-font-size:12px;
+              -fx-text-alignment:center;
+       "/>
+
+            </VBox>
+
+        </StackPane>
+
+    </HBox>
+
+</StackPane>

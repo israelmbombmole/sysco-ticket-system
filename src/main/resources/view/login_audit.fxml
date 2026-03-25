@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.app.controller.LoginAuditController"
+      spacing="20"
+      styleClass="card"
+      VBox.vgrow="ALWAYS">
+
+    <!-- Title -->
+    
+    <Label text="%loginAudit"
+           style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+           
+
+    <!-- Table -->
+    <TableView fx:id="loginAuditTable"
+               VBox.vgrow="ALWAYS">
+
+        <columns>
+            <TableColumn fx:id="colUsername" text="%username"/>
+            <TableColumn fx:id="colLoginTime" text="%loginTime"/>
+        </columns>
+
+    </TableView>
+
+</VBox>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.app.ui.AuditLogController"
+      spacing="15"
+      style="-fx-background-color:#eef1f4;">
+
+
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <Label text="%SystemAuditLogs"
+           style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+
+    <!-- FILTER BAR -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+
+    <!-- User Filter -->
+    <ComboBox fx:id="cmbUser" prefWidth="150"/>
+
+    <!-- Date Range -->
+    <DatePicker fx:id="dpFrom" prefWidth="140"/>
+    <DatePicker fx:id="dpTo" prefWidth="140"/>
+
+    <!-- Keyword Search -->
+    <TextField fx:id="txtKeyword"
+               promptText="Search details..."
+               prefWidth="250"/>
+
+    <!-- Action Buttons -->
+    <Button text="%Apply" onAction="#handleFilter"/>
+    <Button text="Reset" onAction="#handleReset"/>
+
+</HBox>
+
+    <!-- TABLE -->
+    <TableView fx:id="tableAudit" VBox.vgrow="ALWAYS">
+
+        <columns>
+            <TableColumn fx:id="colUser" text="%User" prefWidth="120"/>
+            <TableColumn fx:id="colAction" text="%Action" prefWidth="120"/>
+            <TableColumn fx:id="colEntity" text="%Entity" prefWidth="120"/>
+            <TableColumn fx:id="colDetails" text="%Details" prefWidth="350"/>
+            <TableColumn fx:id="colTime" text="%dateTime" prefWidth="180"/>
+        </columns>
+
+    </TableView>
+
+    <!-- BOTTOM BUTTONS -->
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Button text="%exportCSV" onAction="#handleExport"/>
+        <Button text="%Refresh" onAction="#handleRefresh"/>
+        <Button text="%Close" onAction="#handleClose"/>
+    </HBox>
+
+</VBox>

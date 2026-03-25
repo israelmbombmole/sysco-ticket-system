@@ -1,0 +1,70 @@
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.app.controller.DataShareAuditController"
+            style="-fx-background-color:#f8fafc;">
+
+    <!-- HEADER -->
+    <top>
+        <VBox spacing="10" style="-fx-padding:20;">
+
+            <Label text="%fileShareAudit"
+                   style="-fx-font-size:22px; -fx-font-weight:bold;"/>
+
+            <HBox spacing="10">
+
+                <TextField fx:id="txtSearch"
+                           promptText="Search file / user..."
+                           prefWidth="300"/>
+
+                <Button text="%Refresh"
+                        onAction="#loadAudit"/>
+
+            </HBox>
+
+        </VBox>
+    </top>
+
+    <!-- TABLE -->
+    <center>
+
+        <TableView fx:id="tableAudit"
+                   prefHeight="600"
+                   style="-fx-padding:20;">
+
+            <columns>
+
+                <TableColumn fx:id="colFile"
+                             text="%File"
+                             prefWidth="200"/>
+
+                <TableColumn fx:id="colSharedBy"
+                             text="%SharedBy"
+                             prefWidth="150"/>
+
+                <TableColumn fx:id="colRecipient"
+                             text="%Recipient"
+                             prefWidth="150"/>
+
+                <TableColumn fx:id="colAction"
+                             text="%Action"
+                             prefWidth="120"/>
+
+                <TableColumn fx:id="colDate"
+                             text="%Date"
+                             prefWidth="120"/>
+
+                <TableColumn fx:id="colTime"
+                             text="%Time"
+                             prefWidth="120"/>
+
+            </columns>
+
+        </TableView>
+
+    </center>
+
+</BorderPane>

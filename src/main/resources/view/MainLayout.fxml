@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+
+<StackPane xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.app.controller.MainController"
+           stylesheets="@../style/app.css">
+
+    <BorderPane fx:id="rootPane">
+
+        <!-- HEADER -->
+        <top>
+            <HBox styleClass="top-bar" alignment="CENTER_LEFT">
+                <Label text="%appTitle"/>
+                <Pane HBox.hgrow="ALWAYS"/>
+
+                <Label fx:id="lblUser"
+                       style="-fx-text-fill:white; -fx-font-size:14px;"/>
+                
+                <StackPane>
+
+    <Button fx:id="btnNotifications"
+            onAction="#openNotifications"
+            style="-fx-background-color:transparent;">
+
+        <graphic>
+            <Label text="🔔" style="-fx-font-size:18px;"/>
+        </graphic>
+
+    </Button>
+
+    <Label fx:id="badgeNotifications"
+       text=""
+       visible="false"
+       style="-fx-background-color:red;
+              -fx-text-fill:white;
+              -fx-padding:2 6 2 6;
+              -fx-background-radius:10;
+              -fx-font-size:10px;"
+       StackPane.alignment="TOP_RIGHT">
+
+    <StackPane.margin>
+        <Insets top="-3" right="-3"/>
+    </StackPane.margin>
+
+</Label>
+
+</StackPane>
+                
+                
+                
+
+                <!-- LANGUAGE FLAGS -->
+               <Button onAction="#switchToEnglish"
+        style="-fx-background-color:transparent; -fx-cursor:hand;">
+
+    <graphic>
+        <ImageView fitWidth="22" fitHeight="22">
+            <image>
+                <Image url="@/images/en.png"/>
+            </image>
+        </ImageView>
+    </graphic>
+
+</Button>
+
+               <Button onAction="#switchToFrench"
+        style="-fx-background-color:transparent; -fx-cursor:hand;">
+
+    <graphic>
+        <ImageView fitWidth="22" fitHeight="22">
+            <image>
+                <Image url="@/images/fr.png"/>
+            </image>
+        </ImageView>
+    </graphic>
+
+</Button>
+                
+                
+            </HBox>
+        </top>
+
+        <!-- SIDEBAR -->
+        <left>
+            <VBox fx:id="sidebar"
+                  styleClass="sidebar"
+                  spacing="12"
+                  minWidth="180"
+                  prefWidth="220"
+                  maxWidth="260">
+
+                <Button fx:id="btnDashboard"
+                        text="%dashboard"
+                        onAction="#loadDashboard"
+                        styleClass="sidebar-btn"/>
+
+                <Button fx:id="btnDataEntry"
+                        text="%dataEntry"
+                        onAction="#loadDataEntry"
+                        styleClass="sidebar-btn"/>
+
+                <Button fx:id="btnDataManagement"
+                        text="%dataManagement"
+                        onAction="#loadDataManagement"
+                        styleClass="sidebar-btn"/>
+               
+                <Button fx:id="btnDataShare"
+                        text="%dataShare"
+                        onAction="#openDataShare"
+                        styleClass="sidebar-btn"/>
+                
+                <Button fx:id="btnMyActivity"
+                        text="%myActivity"
+                        onAction="#openMyActivity"
+                        styleClass="sidebar-btn"/>
+                
+                <Button fx:id="btnMyWork"
+                        text="My Work"
+                        onAction="#loadMyWork"
+                        styleClass="sidebar-btn"/>
+                
+
+                <Button fx:id="btnTicketMonitoring"
+                        text="%ticketMonitoring"
+                        onAction="#loadTicketMonitoring"
+                        styleClass="sidebar-btn"/>
+                
+                <Button fx:id="btnTicketManagement"
+                        text="%ticketManagement"
+                        onAction="#openTicketManagement"
+                        styleClass="sidebar-btn"/>
+                
+                <Button fx:id="btnFileShareManagement"
+                        text="%fileShareManagement"
+                        onAction="#handleDataShareManagement"
+                        styleClass="sidebar-btn"/>
+                
+                
+                <Button fx:id="btnUserManagement"
+                        text="%userManagement"
+                        onAction="#loadUserManagement"
+                        styleClass="sidebar-btn"/>
+
+                <Button fx:id="btnLoginAudit"
+                        text="%loginAudit"
+                        onAction="#loadLoginAudit"
+                        styleClass="sidebar-btn"/>
+                
+                <Button fx:id="btnFileShareAudit"
+                        text="%fileShareAudit"
+                        onAction="#loadFileShareAudit"
+                        styleClass="sidebar-btn"/>
+
+                <Button fx:id="btnCreateTicket"
+                text="%createTicket"
+                onAction="#openCreateTicket"
+                styleClass="sidebar-btn"/>
+                
+                
+                
+                <Pane VBox.vgrow="ALWAYS"/>
+
+                <Button fx:id="btnLogout"
+                        text="%logout"
+                        onAction="#handleLogout"
+                        styleClass="danger-btn"/>
+            </VBox>
+        </left>
+
+        <!-- CONTENT -->
+        <center>
+            <StackPane style="-fx-padding:20;">
+                <StackPane fx:id="contentArea"
+                           styleClass="card"
+                           maxWidth="1200"
+                           StackPane.alignment="CENTER"/>
+            </StackPane>
+        </center>
+
+    </BorderPane>
+
+    <!-- FLOATING CHAT BUTTON -->
+    <Button fx:id="btnChat"
+            onAction="#openChat"
+            styleClass="floating-chat"
+            StackPane.alignment="BOTTOM_RIGHT">
+
+        <graphic>
+            <Label text="💬"
+                   style="-fx-font-size:18px;"/>
+        </graphic>
+
+        <StackPane.margin>
+            <Insets right="25" bottom="25"/>
+        </StackPane.margin>
+
+    </Button>
+
+</StackPane>

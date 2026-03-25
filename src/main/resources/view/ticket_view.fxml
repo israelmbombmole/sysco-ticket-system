@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.app.controller.TicketViewController"
+      spacing="10"
+      style="-fx-padding:20;">
+
+    <Label text="%TicketDetails" style="-fx-font-size:18px; -fx-font-weight:bold;"/>
+
+    <GridPane hgap="10" vgap="10">
+
+        <Label text="%Ticket" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <Label fx:id="lblTicket" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+        <Label text="%Title" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <Label fx:id="lblTitle" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+        <Label text="%Status" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <Label fx:id="lblStatus" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+        <Label text="%Type" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+        <Label fx:id="lblType" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+        <Label text="%Priority" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+        <Label fx:id="lblPriority" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+        <Label text="%Agent" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+        <Label fx:id="lblAgent" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+        <Label text="%Created" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+        <Label fx:id="lblCreated" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+
+    </GridPane>
+
+    <Label text="%Description"/>
+
+    <TextArea fx:id="txtDescription"
+              editable="false"
+              prefHeight="150"/>
+
+</VBox>

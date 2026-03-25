@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      spacing="20"
+      style="-fx-padding:30; -fx-background-color:#f1f5f9;">
+
+    <Label text="%adminDashboard"
+       style="-fx-font-size:18px; -fx-font-weight:bold; -fx-padding:20;"
+       BorderPane.alignment="CENTER"/>
+
+<PieChart fx:id="dashboardPieChart"
+          title="%ticketsDistribution"
+          prefWidth="400"/>
+
+<BarChart fx:id="dashboardBarChart"
+          title="%closedTickets"
+          prefWidth="400">
+    <xAxis>
+        <CategoryAxis label="%agents"/>
+    </xAxis>
+    <yAxis>
+        <NumberAxis label="%closedTickets"/>
+    </yAxis>
+</BarChart>
+
+    </HBox>
+
+</VBox>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.controller.TicketCreateController"
+            style="-fx-background-color:#f8fafc;">
+
+    <center>
+
+        <VBox spacing="20"
+              alignment="TOP_CENTER"
+              style="-fx-padding:30;">
+
+            <!-- Title -->
+            <Label fx:id="lblTitle"
+                   text="%CreateNewTicket"
+                   style="-fx-font-size:22px; -fx-font-weight:bold;"/>
+
+            <!-- Card Container -->
+            <VBox spacing="15"
+                  maxWidth="520"
+                  style="-fx-background-color:white;
+                         -fx-padding:25;
+                         -fx-background-radius:10;
+                         -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.1),10,0,0,4);">
+
+                <!-- Ticket Title -->
+                <VBox spacing="5">
+                    <Label text="%Title"/>
+                    <TextField fx:id="txtTitle"
+                               promptText="Enter ticket title"/>
+                </VBox>
+
+                <!-- Description -->
+                <VBox spacing="5">
+                    <Label text="%Description"/>
+                    <TextArea fx:id="txtDescription"
+                              promptText="Describe the issue..."
+                              prefRowCount="4"/>
+                </VBox>
+
+                <!-- Priority -->
+                <VBox spacing="5">
+                    <Label text="%Priority"/>
+                    <ComboBox fx:id="cmbPriority"
+                              promptText="Select priority"/>
+                </VBox>
+
+                <!-- Department -->
+                <VBox spacing="5">
+                    <Label text="%Department"/>
+                    <ComboBox fx:id="cmbDepartment"
+                              promptText="Select department"/>
+                </VBox>
+
+               
+
+                <!-- Attachments -->
+                <VBox spacing="5">
+
+                    <Label text="Attachments"/>
+
+                    <HBox spacing="10">
+
+                        <ListView fx:id="attachmentList"
+                                  prefHeight="80"
+                                  prefWidth="350"/>
+
+                        <VBox spacing="5">
+
+                            <Button text="Add Files"
+                                    onAction="#handleBrowseFiles"
+                                    style="-fx-background-color:#2f80ed;
+                                           -fx-text-fill:white;
+                                           -fx-font-weight:bold;"/>
+
+                            <Button text="Remove"
+                                    onAction="#handleRemoveFile"
+                                    style="-fx-background-color:#ef4444;
+                                           -fx-text-fill:white;
+                                           -fx-font-weight:bold;"/>
+
+                        </VBox>
+
+                    </HBox>
+
+                </VBox>
+
+                <!-- Buttons -->
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+
+                    <Button text="%Clear"
+                            fx:id="btnClear"
+                            style="-fx-background-color:#e5e7eb;"
+                            onAction="#handleClear"/>
+
+                    <Button text="%CreateTicket"
+                            fx:id="btnCreate"
+                            style="-fx-background-color:#2f80ed;
+                                   -fx-text-fill:white;"
+                            onAction="#handleCreate"/>
+
+                </HBox>
+
+            </VBox>
+
+        </VBox>
+
+    </center>
+
+</BorderPane>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.app.controller.TicketMonitoringController"
+            style="-fx-background-color:#f8fafc;">
+
+    <center>
+
+        <ScrollPane fitToWidth="true"
+                    vbarPolicy="AS_NEEDED"
+                    hbarPolicy="NEVER">
+
+            <VBox spacing="20" style="-fx-padding:20;">
+
+                <!-- ================= ASSIGN SECTION ================= -->
+                <VBox spacing="10">
+
+                    <Label text="%assignTicket"
+                           style="-fx-font-size:18px; -fx-font-weight:bold;"/>
+
+                    <TableView fx:id="tableTickets"
+                               prefHeight="160">
+
+                        <columns>
+                            <TableColumn fx:id="colTicketIdAssign" text="%ticketId"/>
+                            <TableColumn fx:id="colTitleAssign" text="%title"/>
+                            <TableColumn fx:id="colStatusAssign" text="%status"/>
+                        </columns>
+
+                    </TableView>
+
+                    <HBox spacing="10">
+
+                        <!-- ✅ FIXED MULTI-SELECT LIST -->
+                        <ListView fx:id="listAgents"
+                                  prefHeight="100"
+                                  prefWidth="200"/>
+
+                        <Button text="%assign"
+                                onAction="#handleAssign"
+                                style="-fx-background-color:#2563eb; -fx-text-fill:white;"/>
+
+                    </HBox>
+
+                </VBox>
+
+
+                <!-- ================= ASSIGNMENTS TABLE ================= -->
+                <VBox spacing="10">
+
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+
+                        <Label text="%Recherche"
+                               style="-fx-font-weight:bold;"/>
+
+                        <TextField fx:id="txtSearch"
+                                   promptText="Rechercher ID, agent ou statut..."
+                                   HBox.hgrow="ALWAYS"/>
+
+                    </HBox>
+
+                    <Label text="%ticketAssignments"
+                           style="-fx-font-size:18px; -fx-font-weight:bold;"/>
+
+                    <TableView fx:id="tableAssignments"
+                               prefHeight="160">
+
+                        <columns>
+                            <TableColumn fx:id="colTicketIdAssigned" text="%ticketId" prefWidth="80"/>
+                            <TableColumn fx:id="colAgentAssigned" text="%agent"/>
+                            <TableColumn fx:id="colStatusAssigned" text="%status"/>
+                        </columns>
+
+                    </TableView>
+
+                </VBox>
+
+
+                <!-- ================= STATS ================= -->
+                <VBox spacing="10">
+
+                    <Label text="%agentPerformanceStats"
+                           style="-fx-font-size:18px; -fx-font-weight:bold;"/>
+
+                    <HBox spacing="20">
+
+                        <TableView fx:id="tableStats"
+                                   prefHeight="160"
+                                   HBox.hgrow="ALWAYS">
+
+                            <columns>
+                                <TableColumn fx:id="colAgentName" text="%agent"/>
+                                <TableColumn fx:id="colTotalTickets" text="%totalTickets"/>
+                            </columns>
+
+                        </TableView>
+
+                        <PieChart fx:id="ticketPieChart"
+                                  title="%ticketStatus"
+                                  HBox.hgrow="ALWAYS"/>
+
+                    </HBox>
+
+                </VBox>
+
+            </VBox>
+
+        </ScrollPane>
+
+    </center>
+
+</BorderPane>

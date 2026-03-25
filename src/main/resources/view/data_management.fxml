@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.app.ui.DataManagementController"
+      spacing="15"
+      style="-fx-padding:20; -fx-background-color:#f4f6f8;">
+
+    <Label text="%dataManagement"
+           style="-fx-font-size:20px; -fx-font-weight:bold;" />
+
+    <!-- SEARCH AREA -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+
+        <!-- 1️⃣ Date d'enregistrement -->
+        <DatePicker fx:id="datePicker"
+                    promptText="%registrationDate"/>
+
+        <!-- 2️⃣ Expéditeur -->
+        <TextField fx:id="txtExpediteur"
+                   promptText="%searchExpediteur"/>
+
+        <!-- 3️⃣ Cotation -->
+        <TextField fx:id="txtCotation"
+                   promptText="%searchCotation"/>
+
+        <Button text="%search"
+                onAction="#handleSearch"
+                style="-fx-background-color:#3498db; -fx-text-fill:white;"/>
+
+        <Button text="%reset"
+                onAction="#handleReset"/>
+
+    </HBox>
+
+    <!-- TABLE -->
+    <TableView fx:id="tableData" VBox.vgrow="ALWAYS">
+
+        <columns>
+            <TableColumn fx:id="colDateEnregistrement" text="%dateEnregistrement"/>
+<TableColumn fx:id="colExpediteur" text="%expediteur"/>
+<TableColumn fx:id="colObjet" text="%objet"/>
+<TableColumn fx:id="colSousDirection" text="%sousDirection"/>
+<TableColumn fx:id="colCotation" text="%cotation"/>
+<TableColumn fx:id="colDateCotation" text="%dateCotation"/>
+        </columns>
+
+    </TableView>
+
+    <!-- ACTION BUTTONS -->
+    <HBox spacing="10" alignment="CENTER_RIGHT"
+          style="-fx-padding:10 20 10 20;">
+
+        <Button text="%edit"
+                onAction="#handleEdit"
+                style="-fx-background-color:#5bc0de; -fx-text-fill:white;"/>
+
+        <Button text="%delete"
+                onAction="#handleDelete"
+                style="-fx-background-color:#d9534f; -fx-text-fill:white;"/>
+
+
+    </HBox>
+
+</VBox>

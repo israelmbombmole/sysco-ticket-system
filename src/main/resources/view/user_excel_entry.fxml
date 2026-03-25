@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.controller.UserExcelEntryController"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED">
+
+    <content>
+
+        <VBox spacing="20"
+              alignment="TOP_CENTER"
+              style="-fx-padding:30;">
+
+            <!-- TITLE -->
+            <Label fx:id="lblTitle"
+                   text="%userDataEntry"
+                   style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+
+            <!-- FORM -->
+            <GridPane hgap="15"
+                      vgap="15"
+                      maxWidth="600">
+
+                <!-- Registration Date -->
+                <Label text="%dateEnregistrement" GridPane.rowIndex="0"/>
+                <DatePicker fx:id="dateEnreg"
+                            GridPane.rowIndex="0"
+                            GridPane.columnIndex="1"/>
+
+                <!-- Sender -->
+                <Label text="%expediteur" GridPane.rowIndex="1"/>
+                <TextField fx:id="expediteur"
+                           GridPane.rowIndex="1"
+                           GridPane.columnIndex="1"/>
+
+                <!-- Subject -->
+                <Label text="%objet" GridPane.rowIndex="2"/>
+                <TextArea fx:id="objet"
+                          prefRowCount="3"
+                          GridPane.rowIndex="2"
+                          GridPane.columnIndex="1"/>
+
+                <!-- Priority -->
+                <Label text="%Priority" GridPane.rowIndex="3"/>
+                <ComboBox fx:id="cmbPriority"
+                          prefWidth="250"
+                          GridPane.rowIndex="3"
+                          GridPane.columnIndex="1"/>
+
+                <!-- Attachments -->
+                <Label text="%attachment"
+                       GridPane.rowIndex="4"/>
+
+                <HBox spacing="10"
+                      GridPane.rowIndex="4"
+                      GridPane.columnIndex="1">
+
+                    <ListView fx:id="attachmentList"
+                              prefHeight="80"
+                              prefWidth="250"/>
+
+                    <VBox spacing="5">
+
+                        <Button text="%browse"
+                                onAction="#handleBrowseFiles"
+                                style="-fx-background-color:#2f80ed;
+                                       -fx-text-fill:white;
+                                       -fx-font-weight:bold;"/>
+
+                        <Button text="%remove"
+                                onAction="#handleRemoveFile"
+                                style="-fx-background-color:#ef4444;
+                                       -fx-text-fill:white;
+                                       -fx-font-weight:bold;"/>
+
+                    </VBox>
+
+                </HBox>
+
+            </GridPane>
+
+            <!-- PROGRESS -->
+            <HBox alignment="CENTER" spacing="10">
+
+                <ProgressBar fx:id="progressSave"
+                             prefWidth="220"
+                             progress="0"
+                             visible="false"/>
+
+                <Label fx:id="lblSaveStatus"
+                       visible="false"
+                       style="-fx-text-fill:#2f80ed; -fx-font-weight:bold;"/>
+
+            </HBox>
+
+            <!-- SAVE BUTTON -->
+            <HBox spacing="15" alignment="CENTER">
+                <Button fx:id="btnSave"
+                        text="%save"
+                        onAction="#handleSave"/>
+            </HBox>
+
+            <!-- MESSAGE -->
+            <Label fx:id="message"
+                   style="-fx-text-fill:green;"/>
+
+        </VBox>
+
+    </content>
+
+</ScrollPane>

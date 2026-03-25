@@ -1,0 +1,500 @@
+/* =====================================================
+   DESIGN SYSTEM - TICKET SYSTEM ENTERPRISE THEME
+===================================================== */
+
+/* =========================
+   ROOT
+========================= */
+
+.root {
+    -fx-font-family: "Segoe UI";
+    -fx-background-color: #eef2f7;
+}
+
+/* =========================
+   TYPOGRAPHY
+========================= */
+
+.label {
+    -fx-text-fill: #111827;
+}
+
+.title-large {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+.title-medium {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6b7280;
+}
+
+.muted-text {
+    -fx-text-fill: #6b7280;
+}
+
+.stat-number {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.top-bar {
+    -fx-background-color: #0b1e3d;
+    -fx-padding: 15;
+}
+
+.top-bar Label {
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar {
+    -fx-background-color: #07152b;
+    -fx-padding: 20;
+}
+
+.sidebar-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #d1d5db;
+    -fx-font-size: 14px;
+    -fx-pref-width: 200px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-background-radius: 6;
+}
+
+.sidebar-btn:hover {
+    -fx-background-color: #102a54;
+    -fx-text-fill: white;
+}
+
+.sidebar-btn:focused {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+}
+
+/* =========================
+   CARD SYSTEM
+========================= */
+
+.card {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+    -fx-padding: 25;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 18, 0.2, 0, 6);
+}
+
+/* =========================
+   TABLE
+========================= */
+
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #f1f5f9;
+}
+
+.table-view .column-header {
+    -fx-font-weight: bold;
+}
+
+.table-row-cell:filled:selected {
+    -fx-background-color: #2563eb;
+}
+
+.table-row-cell:filled:selected .text {
+    -fx-fill: white;
+}
+
+/* =========================
+   BUTTON SYSTEM
+========================= */
+
+.button {
+    -fx-background-radius: 8;
+}
+
+.primary-btn {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+    -fx-padding: 8 18;
+    -fx-font-weight: bold;
+}
+
+.primary-btn:hover {
+    -fx-background-color: #1e40af;
+}
+
+.danger-btn {
+    -fx-background-color: #b91c1c;
+    -fx-text-fill: white;
+}
+
+.success-btn {
+    -fx-background-color: #16a34a;
+    -fx-text-fill: white;
+}
+
+/* =========================
+   STATUS BADGES
+========================= */
+
+.status-badge {
+    -fx-padding: 6 16;
+    -fx-background-radius: 20;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+}
+
+.status-open {
+    -fx-background-color: #f59e0b;
+    -fx-text-fill: black;
+}
+
+.status-closed {
+    -fx-background-color: #b91c1c;
+}
+
+.status-inprogress {
+    -fx-background-color: #2563eb;
+}
+
+/* =========================
+   TICKET DETAIL AREA
+========================= */
+
+.ticket-container {
+    -fx-padding: 40 0 40 0;
+}
+
+.ticket-description {
+    -fx-background-color: #f9fafb;
+    -fx-background-radius: 10;
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 10;
+    -fx-padding: 15;
+}
+
+.ticket-comments {
+    -fx-background-color: #f9fafb;
+    -fx-background-radius: 10;
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 10;
+    -fx-padding: 20;
+}
+
+.comment-input {
+    -fx-background-radius: 8;
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 8;
+    -fx-padding: 8 12;
+}
+
+/* =========================
+   PIE CHART
+========================= */
+
+.chart-pie-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+/* =========================
+   GOVERNMENT DETAIL STYLE
+========================= */
+
+.card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 4;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 4;
+    -fx-padding: 20;
+    -fx-effect: none;
+}
+
+.status-badge {
+    -fx-padding: 4 12;
+    -fx-background-radius: 4;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+.status-open {
+    -fx-background-color: #f59e0b;
+    -fx-text-fill: black;
+}
+
+.status-closed {
+    -fx-background-color: #b91c1c;
+}
+
+.status-inprogress {
+    -fx-background-color: #2563eb;
+}
+
+.ticket-description {
+    -fx-background-color: #f9fafb;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 15;
+}
+
+.ticket-comments {
+    -fx-background-color: #f9fafb;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 15;
+}
+
+/* =========================
+   GOVERNMENT FORM STRUCTURE
+========================= */
+
+.reference-id {
+    -fx-font-size: 13px;
+    -fx-text-fill: #6b7280;
+}
+
+.section-header {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #111827;
+    -fx-letter-spacing: 1px;
+}
+
+.form-label {
+    -fx-text-fill: #374151;
+    -fx-font-weight: bold;
+}
+
+.section-divider {
+    -fx-background-color: #d1d5db;
+}
+
+.ticket-description {
+    -fx-background-color: #f9fafb;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 12;
+}
+
+.ticket-comments {
+    -fx-background-color: #f9fafb;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 12;
+}
+
+
+/* =========================
+   TICKET VIEW EMPHASIS
+========================= */
+
+.reference-id {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1f2937;
+}
+
+.ticket-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #111827;
+}
+
+.section-header {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0f172a;
+    -fx-padding: 5 0 5 0;
+}
+
+.form-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #111827;
+}
+
+/* =========================
+   CLEAN DETAIL VIEW STYLE
+========================= */
+
+.section-divider {
+    -fx-background-color: #d1d5db;
+    -fx-padding: 8 0 8 0;
+}
+
+.ticket-description {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 15;
+    -fx-font-size: 13px;
+}
+
+.ticket-comments {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 15;
+}
+
+.comment-input {
+    -fx-background-color: white;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 10 14;
+}
+
+.section-header {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-text-fill: #111827;
+}
+
+.form-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #111827;
+}
+
+.reference-id {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0b1e3d;
+}
+
+.ticket-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #111827;
+}
+
+.section-header {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #111827;
+}
+
+.form-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #111827;
+}
+
+.metadata-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748b;
+}
+
+.ticket-container {
+    -fx-background-color: white;
+    -fx-border-color: #cbd5e1;
+    -fx-border-width: 1;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 35;
+}
+
+.status-merged {
+    -fx-background-color: #6b7280;
+    -fx-text-fill: white;
+}
+
+.btn-view{
+    -fx-background-color:#3498db;
+    -fx-text-fill:white;
+}
+
+.btn-close{
+    -fx-background-color:#27ae60;
+    -fx-text-fill:white;
+}
+
+.btn-delete{
+    -fx-background-color:#e74c3c;
+    -fx-text-fill:white;
+}
+
+.btn-escalate{
+    -fx-background-color:#f39c12;
+    -fx-text-fill:white;
+}
+
+.preview-btn{
+    -fx-background-color:#f1c40f;
+    -fx-text-fill:black;
+    -fx-font-weight:bold;
+    -fx-background-radius:6;
+}
+
+.download-btn{
+    -fx-background-color:#3498db;
+    -fx-text-fill:white;
+    -fx-font-weight:bold;
+    -fx-background-radius:6;
+}
+
+.delete-btn{
+    -fx-background-color:#e74c3c;
+    -fx-text-fill:white;
+    -fx-font-weight:bold;
+    -fx-background-radius:6;
+}
+
+.preview-btn{
+    -fx-background-color:#facc15;
+    -fx-text-fill:black;
+    -fx-font-weight:bold;
+}
+
+.download-btn{
+    -fx-background-color:#3b82f6;
+    -fx-text-fill:white;
+}
+
+.delete-btn{
+    -fx-background-color:#ef4444;
+    -fx-text-fill:white;
+}
+
+.btn-edit {
+    -fx-background-color: #9b59b6;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+    -fx-padding: 5 12;
+    -fx-font-weight: bold;
+}
+
+.btn-edit:hover {
+    -fx-background-color: #8e44ad;
+}
+
+.button:hover {
+    -fx-opacity: 0.85;
+    -fx-cursor: hand;
+}
