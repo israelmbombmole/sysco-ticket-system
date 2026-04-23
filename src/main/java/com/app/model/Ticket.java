@@ -250,6 +250,10 @@ public Integer getDepartmentId() {
     return departmentId;
 }
 
+public void setDepartmentId(Integer departmentId) {
+    this.departmentId = departmentId;
+}
+
 
 public String getTicketType() {
     return ticketType;
