@@ -49,12 +49,12 @@
 
 .top-bar {
     -fx-background-color: #0b1e3d;
-    -fx-padding: 15;
+    -fx-padding: 10 14;
 }
 
 .top-bar Label {
     -fx-text-fill: white;
-    -fx-font-size: 20px;
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
 }
 
@@ -70,10 +70,13 @@
 .sidebar-btn {
     -fx-background-color: transparent;
     -fx-text-fill: #d1d5db;
-    -fx-font-size: 14px;
-    -fx-pref-width: 200px;
+    -fx-font-size: 13px;
+    -fx-max-width: Infinity;
+    -fx-pref-width: 220px;
+    -fx-wrap-text: true;
     -fx-alignment: CENTER_LEFT;
     -fx-background-radius: 6;
+    -fx-padding: 8 12;
 }
 
 .sidebar-btn:hover {
@@ -93,7 +96,7 @@
 .card {
     -fx-background-color: white;
     -fx-background-radius: 14;
-    -fx-padding: 25;
+    -fx-padding: 18;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 18, 0.2, 0, 6);
 }
 
@@ -497,4 +500,26 @@
 .button:hover {
     -fx-opacity: 0.85;
     -fx-cursor: hand;
+}
+
+/* =========================
+   LAYOUT HELPERS
+========================= */
+.responsive-flow {
+    -fx-hgap: 20;
+    -fx-vgap: 20;
+}
+
+.responsive-cards > .card {
+    -fx-min-width: 180;
+    -fx-pref-width: 220;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
 }

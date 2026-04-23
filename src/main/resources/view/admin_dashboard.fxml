@@ -17,7 +17,7 @@
         <VBox spacing="25" style="-fx-padding:30;">
 
             <!-- ================= GLOBAL STAT CARDS ================= -->
-            <FlowPane hgap="20" vgap="20" prefWrapLength="1000">
+            <FlowPane hgap="20" vgap="20" prefWrapLength="1000" maxWidth="Infinity">
 
                 <VBox styleClass="card" minWidth="200">
                     <Label text="%TotalTickets" styleClass="muted-text"/>
@@ -51,7 +51,7 @@
             </FlowPane>
 
             <!-- ================= SLA & ESCALATION CARDS ================= -->
-            <FlowPane hgap="20" vgap="20" prefWrapLength="1000">
+            <FlowPane hgap="20" vgap="20" prefWrapLength="1000" maxWidth="Infinity">
 
                 <VBox styleClass="card" minWidth="250">
                     <Label text="%slaCompliance" styleClass="muted-text"/>
@@ -86,19 +86,19 @@
             </FlowPane>
 
             <!-- ================= CHART SECTION ================= -->
-            <HBox spacing="25">
+            <FlowPane hgap="25" vgap="25" prefWrapLength="900" maxWidth="Infinity">
 
-                <VBox styleClass="card" HBox.hgrow="ALWAYS">
+                <VBox styleClass="card" minWidth="280" prefWidth="420" maxWidth="Infinity">
                     <Label text="%TicketDistribution" styleClass="title-medium"/>
                     <PieChart fx:id="ticketChart" minHeight="300"/>
                 </VBox>
 
-                <VBox styleClass="card" HBox.hgrow="ALWAYS">
+                <VBox styleClass="card" minWidth="280" prefWidth="420" maxWidth="Infinity">
                     <Label text="%SLAOverview" styleClass="title-medium"/>
                     <PieChart fx:id="slaChart" minHeight="300"/>
                 </VBox>
 
-            </HBox>
+            </FlowPane>
 
             <!-- ================= AGENT PERFORMANCE ================= -->
             <VBox styleClass="card">
@@ -129,7 +129,7 @@
             <VBox styleClass="card">
                 <Label text="%RecentTickets" styleClass="title-medium"/>
 
-                <TableView fx:id="recentTicketsTable" prefHeight="300">
+                <TableView fx:id="recentTicketsTable" prefHeight="300" maxWidth="Infinity">
 
                     <columns>
                         <TableColumn fx:id="colId" text="%ID"/>

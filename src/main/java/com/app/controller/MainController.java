@@ -7,7 +7,6 @@ import com.app.model.TicketTask;
 import com.app.service.SLAMonitorService;
 import com.app.util.LanguageManager;
 import com.app.util.NotificationPopup;
-import static com.sun.source.util.DocTrees.instance;
 
 import java.util.List;
 import javafx.fxml.FXML;
@@ -16,6 +15,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -33,10 +33,10 @@ import javafx.animation.Timeline;
 
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.util.Duration;
+import javafx.scene.control.ScrollPane;
 
 
 
@@ -81,6 +81,7 @@ private static MainController instance;
     private double mouseY;
     private String role;
     private Timeline notificationPolling;
+    private int lastUnreadCount = -1;
     
     
     
@@ -94,14 +95,8 @@ public void initialize() throws Exception {
     setupTaskDoubleClick();
 }
     
-    // Create translation bundle
-    ResourceBundle bundle = LanguageManager.getBundle();
-    
-
     SLAMonitorService.checkAllTickets();
     startNotificationPolling();
-    refreshNotifications();
-    startNotificationAutoRefresh();
 
     // Apply automatic translation
    
@@ -110,25 +105,21 @@ public void initialize() throws Exception {
 
     //applyRoleVisibility();
     updateTexts(username);
+    refreshNotificationWidgets(true);
 
     // Listen for language change (LIVE UPDATE)
     LanguageManager.localeProperty().addListener((obs, oldVal, newVal) -> {
-
-        ResourceBundle newBundle = LanguageManager.getBundle();
-       
-
         updateTexts(username);
+        refreshNotificationWidgets(true);
         loadDashboard();
     });
 
     // Responsive sidebar
     rootPane.widthProperty().addListener((obs, oldVal, newVal) -> {
-        if (newVal.doubleValue() < 900) {
-            sidebar.setPrefWidth(70);
-        } else {
-            sidebar.setPrefWidth(220);
-        }
+        double targetWidth = Math.max(180, Math.min(260, newVal.doubleValue() * 0.2));
+        sidebar.setPrefWidth(targetWidth);
     });
+    sidebar.setPrefWidth(220);
 
     loadDashboard();
 
@@ -270,7 +261,7 @@ private void openTicketManagement() {
 
         Parent view = loader.load();
 
-        rootPane.setCenter(view);
+        setCenterContent(view);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -291,7 +282,7 @@ private void handleDataShareManagement() {
         Parent view = loader.load();
 
         // Load the screen into the center of the main layout
-        rootPane.setCenter(view);
+        setCenterContent(view);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -381,7 +372,7 @@ public void openChat()  {
             
 
             Parent root = loader.load();
-            rootPane.setCenter(root);
+            setCenterContent(root);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -634,11 +625,9 @@ public void startNotificationPolling() {
 
     notificationPolling = new Timeline(
 
-        new KeyFrame(Duration.seconds(5), e -> {
+        new KeyFrame(Duration.seconds(10), e -> {
 
-            // just refresh badge and dropdown
-            updateNotificationBadges();
-            refreshNotifications();
+            refreshNotificationWidgets(false);
 
         })
     );
@@ -663,7 +652,7 @@ private void openDataShare() {
 
         Parent view = loader.load();
 
-        rootPane.setCenter(view);
+        setCenterContent(view);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -673,46 +662,23 @@ private void openDataShare() {
 
 
 
-private void updateNotificationBadges() {
-
+private void refreshNotificationWidgets(boolean forceRefresh) {
     int unread = NotificationDAO.getUnreadCount(Session.getUserId());
-
-    if (unread > 0) {
-        btnDataShare.setText("DataShare  🔔 " + unread);
-    } else {
-        btnDataShare.setText("DataShare");
+    if (!forceRefresh && unread == lastUnreadCount) {
+        return;
     }
-}
 
-private void refreshNotifications() {
-
-    int userId = Session.getUserId();
-
-    int unread = NotificationDAO.getUnreadCount(userId);
-
+    String dataShareLabel = LanguageManager.getBundle().getString("dataShare");
     if (unread > 0) {
+        btnDataShare.setText(dataShareLabel + "  🔔 " + unread);
         badgeNotifications.setText(String.valueOf(unread));
         badgeNotifications.setVisible(true);
     } else {
+        btnDataShare.setText(dataShareLabel);
         badgeNotifications.setVisible(false);
     }
-}
 
-private void startNotificationAutoRefresh() {
-
-    Timeline timeline = new Timeline(
-
-            new KeyFrame(Duration.seconds(10), event -> {
-
-                refreshNotifications();
-
-            })
-
-    );
-
-    timeline.setCycleCount(Timeline.INDEFINITE);
-    timeline.play();
-
+    lastUnreadCount = unread;
 }
 
 
@@ -746,8 +712,7 @@ private void openNotifications() {
         NotificationDAO.markAllRead(Session.getUserId());
 
         // ⭐ refresh badges
-        updateNotificationBadges();
-        refreshNotifications();
+        refreshNotificationWidgets(true);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -771,7 +736,7 @@ private void openMyActivity() {
 
         Parent view = loader.load();
 
-        rootPane.setCenter(view);
+        setCenterContent(view);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -794,7 +759,7 @@ private void openTaskDetails(TicketTask task, MouseEvent event) {
         controller.setTask(task);
 
         // ✅ CORRECT NAVIGATION
-        rootPane.setCenter(view);
+        setCenterContent(view);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -884,12 +849,42 @@ public static void loadPage(String fxml, java.util.function.Consumer<Object> con
         }
 
         javafx.application.Platform.runLater(() -> {
-            instance.rootPane.setCenter(view);
+            instance.setCenterContent(view);
         });
 
     } catch (Exception e) {
         e.printStackTrace();
     }
+}
+
+private void setCenterContent(Parent view) {
+    rootPane.setCenter(adaptViewForViewport(view));
+}
+
+private Parent adaptViewForViewport(Parent view) {
+    if (view instanceof ScrollPane scrollView) {
+        scrollView.setFitToWidth(true);
+        scrollView.setFitToHeight(false);
+        scrollView.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scrollView;
+    }
+
+    ScrollPane wrapper = new ScrollPane(view);
+    wrapper.setFitToWidth(true);
+    wrapper.setFitToHeight(true);
+    wrapper.setPannable(true);
+    wrapper.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    wrapper.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    wrapper.setStyle("-fx-background-color:transparent; -fx-background:transparent;");
+
+    if (view instanceof Region region) {
+        region.setMaxWidth(Double.MAX_VALUE);
+        region.setMaxHeight(Double.MAX_VALUE);
+        wrapper.viewportBoundsProperty().addListener((obs, oldBounds, newBounds) ->
+                region.setPrefWidth(newBounds.getWidth()));
+    }
+
+    return wrapper;
 }
 
 

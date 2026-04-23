@@ -5,21 +5,24 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.image.*?>
 
-<StackPane xmlns="http://javafx.com/javafx"
+<StackPane xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.app.controller.LoginController"
            style="-fx-background-color: linear-gradient(to right,#4b5cc4,#6a82fb);">
 
-    <HBox alignment="CENTER" spacing="60">
+    <HBox alignment="CENTER" spacing="40" fillHeight="true"
+          maxWidth="1100" StackPane.alignment="CENTER">
+        <padding>
+            <Insets top="20" right="20" bottom="20" left="20"/>
+        </padding>
 
         <!-- ================= LOGIN CARD ================= -->
 
         <VBox spacing="20"
       alignment="CENTER"
+      minWidth="300"
       prefWidth="420"
-      prefHeight="420"
-      maxWidth="420"
-      maxHeight="420"
+      maxWidth="520"
       style="
              -fx-background-color:white;
              -fx-background-radius:30;
@@ -43,7 +46,7 @@
 
             <TextField fx:id="txtUsername"
                        promptText="Nom d'utilisateur"
-                       prefWidth="280"
+                       maxWidth="Infinity"
                        style="
                               -fx-background-radius:8;
                               -fx-padding:10;
@@ -53,7 +56,7 @@
 
             <PasswordField fx:id="txtPassword"
                            promptText="Mot de passe"
-                           prefWidth="280"
+                           maxWidth="Infinity"
                            style="
                                   -fx-background-radius:8;
                                   -fx-padding:10;
@@ -64,7 +67,7 @@
             <Button fx:id="btnLogin"
                     text="SE CONNECTER"
                     defaultButton="true"
-                    prefWidth="280"
+                    maxWidth="Infinity"
                     onAction="#handleLogin"
                     style="
                            -fx-background-color:#5b73d1;
@@ -76,7 +79,7 @@
             <!-- PROGRESS BAR -->
 
             <ProgressBar fx:id="progressBar"
-                         prefWidth="280"
+                         maxWidth="Infinity"
                          visible="false"
                          progress="0"/>
 
@@ -91,7 +94,7 @@
 
         <!-- ================= RIGHT PANEL ================= -->
 
-        <StackPane prefWidth="500">
+        <StackPane minWidth="260" prefWidth="500" HBox.hgrow="ALWAYS">
 
             <VBox alignment="CENTER" spacing="20">
 
@@ -116,7 +119,6 @@
                        "/>
 
                 <Label text="Direction des Systèmes et Technologies d’Information"
-                    
                        style="
                               -fx-font-size:16px;
                               -fx-text-fill:white;
@@ -125,7 +127,6 @@
                        "/>
                 
                 <Label text="Sous-direction de Maintenance et Application (SDMA)"
-                    
                        style="
                               -fx-font-size:14px;
                               -fx-text-fill:white;

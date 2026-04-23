@@ -88,10 +88,16 @@
 
         <!-- SIDEBAR -->
         <left>
+            <ScrollPane fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        vbarPolicy="AS_NEEDED"
+                        style="-fx-background-color:#07152b; -fx-background:#07152b; -fx-border-color:transparent;"
+                        prefWidth="220">
+            <content>
             <VBox fx:id="sidebar"
                   styleClass="sidebar"
                   spacing="12"
-                  minWidth="180"
+                  minWidth="170"
                   prefWidth="220"
                   maxWidth="260">
 
@@ -171,14 +177,17 @@
                         onAction="#handleLogout"
                         styleClass="danger-btn"/>
             </VBox>
+            </content>
+            </ScrollPane>
         </left>
 
         <!-- CONTENT -->
         <center>
-            <StackPane style="-fx-padding:20;">
+            <StackPane style="-fx-padding:12;">
                 <StackPane fx:id="contentArea"
                            styleClass="card"
-                           maxWidth="1200"
+                           maxWidth="Infinity"
+                           maxHeight="Infinity"
                            StackPane.alignment="CENTER"/>
             </StackPane>
         </center>

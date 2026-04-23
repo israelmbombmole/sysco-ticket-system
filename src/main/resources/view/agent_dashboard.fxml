@@ -17,7 +17,7 @@
 
     <content>
 
-        <HBox alignment="CENTER_RIGHT" spacing="10">
+        <HBox alignment="CENTER_RIGHT" spacing="10" fillHeight="true">
 
     <Label text="%agent_dashboard"
            style="-fx-font-size:20px; -fx-font-weight:bold;" />
@@ -39,14 +39,14 @@
 </HBox>
         
         
-        <VBox spacing="15" style="-fx-padding:20;">
+        <VBox spacing="15" style="-fx-padding:20;" maxWidth="Infinity">
 
             <!-- ================= TITLE ================= -->
             <Label text="%agent_dashboard"
                    style="-fx-font-size:20px; -fx-font-weight:bold;" />
 
             <!-- ================= STAT CARDS ================= -->
-            <FlowPane hgap="20" vgap="20">
+            <FlowPane hgap="20" vgap="20" prefWrapLength="900">
 
                 <VBox styleClass="card" minWidth="180">
                     <Label text="%total"/>
@@ -164,7 +164,7 @@
 
                 </HBox>
 
-                <TableView fx:id="tableTickets">
+                <TableView fx:id="tableTickets" minHeight="260" maxWidth="Infinity">
 
                     <columns>
 
