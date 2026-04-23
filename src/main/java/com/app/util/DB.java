@@ -317,6 +317,16 @@ st.execute("""
     )
 """);
 
+try (PreparedStatement insertCourierPerms = c.prepareStatement(
+        "INSERT OR IGNORE INTO user_permissions(user_id, permission) " +
+        "SELECT id, ? FROM users WHERE role='COURRIER'")) {
+    String[] courierPerms = {"DASHBOARD", "TICKET_MONITORING", "CREATE_TICKET"};
+    for (String perm : courierPerms) {
+        insertCourierPerms.setString(1, perm);
+        insertCourierPerms.executeUpdate();
+    }
+}
+
 
 
 

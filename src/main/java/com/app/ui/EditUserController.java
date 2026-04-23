@@ -72,7 +72,8 @@ import java.util.Set;
                 "INSPECTEUR",
                 "CONTROLEUR",
                 "VERIFICATEUR",
-                "VERIFICATEUR-ASSISTANT"
+                "VERIFICATEUR-ASSISTANT",
+                "COURRIER"
                 );
 
                 cmbSousDirection.setItems(SousDirectionDAO.getAllSousDirections());

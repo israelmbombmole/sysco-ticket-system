@@ -9,6 +9,7 @@ public class RoleUtil {
             case "SOUS-DIRECTEUR" -> 5;
             case "INSPECTEUR" -> 4;
             case "CONTROLEUR" -> 3;
+            case "COURRIER" -> 3;
             case "VERIFICATEUR" -> 2;
             case "VERIFICATEUR-ASSISTANT" -> 1;
             default -> 0;

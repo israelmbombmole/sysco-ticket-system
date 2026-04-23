@@ -40,6 +40,7 @@ public class TicketMonitoringController {
     @FXML private TableColumn<Ticket, String> colAgentAssigned;
     @FXML private TableColumn<Ticket, String> colStatusAssigned;
     @FXML private ListView<User> listAgents;
+@FXML private ComboBox<String> cmbTargetRole;
 
     @FXML private TextField txtSearch;
 
@@ -135,7 +136,7 @@ loadUnassignedTickets();
 loadAssignedTickets();
 loadStats();
 loadChart();
-loadAgents();
+initTargetRoleFilter();
 
 
 
@@ -373,24 +374,43 @@ Parent root = loader.load();
                 new PieChart.Data("Closed", closed)
         ));
     }
-private void loadAgents() {
+private void initTargetRoleFilter() {
+    if (cmbTargetRole == null) {
+        return;
+    }
 
-    String currentRole = Session.getRole();
+    cmbTargetRole.getItems().clear();
+    Set<String> allowedRoles = RoleFlowUtil.getAllowedTargetRoles(Session.getRole());
+    cmbTargetRole.getItems().addAll(allowedRoles);
+    if (!cmbTargetRole.getItems().isEmpty()) {
+        cmbTargetRole.getSelectionModel().selectFirst();
+    }
 
-    // 🔥 get allowed roles
-    Set<String> allowedRoles =
-            RoleFlowUtil.getAllowedTargetRoles(currentRole);
+    cmbTargetRole.setOnAction(e -> loadAgentsByTargetRole());
+    loadAgentsByTargetRole();
+}
 
-    // convert to list
-    List<String> rolesList = new ArrayList<>(allowedRoles);
+private void loadAgentsByTargetRole() {
+    if (cmbTargetRole == null) {
+        return;
+    }
 
-    // 🔥 get filtered users
-    ObservableList<User> users =
-            UserDAO.getUsersByRoles(rolesList);
+    String selectedRole = cmbTargetRole.getValue();
+    if (selectedRole == null || selectedRole.isBlank()) {
+        listAgents.setItems(FXCollections.observableArrayList());
+        return;
+    }
 
-    listAgents.setItems(users);
-
+    listAgents.setItems(UserDAO.getUsersByRoles(List.of(selectedRole)));
     listAgents.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+}
+
+private boolean isDirectionCompatible(Ticket ticket, User agent) {
+    Integer ticketDirectionId = ticket.getDepartmentId();
+    if (ticketDirectionId == null || agent.getDirectionId() == null) {
+        return false;
+    }
+    return ticketDirectionId.equals(agent.getDirectionId());
 }
     
 
@@ -414,7 +434,13 @@ private void handleAssign() {
         // ===============================
         if (selectedAgents.size() == 1) {
 
-            int userId = selectedAgents.get(0).getId();
+            User selectedAgent = selectedAgents.get(0);
+            if (!isDirectionCompatible(selectedTicket, selectedAgent)) {
+                showError(LanguageManager.getBundle().getString("assignmentDirectionError"));
+                return;
+            }
+
+            int userId = selectedAgent.getId();
 
             TicketDAO.assignTicket(selectedTicket.getId(), userId);
 
@@ -425,7 +451,18 @@ private void handleAssign() {
         // ===============================
         // 🔥 MULTI ASSIGNMENT → POPUP
         // ===============================
-        openTaskAssignmentPopup(selectedTicket, selectedAgents);
+        List<User> directionSafeAgents = selectedAgents
+                .stream()
+                .filter(agent -> isDirectionCompatible(selectedTicket, agent))
+                .toList();
+        if (directionSafeAgents.isEmpty()) {
+            showError(LanguageManager.getBundle().getString("assignmentDirectionError"));
+            return;
+        }
+        if (directionSafeAgents.size() != selectedAgents.size()) {
+            showError(LanguageManager.getBundle().getString("assignmentDirectionError"));
+        }
+        openTaskAssignmentPopup(selectedTicket, directionSafeAgents);
 
     } catch (Exception e) {
 

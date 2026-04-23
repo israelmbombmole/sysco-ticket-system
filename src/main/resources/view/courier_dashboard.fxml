@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.controller.CourierDashboardController"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            style="-fx-background-color:#f4f6f9;">
+
+    <content>
+        <VBox spacing="18" style="-fx-padding:20;">
+
+            <Label text="%courierDashboard"
+                   style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+
+            <FlowPane hgap="12" vgap="12" prefWrapLength="900">
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%courierTotalTickets"/>
+                    <Label fx:id="lblTotalCreated"
+                           style="-fx-font-size:22px; -fx-font-weight:bold;"/>
+                </VBox>
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%courierOpenTickets"/>
+                    <Label fx:id="lblOpenCount"
+                           style="-fx-font-size:22px; -fx-font-weight:bold;"/>
+                </VBox>
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%courierAssignedTickets"/>
+                    <Label fx:id="lblAssignedCount"
+                           style="-fx-font-size:22px; -fx-font-weight:bold;"/>
+                </VBox>
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%courierInProgressTickets"/>
+                    <Label fx:id="lblInProgressCount"
+                           style="-fx-font-size:22px; -fx-font-weight:bold;"/>
+                </VBox>
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%courierClosedTickets"/>
+                    <Label fx:id="lblClosedCount"
+                           style="-fx-font-size:22px; -fx-font-weight:bold;"/>
+                </VBox>
+            </FlowPane>
+
+            <VBox styleClass="card" spacing="10">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="%search"
+                           style="-fx-font-weight:bold;"/>
+                    <TextField fx:id="txtSearch"
+                               promptText="%courierSearchTickets"
+                               HBox.hgrow="ALWAYS"/>
+                    <ComboBox fx:id="cmbStatus" prefWidth="170"/>
+                    <Button text="%refresh"
+                            onAction="#handleRefresh"/>
+                </HBox>
+
+                <TableView fx:id="tableCourierTickets" minHeight="360" maxWidth="Infinity">
+                    <columns>
+                        <TableColumn fx:id="colTicketRef" text="%ticketId" prefWidth="110"/>
+                        <TableColumn fx:id="colTitle" text="%title" prefWidth="230"/>
+                        <TableColumn fx:id="colDirection" text="%courierTargetDirection" prefWidth="220"/>
+                        <TableColumn fx:id="colAssignedAgent" text="%courierAssignedAgent" prefWidth="180"/>
+                        <TableColumn fx:id="colAssignedRole" text="%courierAssignedRole" prefWidth="150"/>
+                        <TableColumn fx:id="colStatus" text="%status" prefWidth="130"/>
+                        <TableColumn fx:id="colCreatedAt" text="%dateTime" prefWidth="170"/>
+                    </columns>
+                </TableView>
+            </VBox>
+
+        </VBox>
+    </content>
+</ScrollPane>

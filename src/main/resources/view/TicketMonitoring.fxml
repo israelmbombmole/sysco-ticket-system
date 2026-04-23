@@ -41,6 +41,13 @@
                                   prefHeight="100"
                                   prefWidth="200"/>
 
+                        <VBox spacing="6">
+                            <Label text="Target Role"/>
+                            <ComboBox fx:id="cmbTargetRole"
+                                      promptText="Select role"
+                                      prefWidth="200"/>
+                        </VBox>
+
                         <Button text="%assign"
                                 onAction="#handleAssign"
                                 style="-fx-background-color:#2563eb; -fx-text-fill:white;"/>

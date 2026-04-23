@@ -426,7 +426,8 @@ private void handleChangeRole() {
             "INSPECTEUR",
             "CONTROLEUR",
             "VERIFICATEUR",
-            "VERIFICATEUR-ASSISTANT"
+            "VERIFICATEUR-ASSISTANT",
+            "COURRIER"
     );
 
     dialog.setTitle("Change Role");
@@ -458,7 +459,7 @@ private int getRoleLevel(String role) {
         case "ADMIN", "DIRECTEUR" -> 6;
         case "SOUS-DIRECTEUR" -> 5;
         case "INSPECTEUR" -> 4;
-        case "CONTROLEUR", "AGENT" -> 3;
+        case "CONTROLEUR", "AGENT", "COURRIER" -> 3;
         case "VERIFICATEUR", "USER" -> 2;
         case "VERIFICATEUR-ASSISTANT" -> 1;
         default -> 0;

@@ -343,6 +343,7 @@ public String getSubDirection() {
 
 private String sender;
 private String department;
+private String currentOwnerRole;
 
 
 public String getSender() {
@@ -359,6 +360,14 @@ public String getDepartment() {
 
 public void setDepartment(String department) {
     this.department = department;
+}
+
+public String getCurrentOwnerRole() {
+    return currentOwnerRole;
+}
+
+public void setCurrentOwnerRole(String currentOwnerRole) {
+    this.currentOwnerRole = currentOwnerRole;
 }
 
 public String getTicketNumber() {

@@ -405,6 +405,9 @@ private void loadDashboard() {
         case "VERIFICATEUR-ASSISTANT":
             loadPage("user_dashboard_home.fxml");
             break;
+        case "COURRIER":
+            loadPage("courier_dashboard.fxml");
+            break;
 
         default:
             loadPage("user_excel_entry.fxml");

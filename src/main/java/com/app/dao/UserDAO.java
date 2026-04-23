@@ -1072,7 +1072,13 @@ private static void lockUser(Connection c, int userId) {
 
     String placeholders = String.join(",", roles.stream().map(r -> "?").toList());
 
-    String sql = "SELECT * FROM users WHERE role IN (" + placeholders + ") AND active = 1";
+    String sql = """
+        SELECT 
+            u.*,
+            d.name AS direction_name
+        FROM users u
+        LEFT JOIN directions d ON d.id = u.direction_id
+        WHERE u.role IN (""" + placeholders + ") AND u.active = 1";
 
     try (Connection c = DB.getConnection();
          PreparedStatement ps = c.prepareStatement(sql)) {
@@ -1090,6 +1096,10 @@ private static void lockUser(Connection c, int userId) {
             u.setId(rs.getInt("id"));
             u.setUsername(rs.getString("username"));
             u.setRole(rs.getString("role"));
+            if (rs.getObject("direction_id") != null) {
+                u.setDirectionId(rs.getInt("direction_id"));
+            }
+            u.setDirectionName(rs.getString("direction_name"));
 
             list.add(u);
         }

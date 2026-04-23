@@ -32,6 +32,16 @@ import javafx.scene.control.TreeItem;
 
 public class TicketDAO {
 
+    private static Integer resolveTicketDirectionId(Ticket ticket) {
+        if (ticket == null) {
+            return null;
+        }
+        if (ticket.getDepartmentId() != null) {
+            return ticket.getDepartmentId();
+        }
+        return DirectionDAO.findDirectionIdByDepartmentName(ticket.getDepartmentName());
+    }
+
     // =====================================================
     // GET TICKETS FOR AGENT
     // =====================================================
@@ -489,8 +499,11 @@ public static boolean areAllTasksCompleted(int ticketId) {
     ObservableList<Ticket> list = FXCollections.observableArrayList();
 
     String sql = """
-        SELECT t.*
+        SELECT 
+            t.*,
+            d.name AS department_name
         FROM tickets t
+        LEFT JOIN departments d ON d.id = t.department_id
         LEFT JOIN ticket_assignments ta 
             ON t.id = ta.ticket_id AND ta.active = 1
         WHERE ta.id IS NULL
@@ -508,7 +521,54 @@ public static boolean areAllTasksCompleted(int ticketId) {
             t.setTitle(rs.getString("title"));
             t.setStatus(rs.getString("status"));
             t.setTicketType(rs.getString("ticket_type"));
+            t.setDepartmentName(rs.getString("department_name"));
+            if (rs.getObject("department_id") != null) {
+                t.setDepartmentId(rs.getInt("department_id"));
+            }
 
+            list.add(t);
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return list;
+}
+
+public static ObservableList<Ticket> getUnassignedTicketsCreatedBy(int creatorId) {
+
+    ObservableList<Ticket> list = FXCollections.observableArrayList();
+
+    String sql = """
+        SELECT 
+            t.*,
+            d.name AS department_name
+        FROM tickets t
+        LEFT JOIN departments d ON d.id = t.department_id
+        LEFT JOIN ticket_assignments ta 
+            ON t.id = ta.ticket_id AND ta.active = 1
+        WHERE ta.id IS NULL
+          AND t.created_by = ?
+        ORDER BY t.created_at DESC
+    """;
+
+    try (Connection c = DB.getConnection();
+         PreparedStatement ps = c.prepareStatement(sql)) {
+
+        ps.setInt(1, creatorId);
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            Ticket t = new Ticket();
+            t.setId(rs.getInt("id"));
+            t.setTitle(rs.getString("title"));
+            t.setStatus(rs.getString("status"));
+            t.setTicketType(rs.getString("ticket_type"));
+            t.setDepartmentName(rs.getString("department_name"));
+            if (rs.getObject("department_id") != null) {
+                t.setDepartmentId(rs.getInt("department_id"));
+            }
             list.add(t);
         }
 
@@ -2534,6 +2594,9 @@ public static ObservableList<Ticket> getAllTickets() {
 
             ticket.setAssignedToName(rs.getString("agent_name"));
             ticket.setDepartmentName(rs.getString("department_name"));
+            if (rs.getObject("department_id") != null) {
+                ticket.setDepartmentId(rs.getInt("department_id"));
+            }
 
             ticket.setCreatedByName(rs.getString("creator_name"));
             ticket.setCreatedByRole(rs.getString("creator_role"));
@@ -2861,7 +2924,7 @@ public static Ticket getTicketById(int ticketId) {
         LEFT JOIN users u ON t.created_by = u.id
         LEFT JOIN users u2 ON t.updated_by = u2.id
         LEFT JOIN users u3 ON t.assigned_to = u3.id
-        LEFT JOIN sous_directions d ON t.department_id = d.id
+        LEFT JOIN departments d ON t.department_id = d.id
         WHERE t.id = ?
     """;
 
@@ -2912,6 +2975,9 @@ public static Ticket getTicketById(int ticketId) {
             // DEPARTMENT
             // =========================
             ticket.setDepartmentName(rs.getString("department_name"));
+            if (rs.getObject("department_id") != null) {
+                ticket.setDepartmentId(rs.getInt("department_id"));
+            }
 
             // =========================
             // START DATE (✅ FIXED SOURCE)

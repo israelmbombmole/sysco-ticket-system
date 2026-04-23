@@ -100,6 +100,7 @@
                 <CheckBox fx:id="chkLoginAudit" text="Login Audit"/>
                 <CheckBox fx:id="chkFileShareAudit" text="File Share Audit"/>
                 <CheckBox fx:id="chkCreateTicket" text="Create Ticket"/>
+                <CheckBox fx:id="chkDirectionAssignment" text="Direction Assignment"/>
 
             </VBox>
 

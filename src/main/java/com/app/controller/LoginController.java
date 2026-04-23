@@ -123,6 +123,13 @@ private void handleLogin() {
                 UserPermissionDAO.getPermissions(user.getId())
             );
         }
+        if ("COURRIER".equalsIgnoreCase(role)) {
+            java.util.Set<String> perms = new java.util.HashSet<>(Session.getPermissions());
+            perms.add("DASHBOARD");
+            perms.add("CREATE_TICKET");
+            perms.add("TICKET_MONITORING");
+            Session.setPermissions(perms);
+        }
 
         // ======================
         // AUDIT
