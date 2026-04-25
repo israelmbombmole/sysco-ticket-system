@@ -111,6 +111,17 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>com.app.MainApp</mainClass>
+                    <options>
+                        <option>-Xms128m</option>
+                        <option>-Xmx512m</option>
+                        <option>-XX:MaxMetaspaceSize=192m</option>
+                        <option>-XX:ReservedCodeCacheSize=128m</option>
+                        <option>-XX:+UseG1GC</option>
+                        <option>-XX:+AlwaysPreTouch</option>
+                        <option>-Dprism.order=sw</option>
+                        <option>-Dprism.lcdtext=false</option>
+                        <option>-Dfile.encoding=UTF-8</option>
+                    </options>
                 </configuration>
             </plugin>
 
