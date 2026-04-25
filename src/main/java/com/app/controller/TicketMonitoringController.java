@@ -233,14 +233,8 @@ addViewButtonColumn();
     
 
     private void loadUnassignedTickets() {
-
-    String role = com.app.auth.Session.getRole();
-
-    if (RoleFlowUtil.isHighLevel(role)) {
-        tableTickets.setItems(TicketDAO.getUnassignedTickets());
-    } else {
-        tableTickets.setItems(FXCollections.observableArrayList());
-    }
+    String role = Session.getRole();
+    tableTickets.setItems(TicketDAO.getTicketsForMonitoringRole(role, Session.getUserId()));
 }
 
    private void loadAssignedTickets() {
@@ -406,6 +400,21 @@ private void loadAgentsByTargetRole() {
 }
 
 private boolean isDirectionCompatible(Ticket ticket, User agent) {
+    if (ticket == null || agent == null) {
+        return false;
+    }
+
+    String sessionRole = Session.getRole() == null ? "" : Session.getRole().toUpperCase();
+
+    if ("SECRETAIRE".equals(sessionRole) && "SOUS-DIRECTEUR".equalsIgnoreCase(agent.getRole())) {
+        Integer ticketSousDirectionId = ticket.getSousDirectionId();
+        Integer agentSousDirectionId = agent.getSousDirectionId();
+        if (ticketSousDirectionId == null || agentSousDirectionId == null) {
+            return false;
+        }
+        return ticketSousDirectionId.equals(agentSousDirectionId);
+    }
+
     Integer ticketDirectionId = ticket.getDepartmentId();
     if (ticketDirectionId == null || agent.getDirectionId() == null) {
         return false;

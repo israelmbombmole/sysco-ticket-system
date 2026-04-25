@@ -1,8 +1,8 @@
 package com.app.ui;
 
 import com.app.dao.UserActionDAO;
+import com.app.dao.TicketDAO;
 import com.app.model.DataEntry;
-import com.app.service.ExcelService;
 import com.app.session.LoggedUser;
 import java.util.ResourceBundle;
 import javafx.collections.FXCollections;
@@ -10,7 +10,6 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -59,10 +58,10 @@ tableData.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
     // ===============================
-    // LOAD ALL FROM EXCEL
+    // LOAD ALL FROM FINALIZED TICKETS
     // ===============================
     private void loadAll() {
-        tableData.setItems(ExcelService.readAll());
+        tableData.setItems(TicketDAO.getFinalizedDataEntries());
     }
 
     // ===============================
@@ -71,7 +70,7 @@ tableData.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     @FXML
     private void handleSearch() {
 
-        ObservableList<DataEntry> allData = ExcelService.readAll();
+        ObservableList<DataEntry> allData = TicketDAO.getFinalizedDataEntries();
         ObservableList<DataEntry> filtered = FXCollections.observableArrayList();
 
         String cotation = txtCotation.getText() == null ? "" : txtCotation.getText().toLowerCase();
@@ -135,7 +134,7 @@ private void handleDelete() {
     confirm.showAndWait().ifPresent(btn -> {
         if (btn == ButtonType.YES) {
 
-            ExcelService.delete(selected);
+            TicketDAO.clearFinalizedDataEntry(selected);
             loadAll();
         }
     });

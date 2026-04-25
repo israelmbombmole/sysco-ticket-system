@@ -12,6 +12,7 @@ public class RoleFlowUtil {
     public static final String SOUS_DIRECTEUR = "SOUS-DIRECTEUR";
     public static final String INSPECTEUR = "INSPECTEUR";
     public static final String CONTROLEUR = "CONTROLEUR";
+    public static final String SECRETAIRE = "SECRETAIRE";
     public static final String VERIFICATEUR = "VERIFICATEUR";
     public static final String ASSISTANT = "VERIFICATEUR-ASSISTANT";
     public static final String COURRIER = "COURRIER";
@@ -82,11 +83,10 @@ public class RoleFlowUtil {
                 return toRole.equals(CONTROLEUR)
                         || toRole.equals(VERIFICATEUR)
                         || toRole.equals(ASSISTANT);
+            case SECRETAIRE:
+                return toRole.equals(SOUS_DIRECTEUR);
             case COURRIER:
-                return toRole.equals(DIRECTEUR)
-                        || toRole.equals(SOUS_DIRECTEUR)
-                        || toRole.equals(INSPECTEUR)
-                        || toRole.equals(CONTROLEUR);
+                return toRole.equals(SECRETAIRE);
 
             default:
                 return false; // VERIFICATEUR & ASSISTANT cannot assign
@@ -166,10 +166,11 @@ public class RoleFlowUtil {
                 roles.add(ASSISTANT);
                 break;
             case COURRIER:
-                roles.add(DIRECTEUR);
+                roles.add(SECRETAIRE);
+                break;
+
+            case SECRETAIRE:
                 roles.add(SOUS_DIRECTEUR);
-                roles.add(INSPECTEUR);
-                roles.add(CONTROLEUR);
                 break;
 
             case SOUS_DIRECTEUR:
