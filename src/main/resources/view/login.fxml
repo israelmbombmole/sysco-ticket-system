@@ -5,21 +5,24 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.image.*?>
 
-<StackPane xmlns="http://javafx.com/javafx"
+<StackPane xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.app.controller.LoginController"
            style="-fx-background-color: linear-gradient(to right,#4b5cc4,#6a82fb);">
 
-    <HBox alignment="CENTER" spacing="60">
+    <HBox alignment="CENTER" spacing="40" fillHeight="true"
+          maxWidth="1100" StackPane.alignment="CENTER">
+        <padding>
+            <Insets top="20" right="20" bottom="20" left="20"/>
+        </padding>
 
         <!-- ================= LOGIN CARD ================= -->
 
         <VBox spacing="20"
       alignment="CENTER"
+      minWidth="300"
       prefWidth="420"
-      prefHeight="420"
-      maxWidth="420"
-      maxHeight="420"
+      maxWidth="520"
       style="
              -fx-background-color:white;
              -fx-background-radius:30;
@@ -30,20 +33,20 @@
 
             <!-- SYSTEM TITLE -->
 
-            <Label text="SYSCO"
+            <Label text="%appName"
                    style="-fx-font-size:32px;
                           -fx-font-weight:bold;
                           -fx-text-fill:#2c3e50;"/>
 
-            <Label text="Connexion utilisateur"
+            <Label text="%loginUserTitle"
                    style="-fx-font-size:16px;
                           -fx-text-fill:#555;"/>
 
             <!-- USERNAME -->
 
             <TextField fx:id="txtUsername"
-                       promptText="Nom d'utilisateur"
-                       prefWidth="280"
+                       promptText="%loginUsernamePrompt"
+                       maxWidth="Infinity"
                        style="
                               -fx-background-radius:8;
                               -fx-padding:10;
@@ -52,8 +55,8 @@
             <!-- PASSWORD -->
 
             <PasswordField fx:id="txtPassword"
-                           promptText="Mot de passe"
-                           prefWidth="280"
+                           promptText="%loginPasswordPrompt"
+                           maxWidth="Infinity"
                            style="
                                   -fx-background-radius:8;
                                   -fx-padding:10;
@@ -62,9 +65,9 @@
             <!-- LOGIN BUTTON -->
 
             <Button fx:id="btnLogin"
-                    text="SE CONNECTER"
+                    text="%loginButton"
                     defaultButton="true"
-                    prefWidth="280"
+                    maxWidth="Infinity"
                     onAction="#handleLogin"
                     style="
                            -fx-background-color:#5b73d1;
@@ -76,7 +79,7 @@
             <!-- PROGRESS BAR -->
 
             <ProgressBar fx:id="progressBar"
-                         prefWidth="280"
+                         maxWidth="Infinity"
                          visible="false"
                          progress="0"/>
 
@@ -86,12 +89,22 @@
                    style="-fx-text-fill:red;
                           -fx-font-size:12px;"/>
 
+            <!-- LANGUAGE TOGGLE -->
+            <HBox spacing="8" alignment="CENTER">
+                <Button text="%langEnglish"
+                        onAction="#handleEnglish"
+                        style="-fx-background-color:#e2e8f0; -fx-text-fill:#1f2937; -fx-background-radius:8; -fx-padding:4 12;"/>
+                <Button text="%langFrench"
+                        onAction="#handleFrench"
+                        style="-fx-background-color:#e2e8f0; -fx-text-fill:#1f2937; -fx-background-radius:8; -fx-padding:4 12;"/>
+            </HBox>
+
         </VBox>
 
 
         <!-- ================= RIGHT PANEL ================= -->
 
-        <StackPane prefWidth="500">
+        <StackPane minWidth="260" prefWidth="500" HBox.hgrow="ALWAYS">
 
             <VBox alignment="CENTER" spacing="20">
 
@@ -106,7 +119,7 @@
 
                 </ImageView>
 
-                <Label text="Direction Générale des Douanes et Accises"
+                <Label text="%loginFooterDgda"
                        style="
                               -fx-font-size:22px;
                               -fx-font-weight:bold;
@@ -115,8 +128,7 @@
                               -fx-text-alignment:center;
                        "/>
 
-                <Label text="Direction des Systèmes et Technologies d’Information"
-                    
+                <Label text="%loginFooterDsti"
                        style="
                               -fx-font-size:16px;
                               -fx-text-fill:white;
@@ -124,8 +136,7 @@
                               -fx-text-alignment:center;
                        "/>
                 
-                <Label text="Sous-direction de Maintenance et Application (SDMA)"
-                    
+                <Label text="%loginFooterSdma"
                        style="
                               -fx-font-size:14px;
                               -fx-text-fill:white;
@@ -135,7 +146,7 @@
                 
                 
 
-                <Label text="Ce système est réservé aux utilisateurs autorisés. Toutes les activités sont surveillées et enregistrées. Tout accès non autorisé ou toute utilisation abusive peut entraîner des sanctions disciplinaires, voire des poursuites judiciaires. En vous connectant, vous consentez à cette surveillance."
+                <Label text="%loginLegalNotice"
        wrapText="true"
        maxWidth="420"
        style="

@@ -2,6 +2,8 @@ package com.app.controller;
 
 import com.app.dao.UserDAO;
 import com.app.model.User;
+import com.app.util.LanguageManager;
+import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -34,26 +36,28 @@ public class ChangePasswordController {
         String newPass = txtNewPassword.getText();
         String confirm = txtConfirmPassword.getText();
 
+        ResourceBundle b = LanguageManager.getBundle();
+
         // VALIDATION
         if (newPass == null || newPass.isEmpty()) {
-            lblMessage.setText("Enter new password");
+            lblMessage.setText(b.getString("loginPasswordEnter"));
             return;
         }
 
         if (!newPass.equals(confirm)) {
-            lblMessage.setText("Passwords do not match");
+            lblMessage.setText(b.getString("loginPasswordMismatch"));
             return;
         }
 
         if (newPass.length() < 6) {
-            lblMessage.setText("Password must be at least 6 characters");
+            lblMessage.setText(b.getString("loginPasswordTooShort"));
             return;
         }
 
         // 🔥 UPDATE PASSWORD
         UserDAO.updatePassword(user.getId(), newPass);
 
-        lblMessage.setText("Password updated successfully");
+        lblMessage.setText(b.getString("loginPasswordUpdated"));
 
         // CLOSE WINDOW
         Stage stage = (Stage) txtNewPassword.getScene().getWindow();

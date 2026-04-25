@@ -4,6 +4,7 @@ import com.app.dao.DepartmentDAO;
 import com.app.dao.TicketDAO;
 import com.app.model.Department;
 import com.app.model.Ticket;
+import com.app.util.LanguageManager;
 
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -114,7 +115,7 @@ public class TicketCreateController {
                 || description == null || description.isEmpty()
                 || department == null) {
 
-            showAlert("Title, Description and Department are required.");
+            showAlert(LanguageManager.getBundle().getString("errMissingFields"));
             return;
         }
 
@@ -150,14 +151,14 @@ public class TicketCreateController {
                         null  // 🔥 no users
                 );
 
-                showAlert("Ticket created successfully.");
+                showAlert(LanguageManager.getBundle().getString("infoTicketCreated"));
             }
 
             handleClear();
 
         } catch (Exception e) {
             e.printStackTrace();
-            showAlert("Error while saving ticket.");
+            showAlert(LanguageManager.getBundle().getString("errSavingTicket"));
         }
     }
 
@@ -169,8 +170,8 @@ public class TicketCreateController {
 
         editingTicket = ticket;
 
-        lblTitle.setText("Edit External Ticket");
-        btnCreate.setText("Update Ticket");
+        lblTitle.setText(LanguageManager.getBundle().getString("externalEditTitle"));
+        btnCreate.setText(LanguageManager.getBundle().getString("externalUpdateButton"));
 
         txtTitle.setText(ticket.getTitle());
         txtDescription.setText(ticket.getDescription());

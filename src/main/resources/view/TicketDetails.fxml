@@ -64,7 +64,7 @@
 
                 <!-- INFORMATION -->
                 <VBox spacing="15">
-                    <Label text="Ticket Information"
+                    <Label text="%sectionTicketInformation"
                            style="-fx-font-size:16px;
                                   -fx-font-weight:bold;"/>
 
@@ -100,7 +100,7 @@
 
                 <!-- DESCRIPTION -->
                 <VBox spacing="10">
-                    <Label text="Description"
+                    <Label text="%sectionDescription"
                            style="-fx-font-size:16px; -fx-font-weight:bold;"/>
                     <TextArea fx:id="txtDescription"
                               editable="false"
@@ -114,10 +114,10 @@
                 <VBox spacing="10">
 
                     <HBox spacing="10" alignment="CENTER_LEFT">
-                        <Label text="Tasks"
+                        <Label text="%sectionTasks"
                                style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
-                        <Button text="+ Add Task"
+                        <Button text="%actionAddTask"
                                 onAction="#handleAddTask"
                                 style="-fx-background-color:#10b981;
                                        -fx-text-fill:white;
@@ -127,12 +127,12 @@
                     <TreeTableView fx:id="taskTree" prefHeight="250">
 
                         <columns>
-                            <TreeTableColumn fx:id="colTask" text="Task" prefWidth="350"/>
-                            <TreeTableColumn fx:id="colUser" text="Assigned To" prefWidth="200"/>
-                            <TreeTableColumn fx:id="colStatus" text="Status" prefWidth="120"/>
-                            <TreeTableColumn fx:id="colStart" text="Start"/>
-                            <TreeTableColumn fx:id="colClose" text="Close"/>
-                            <TreeTableColumn fx:id="colDuration" text="Duration"/>
+                            <TreeTableColumn fx:id="colTask" text="%columnTask" prefWidth="350"/>
+                            <TreeTableColumn fx:id="colUser" text="%columnAssignedTo" prefWidth="200"/>
+                            <TreeTableColumn fx:id="colStatus" text="%columnStatus" prefWidth="120"/>
+                            <TreeTableColumn fx:id="colStart" text="%columnStart"/>
+                            <TreeTableColumn fx:id="colClose" text="%columnClose"/>
+                            <TreeTableColumn fx:id="colDuration" text="%columnDuration"/>
                         </columns>
 
                     </TreeTableView>
@@ -147,7 +147,7 @@
                       visible="false"
                       managed="false">
 
-                    <Label text="Attachments" style="-fx-font-weight:bold;"/>
+                    <Label text="%sectionAttachments" style="-fx-font-weight:bold;"/>
                     <ListView fx:id="attachmentList" prefHeight="140"/>
 
                     <ImageView fx:id="attachmentImage"
@@ -162,7 +162,7 @@
                 <!-- ACTIVITY -->
                 <VBox spacing="10">
 
-                    <Label text="Activity / Comments"
+                    <Label text="%sectionActivityComments"
                            style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
                     <ScrollPane fitToWidth="true" prefHeight="200">
@@ -172,7 +172,7 @@
                     <HBox spacing="10">
                         <TextField fx:id="txtNewComment"
                                    HBox.hgrow="ALWAYS"
-                                   promptText="Write a comment..."
+                                   promptText="%commentPrompt"
                                    onAction="#handleAddComment"/>
 
                         <Button text="%Ajouter"

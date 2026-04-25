@@ -36,4 +36,25 @@ public class DirectionDAO {
 
         return list;
     }
+
+    public static Integer findDirectionIdByDepartmentName(String departmentName) {
+        if (departmentName == null || departmentName.isBlank()) {
+            return null;
+        }
+
+        String sql = "SELECT id FROM directions WHERE LOWER(name) = LOWER(?) LIMIT 1";
+
+        try (Connection c = DB.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, departmentName.trim());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 }

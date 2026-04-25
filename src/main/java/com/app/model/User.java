@@ -147,6 +147,7 @@ public String toString() {
 }
 
 private String directionName;
+private boolean superAdmin;
 
 public String getDirectionName() {
     return directionName;
@@ -154,6 +155,14 @@ public String getDirectionName() {
 
 public void setDirectionName(String directionName) {
     this.directionName = directionName;
+}
+
+public boolean isSuperAdmin() {
+    return superAdmin;
+}
+
+public void setSuperAdmin(boolean superAdmin) {
+    this.superAdmin = superAdmin;
 }
 
 private String sousDirection;

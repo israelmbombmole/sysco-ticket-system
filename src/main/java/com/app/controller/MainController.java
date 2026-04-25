@@ -7,7 +7,6 @@ import com.app.model.TicketTask;
 import com.app.service.SLAMonitorService;
 import com.app.util.LanguageManager;
 import com.app.util.NotificationPopup;
-import static com.sun.source.util.DocTrees.instance;
 
 import java.util.List;
 import javafx.fxml.FXML;
@@ -16,6 +15,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -33,10 +33,10 @@ import javafx.animation.Timeline;
 
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.util.Duration;
+import javafx.scene.control.ScrollPane;
 
 
 
@@ -81,6 +81,8 @@ private static MainController instance;
     private double mouseY;
     private String role;
     private Timeline notificationPolling;
+    private int lastUnreadCount = -1;
+    private String currentPageFxml;
     
     
     
@@ -94,14 +96,8 @@ public void initialize() throws Exception {
     setupTaskDoubleClick();
 }
     
-    // Create translation bundle
-    ResourceBundle bundle = LanguageManager.getBundle();
-    
-
     SLAMonitorService.checkAllTickets();
     startNotificationPolling();
-    refreshNotifications();
-    startNotificationAutoRefresh();
 
     // Apply automatic translation
    
@@ -110,25 +106,25 @@ public void initialize() throws Exception {
 
     //applyRoleVisibility();
     updateTexts(username);
+    refreshNotificationWidgets(true);
 
     // Listen for language change (LIVE UPDATE)
     LanguageManager.localeProperty().addListener((obs, oldVal, newVal) -> {
-
-        ResourceBundle newBundle = LanguageManager.getBundle();
-       
-
         updateTexts(username);
-        loadDashboard();
+        refreshNotificationWidgets(true);
+        if (currentPageFxml != null) {
+            loadPage(currentPageFxml);
+        } else {
+            loadDashboard();
+        }
     });
 
     // Responsive sidebar
     rootPane.widthProperty().addListener((obs, oldVal, newVal) -> {
-        if (newVal.doubleValue() < 900) {
-            sidebar.setPrefWidth(70);
-        } else {
-            sidebar.setPrefWidth(220);
-        }
+        double targetWidth = Math.max(180, Math.min(260, newVal.doubleValue() * 0.2));
+        sidebar.setPrefWidth(targetWidth);
     });
+    sidebar.setPrefWidth(220);
 
     loadDashboard();
 
@@ -222,12 +218,11 @@ private void applyPermissions() {
     btnFileShareAudit.setText(bundle.getString("fileShareAudit"));
 
     btnCreateTicket.setText(bundle.getString("createTicket"));
+    if (btnMyWork != null) {
+        btnMyWork.setText(bundle.getString("myWork"));
+    }
 
     btnLogout.setText(bundle.getString("logout"));
-    
-    
-    
-    
 }
 
     @FXML
@@ -254,23 +249,17 @@ private void openTicketManagement() {
         // 🔥 PERMISSION CHECK ONLY (NO ROLE)
         if (!Session.getPermissions().contains("TICKET_MANAGEMENT")) {
 
+            ResourceBundle b = LanguageManager.getBundle();
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Access Denied");
+            alert.setTitle(b.getString("dialogAccessDenied"));
             alert.setHeaderText(null);
-            alert.setContentText("You do not have permission to access Ticket Management.");
+            alert.setContentText(b.getString("errCannotAccessTicketManagement"));
             alert.showAndWait();
 
             return;
         }
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/TicketManagement.fxml"),
-                LanguageManager.getBundle()
-        );
-
-        Parent view = loader.load();
-
-        rootPane.setCenter(view);
+        loadPage("TicketManagement.fxml");
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -283,15 +272,7 @@ private void handleDataShareManagement() {
 
      try {
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/DataShareManagement.fxml"),
-                LanguageManager.getBundle()
-        );
-
-        Parent view = loader.load();
-
-        // Load the screen into the center of the main layout
-        rootPane.setCenter(view);
+        loadPage("DataShareManagement.fxml");
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -377,11 +358,10 @@ public void openChat()  {
                     getClass().getResource("/view/" + fxml),
                     LanguageManager.getBundle()
             );
-            
-            
 
             Parent root = loader.load();
-            rootPane.setCenter(root);
+            setCenterContent(root);
+            currentPageFxml = fxml;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -413,6 +393,9 @@ private void loadDashboard() {
         case "VERIFICATEUR":
         case "VERIFICATEUR-ASSISTANT":
             loadPage("user_dashboard_home.fxml");
+            break;
+        case "COURRIER":
+            loadPage("courier_dashboard.fxml");
             break;
 
         default:
@@ -591,10 +574,11 @@ private void showAll() {
     @FXML
 private void handleLogout(ActionEvent event) {
 
+    ResourceBundle bundle = LanguageManager.getBundle();
     Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-    confirm.setTitle("Logout");
-    confirm.setHeaderText("Confirm Logout");
-    confirm.setContentText("Are you sure you want to logout?");
+    confirm.setTitle(bundle.getString("dialogLogout"));
+    confirm.setHeaderText(bundle.getString("dialogConfirmLogout"));
+    confirm.setContentText(bundle.getString("dialogLogoutQuestion"));
 
     Optional<ButtonType> result = confirm.showAndWait();
 
@@ -606,7 +590,8 @@ private void handleLogout(ActionEvent event) {
             Session.clear();
 
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/login.fxml")
+                    getClass().getResource("/view/login.fxml"),
+                    LanguageManager.getBundle()
             );
 
             Parent loginRoot = loader.load();
@@ -616,7 +601,7 @@ private void handleLogout(ActionEvent event) {
             Stage stage = (Stage) btnLogout.getScene().getWindow();
 
             stage.setScene(loginScene);
-            stage.setTitle("Login");
+            stage.setTitle(LanguageManager.getBundle().getString("stageLogin"));
             stage.setMaximized(true);
             stage.centerOnScreen();
             stage.show();
@@ -634,11 +619,9 @@ public void startNotificationPolling() {
 
     notificationPolling = new Timeline(
 
-        new KeyFrame(Duration.seconds(5), e -> {
+        new KeyFrame(Duration.seconds(10), e -> {
 
-            // just refresh badge and dropdown
-            updateNotificationBadges();
-            refreshNotifications();
+            refreshNotificationWidgets(false);
 
         })
     );
@@ -656,14 +639,7 @@ private void openDataShare() {
 
         System.out.println("Opening DataShare...");
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/DataShare.fxml"),
-                LanguageManager.getBundle()
-        );
-
-        Parent view = loader.load();
-
-        rootPane.setCenter(view);
+        loadPage("DataShare.fxml");
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -673,46 +649,23 @@ private void openDataShare() {
 
 
 
-private void updateNotificationBadges() {
-
+private void refreshNotificationWidgets(boolean forceRefresh) {
     int unread = NotificationDAO.getUnreadCount(Session.getUserId());
-
-    if (unread > 0) {
-        btnDataShare.setText("DataShare  🔔 " + unread);
-    } else {
-        btnDataShare.setText("DataShare");
+    if (!forceRefresh && unread == lastUnreadCount) {
+        return;
     }
-}
 
-private void refreshNotifications() {
-
-    int userId = Session.getUserId();
-
-    int unread = NotificationDAO.getUnreadCount(userId);
-
+    String dataShareLabel = LanguageManager.getBundle().getString("dataShare");
     if (unread > 0) {
+        btnDataShare.setText(dataShareLabel + "  🔔 " + unread);
         badgeNotifications.setText(String.valueOf(unread));
         badgeNotifications.setVisible(true);
     } else {
+        btnDataShare.setText(dataShareLabel);
         badgeNotifications.setVisible(false);
     }
-}
 
-private void startNotificationAutoRefresh() {
-
-    Timeline timeline = new Timeline(
-
-            new KeyFrame(Duration.seconds(10), event -> {
-
-                refreshNotifications();
-
-            })
-
-    );
-
-    timeline.setCycleCount(Timeline.INDEFINITE);
-    timeline.play();
-
+    lastUnreadCount = unread;
 }
 
 
@@ -730,7 +683,7 @@ private void openNotifications() {
         Parent root = loader.load();
 
         Stage stage = new Stage();
-        stage.setTitle("Notifications");
+        stage.setTitle(LanguageManager.getBundle().getString("stageNotifications"));
 
         Scene scene = new Scene(root);
 
@@ -746,8 +699,7 @@ private void openNotifications() {
         NotificationDAO.markAllRead(Session.getUserId());
 
         // ⭐ refresh badges
-        updateNotificationBadges();
-        refreshNotifications();
+        refreshNotificationWidgets(true);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -764,14 +716,7 @@ private void openMyActivity() {
 
     try {
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/UserActivity.fxml"),
-                LanguageManager.getBundle()
-        );
-
-        Parent view = loader.load();
-
-        rootPane.setCenter(view);
+        loadPage("UserActivity.fxml");
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -794,7 +739,7 @@ private void openTaskDetails(TicketTask task, MouseEvent event) {
         controller.setTask(task);
 
         // ✅ CORRECT NAVIGATION
-        rootPane.setCenter(view);
+        setCenterContent(view);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -884,12 +829,42 @@ public static void loadPage(String fxml, java.util.function.Consumer<Object> con
         }
 
         javafx.application.Platform.runLater(() -> {
-            instance.rootPane.setCenter(view);
+            instance.setCenterContent(view);
         });
 
     } catch (Exception e) {
         e.printStackTrace();
     }
+}
+
+private void setCenterContent(Parent view) {
+    rootPane.setCenter(adaptViewForViewport(view));
+}
+
+private Parent adaptViewForViewport(Parent view) {
+    if (view instanceof ScrollPane scrollView) {
+        scrollView.setFitToWidth(true);
+        scrollView.setFitToHeight(false);
+        scrollView.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scrollView;
+    }
+
+    ScrollPane wrapper = new ScrollPane(view);
+    wrapper.setFitToWidth(true);
+    wrapper.setFitToHeight(true);
+    wrapper.setPannable(true);
+    wrapper.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    wrapper.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    wrapper.setStyle("-fx-background-color:transparent; -fx-background:transparent;");
+
+    if (view instanceof Region region) {
+        region.setMaxWidth(Double.MAX_VALUE);
+        region.setMaxHeight(Double.MAX_VALUE);
+        wrapper.viewportBoundsProperty().addListener((obs, oldBounds, newBounds) ->
+                region.setPrefWidth(newBounds.getWidth()));
+    }
+
+    return wrapper;
 }
 
 

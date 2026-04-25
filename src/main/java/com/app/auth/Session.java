@@ -10,6 +10,9 @@ public class Session {
     private static String username;
     private static String role;
     private static String sousDirection;
+    private static Integer sousDirectionId;
+    private static Integer directionId;
+    private static boolean superAdmin;
     private static Set<String> permissions = new HashSet<>();
 
     // ==========================
@@ -23,6 +26,9 @@ public class Session {
         username = user.getUsername();
         role = user.getRole();
         sousDirection = user.getSousDirection();
+        sousDirectionId = user.getSousDirectionId();
+        directionId = user.getDirectionId();
+        superAdmin = user.isSuperAdmin();
 
         System.out.println("SESSION SET → ID=" + userId + " USER=" + username);
     }
@@ -48,6 +54,18 @@ public class Session {
         return sousDirection;
     }
 
+    public static Integer getSousDirectionId() {
+        return sousDirectionId;
+    }
+
+    public static Integer getDirectionId() {
+        return directionId;
+    }
+
+    public static boolean isSuperAdmin() {
+        return superAdmin;
+    }
+
     // ==========================
     // LOGIN CHECK
     // ==========================
@@ -65,6 +83,9 @@ public class Session {
         username = null;
         role = null;
         sousDirection = null;
+        sousDirectionId = null;
+        directionId = null;
+        superAdmin = false;
     }
     
 

@@ -54,32 +54,21 @@
             <version>5.2.5</version>
         </dependency>
 
-        <!-- Log4j2 (Required by Apache POI) -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>2.22.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.22.1</version>
-        </dependency>
-
-        <!-- Optional: Clean SLF4J warning -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>2.0.9</version>
-        </dependency>
-        
         
         <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>itext7-core</artifactId>
+            <artifactId>kernel</artifactId>
             <version>7.2.5</version>
-            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>layout</artifactId>
+            <version>7.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>io</artifactId>
+            <version>7.2.5</version>
         </dependency>
         
         
@@ -122,6 +111,17 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>com.app.MainApp</mainClass>
+                    <options>
+                        <option>-Xms128m</option>
+                        <option>-Xmx512m</option>
+                        <option>-XX:MaxMetaspaceSize=192m</option>
+                        <option>-XX:ReservedCodeCacheSize=128m</option>
+                        <option>-XX:+UseG1GC</option>
+                        <option>-XX:+AlwaysPreTouch</option>
+                        <option>-Dprism.order=sw</option>
+                        <option>-Dprism.lcdtext=false</option>
+                        <option>-Dfile.encoding=UTF-8</option>
+                    </options>
                 </configuration>
             </plugin>
 
@@ -136,9 +136,10 @@
                         <goal>shade</goal>
                     </goals>
                     <configuration>
+                        <createDependencyReducedPom>false</createDependencyReducedPom>
                         <transformers>
                             <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                <mainClass>com.app.Main</mainClass>
+                                <mainClass>com.app.MainApp</mainClass>
                             </transformer>
                         </transformers>
                     </configuration>

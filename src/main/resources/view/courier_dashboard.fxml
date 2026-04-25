@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.controller.CourierDashboardController"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            styleClass="courier-root">
+
+    <content>
+        <VBox spacing="18" style="-fx-padding:20;">
+
+            <HBox alignment="CENTER_LEFT" spacing="14">
+                <Label text="%courierDashboardModern"
+                       styleClass="courier-hero-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblSmartFlowHealth" text="%courierServiceHealthNeutral"
+                       styleClass="courier-health-badge"/>
+            </HBox>
+
+            <FlowPane hgap="12" vgap="12" prefWrapLength="900" styleClass="courier-cards-flow">
+                <VBox styleClass="courier-stat-card" minWidth="180">
+                    <Label text="%courierTotalCouriers" styleClass="courier-stat-label"/>
+                    <Label fx:id="lblTotalCreated" styleClass="courier-stat-value"/>
+                </VBox>
+                <VBox styleClass="courier-stat-card" minWidth="180">
+                    <Label text="%courierOpenCouriers" styleClass="courier-stat-label"/>
+                    <Label fx:id="lblOpenCount" styleClass="courier-stat-value"/>
+                </VBox>
+                <VBox styleClass="courier-stat-card" minWidth="180">
+                    <Label text="%courierAssignedCouriers" styleClass="courier-stat-label"/>
+                    <Label fx:id="lblAssignedCount" styleClass="courier-stat-value"/>
+                </VBox>
+                <VBox styleClass="courier-stat-card" minWidth="180">
+                    <Label text="%courierInProgressCouriers" styleClass="courier-stat-label"/>
+                    <Label fx:id="lblInProgressCount" styleClass="courier-stat-value"/>
+                </VBox>
+                <VBox styleClass="courier-stat-card" minWidth="180">
+                    <Label text="%courierClosedCouriers" styleClass="courier-stat-label"/>
+                    <Label fx:id="lblClosedCount" styleClass="courier-stat-value"/>
+                </VBox>
+                <VBox styleClass="courier-stat-card" minWidth="180">
+                    <Label text="%courierAvgAgingHours" styleClass="courier-stat-label"/>
+                    <Label fx:id="lblAvgAgingHours" styleClass="courier-stat-value"/>
+                </VBox>
+                <VBox styleClass="courier-stat-card" minWidth="180">
+                    <Label text="%courierEscalationRisk" styleClass="courier-stat-label"/>
+                    <Label fx:id="lblEscalationRisk" styleClass="courier-stat-value"/>
+                </VBox>
+                <VBox styleClass="courier-stat-card" minWidth="180">
+                    <Label text="%courierFlowHealth" styleClass="courier-stat-label"/>
+                    <Label fx:id="lblFlowHealth" styleClass="courier-stat-value"/>
+                </VBox>
+                <VBox styleClass="courier-stat-card" minWidth="180">
+                    <Label text="%courierStuckCouriers" styleClass="courier-stat-label"/>
+                    <Label fx:id="lblStuckCouriers" styleClass="courier-stat-value"/>
+                </VBox>
+                <VBox styleClass="courier-stat-card" minWidth="180">
+                    <Label text="%courierServiceHealth" styleClass="courier-stat-label"/>
+                    <Label fx:id="lblServiceHealth" styleClass="courier-stat-value"/>
+                </VBox>
+            </FlowPane>
+
+            <VBox styleClass="courier-panel-card" spacing="10">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="%courierSmartFilter"
+                           styleClass="courier-filter-label"/>
+                    <TextField fx:id="txtSearch"
+                               promptText="%courierSearchTickets"
+                               HBox.hgrow="ALWAYS"/>
+                    <ComboBox fx:id="cmbStatus" prefWidth="170"/>
+                    <Button text="%courierLiveRefresh"
+                            onAction="#handleRefresh"
+                            styleClass="courier-refresh-btn"/>
+                </HBox>
+
+                <TableView fx:id="tableCourierTickets" minHeight="360" maxWidth="Infinity" styleClass="courier-smart-table">
+                    <columns>
+                        <TableColumn fx:id="colTicketRef" text="%courierRef" prefWidth="110"/>
+                        <TableColumn fx:id="colTitle" text="%courierLabel" prefWidth="230"/>
+                        <TableColumn fx:id="colDirection" text="%courierTargetDirection" prefWidth="220"/>
+                        <TableColumn fx:id="colAssignedAgent" text="%courierAssignedAgent" prefWidth="180"/>
+                        <TableColumn fx:id="colAssignedRole" text="%courierAssignedRole" prefWidth="150"/>
+                        <TableColumn fx:id="colSmartStage" text="%courierRoutingStage" prefWidth="170"/>
+                        <TableColumn fx:id="colStatus" text="%status" prefWidth="130"/>
+                        <TableColumn fx:id="colSmartAging" text="%courierAgingHours" prefWidth="130"/>
+                        <TableColumn fx:id="colUpdatedAt" text="%dateTime" prefWidth="170"/>
+                    </columns>
+                </TableView>
+            </VBox>
+
+        </VBox>
+    </content>
+</ScrollPane>

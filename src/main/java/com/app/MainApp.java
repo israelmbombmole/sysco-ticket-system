@@ -1,12 +1,15 @@
 package com.app;
 
 import com.app.util.DB;
+import com.app.util.LanguageManager;
 import java.io.File;
 import java.util.TimeZone;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 public class MainApp extends Application {
@@ -18,20 +21,21 @@ public class MainApp extends Application {
         new File("uploads").mkdirs();
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/login.fxml")
+                getClass().getResource("/view/login.fxml"),
+                LanguageManager.getBundle()
         );
 
         Scene scene = new Scene(loader.load());
 
-        stage.setTitle("SYSCO 1.0");
+        stage.setTitle(LanguageManager.getBundle().getString("appName") + " 1.0");
 
-        // Default size
-        stage.setWidth(1300);
-        stage.setHeight(800);
-
-        // Prevent layouts from breaking
-        stage.setMinWidth(1100);
-        stage.setMinHeight(700);
+        Rectangle2D visualBounds = Screen.getPrimary().getVisualBounds();
+        double initialWidth = Math.min(1300, visualBounds.getWidth() * 0.92);
+        double initialHeight = Math.min(800, visualBounds.getHeight() * 0.92);
+        stage.setWidth(Math.max(860, initialWidth));
+        stage.setHeight(Math.max(560, initialHeight));
+        stage.setMinWidth(640);
+        stage.setMinHeight(420);
 
         // Allow resizing
         stage.setResizable(true);

@@ -141,6 +141,14 @@ public class DB {
 try { st.execute("ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 1"); } catch(Exception ignored){}
 try { st.execute("ALTER TABLE users ADD COLUMN failed_attempts INTEGER DEFAULT 0"); } catch(Exception ignored){}
 try { st.execute("ALTER TABLE users ADD COLUMN lock_until DATETIME"); } catch(Exception ignored){}  
+try { st.execute("ALTER TABLE users ADD COLUMN is_super_admin INTEGER DEFAULT 0"); } catch(Exception ignored){}
+try {
+    st.executeUpdate("""
+        UPDATE users
+        SET is_super_admin = 1
+        WHERE username = 'admin'
+    """);
+} catch (Exception ignored) {}
 
 // =====================================================
 // DEFAULT ADMINS (SAFE + ALWAYS AVAILABLE)
@@ -171,12 +179,13 @@ try {
 
             // CREATE ADMIN
             PreparedStatement ps = c.prepareStatement("""
-                INSERT INTO users(username, password_hash, role, active, failed_attempts, must_change_password)
-                VALUES (?, ?, 'ADMIN', 1, 0, 0)
+                INSERT INTO users(username, password_hash, role, active, failed_attempts, must_change_password, is_super_admin)
+                VALUES (?, ?, 'ADMIN', 1, 0, 0, ?)
             """);
 
             ps.setString(1, username);
             ps.setString(2, BCrypt.hashpw(password, BCrypt.gensalt()));
+            ps.setInt(3, "admin".equalsIgnoreCase(username) ? 1 : 0);
 
             ps.executeUpdate();
 
@@ -189,7 +198,8 @@ try {
                 UPDATE users
                 SET password_hash = ?,
                     active = 1,
-                    failed_attempts = 0
+                    failed_attempts = 0,
+                    is_super_admin = CASE WHEN username = 'admin' THEN 1 ELSE is_super_admin END
                 WHERE username = ?
             """);
 
@@ -197,6 +207,13 @@ try {
             update.setString(2, username);
 
             update.executeUpdate();
+
+            if ("admin".equalsIgnoreCase(username)) {
+                try (PreparedStatement markSuperAdmin = c.prepareStatement(
+                        "UPDATE users SET is_super_admin = 1 WHERE username = 'admin'")) {
+                    markSuperAdmin.executeUpdate();
+                }
+            }
 
             System.out.println("🔄 Reset admin: " + username);
         }
@@ -317,6 +334,43 @@ st.execute("""
     )
 """);
 
+ResultSet rsUserPermUnique =
+    c.getMetaData().getIndexInfo(null, null, "user_permissions", true, false);
+boolean hasUserPermUnique = false;
+while (rsUserPermUnique.next()) {
+    String idx = rsUserPermUnique.getString("INDEX_NAME");
+    if ("idx_user_permissions_unique".equalsIgnoreCase(idx)) {
+        hasUserPermUnique = true;
+        break;
+    }
+}
+if (!hasUserPermUnique) {
+    st.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_user_permissions_unique
+        ON user_permissions(user_id, permission)
+    """);
+}
+
+try (PreparedStatement insertCourierPerms = c.prepareStatement(
+        "INSERT OR IGNORE INTO user_permissions(user_id, permission) " +
+        "SELECT id, ? FROM users WHERE role='COURRIER'")) {
+    String[] courierPerms = {"DASHBOARD", "TICKET_MONITORING", "CREATE_TICKET"};
+    for (String perm : courierPerms) {
+        insertCourierPerms.setString(1, perm);
+        insertCourierPerms.executeUpdate();
+    }
+}
+
+try (PreparedStatement insertSecretairePerms = c.prepareStatement(
+        "INSERT OR IGNORE INTO user_permissions(user_id, permission) " +
+        "SELECT id, ? FROM users WHERE role='SECRETAIRE'")) {
+    String[] secretairePerms = {"DASHBOARD", "TICKET_MONITORING", "CREATE_TICKET"};
+    for (String perm : secretairePerms) {
+        insertSecretairePerms.setString(1, perm);
+        insertSecretairePerms.executeUpdate();
+    }
+}
+
 
 
 
@@ -363,6 +417,22 @@ try { st.execute("ALTER TABLE tickets ADD COLUMN updated_at DATETIME"); } catch(
 try { st.execute("ALTER TABLE tickets ADD COLUMN merged_into INTEGER"); } catch (Exception ignored) {}
 try { st.execute("ALTER TABLE tickets ADD COLUMN merge_note TEXT"); }     catch (Exception ignored) {}
 try (Statement stmt = c.createStatement()) {stmt.executeUpdate("ALTER TABLE tickets ADD COLUMN ticket_number TEXT");} catch (SQLException ignored) {}
+try { st.execute("ALTER TABLE tickets ADD COLUMN date_enregistrement TEXT"); } catch (Exception ignored) {}
+try { st.execute("ALTER TABLE tickets ADD COLUMN expediteur TEXT"); } catch (Exception ignored) {}
+try { st.execute("ALTER TABLE tickets ADD COLUMN objet TEXT"); } catch (Exception ignored) {}
+try { st.execute("ALTER TABLE tickets ADD COLUMN cotation TEXT"); } catch (Exception ignored) {}
+try { st.execute("ALTER TABLE tickets ADD COLUMN date_cotation TEXT"); } catch (Exception ignored) {}
+try { st.execute("ALTER TABLE tickets ADD COLUMN sous_direction_id INTEGER"); } catch (Exception ignored) {}
+try { st.execute("ALTER TABLE tickets ADD COLUMN routing_stage TEXT DEFAULT 'CREATED'"); } catch (Exception ignored) {}
+try { st.execute("ALTER TABLE tickets ADD COLUMN recorded_year INTEGER"); } catch (Exception ignored) {}
+try { st.execute("ALTER TABLE tickets ADD COLUMN recorded_at DATETIME"); } catch (Exception ignored) {}
+try { st.execute("ALTER TABLE tickets ADD COLUMN cotation_assigned_at DATETIME"); } catch (Exception ignored) {}
+try {
+    st.executeUpdate("""
+        UPDATE tickets
+        SET routing_stage = COALESCE(routing_stage, 'CREATED')
+    """);
+} catch (Exception ignored) {}
 
 
 try { st.execute("ALTER TABLE ticket_tasks ADD COLUMN started_at TEXT"); }  catch(Exception ignored){}

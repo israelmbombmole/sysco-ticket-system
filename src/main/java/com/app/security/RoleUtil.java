@@ -6,9 +6,13 @@ public class RoleUtil {
 
         return switch (role) {
             case "DIRECTEUR" -> 6;
+            case "SUPER_ADMIN" -> 7;
+            case "ADMIN_DIRECTION" -> 5;
             case "SOUS-DIRECTEUR" -> 5;
             case "INSPECTEUR" -> 4;
             case "CONTROLEUR" -> 3;
+            case "COURRIER" -> 3;
+            case "SECRETAIRE" -> 4;
             case "VERIFICATEUR" -> 2;
             case "VERIFICATEUR-ASSISTANT" -> 1;
             default -> 0;

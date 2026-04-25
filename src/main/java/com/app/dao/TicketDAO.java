@@ -8,6 +8,7 @@ import com.app.model.TicketEvent;
 import com.app.model.TicketTask;
 import com.app.model.User;
 import com.app.service.EmailService;
+import com.app.service.ExcelService;
 import static com.app.service.SLAMonitorService.countSlaBreaches;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.sql.Timestamp;
@@ -32,6 +34,94 @@ import javafx.scene.control.TreeItem;
 
 public class TicketDAO {
 
+    private static String normalizeRole(String role) {
+        return role == null ? "" : role.trim().toUpperCase();
+    }
+
+    private static String monitoringRoutingStageForRole(String role) {
+        role = normalizeRole(role);
+        return switch (role) {
+            case "COURRIER" -> "CREATED";
+            case "SECRETAIRE" -> "TO_SECRETAIRE";
+            case "SOUS-DIRECTEUR" -> "TO_SOUS_DIRECTEUR";
+            default -> null;
+        };
+    }
+
+    private static String buildCotationValue(int ticketId) {
+        return "COT-" + String.format("%05d", ticketId);
+    }
+
+    private static void persistExcelSnapshotIfFinalized(Connection c, int ticketId) {
+        String sql = """
+            SELECT
+                t.id,
+                t.date_enregistrement,
+                t.expediteur,
+                t.objet,
+                t.cotation,
+                t.date_cotation,
+                sd.name AS sous_direction_name
+            FROM tickets t
+            LEFT JOIN sous_directions sd ON sd.id = t.sous_direction_id
+            WHERE t.id = ?
+        """;
+
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, ticketId);
+            ResultSet rs = ps.executeQuery();
+
+            if (!rs.next()) {
+                return;
+            }
+
+            String dateEnreg = rs.getString("date_enregistrement");
+            String expediteur = rs.getString("expediteur");
+            String objet = rs.getString("objet");
+            String cotation = rs.getString("cotation");
+            String dateCotation = rs.getString("date_cotation");
+            String sousDirection = rs.getString("sous_direction_name");
+
+            if (dateEnreg == null || dateEnreg.isBlank()
+                    || expediteur == null || expediteur.isBlank()
+                    || objet == null || objet.isBlank()
+                    || cotation == null || cotation.isBlank()
+                    || dateCotation == null || dateCotation.isBlank()
+                    || sousDirection == null || sousDirection.isBlank()) {
+                return;
+            }
+
+            ExcelService.append(dateEnreg, expediteur, objet, cotation, dateCotation, sousDirection);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static boolean hasDateCotation(Connection c, int ticketId) {
+        String sql = "SELECT date_cotation FROM tickets WHERE id = ?";
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, ticketId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                String val = rs.getString("date_cotation");
+                return val != null && !val.isBlank();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private static Integer resolveTicketDirectionId(Ticket ticket) {
+        if (ticket == null) {
+            return null;
+        }
+        if (ticket.getDepartmentId() != null) {
+            return ticket.getDepartmentId();
+        }
+        return DirectionDAO.findDirectionIdByDepartmentName(ticket.getDepartmentName());
+    }
+
     // =====================================================
     // GET TICKETS FOR AGENT
     // =====================================================
@@ -40,11 +130,41 @@ public class TicketDAO {
 
     List<Ticket> list = new ArrayList<>();
 
-    String sql = "SELECT * FROM tickets"; // 🔥 TEMP FIX
+    String sql = """
+        SELECT DISTINCT
+            t.id,
+            t.title,
+            t.status,
+            t.priority,
+            t.department_id,
+            d.name AS department_name,
+            ta.assigned_to,
+            u.username AS assigned_to_name
+        FROM tickets t
+        LEFT JOIN departments d ON d.id = t.department_id
+        LEFT JOIN ticket_assignments ta
+               ON ta.ticket_id = t.id
+              AND ta.id = (
+                    SELECT id
+                    FROM ticket_assignments ta2
+                    WHERE ta2.ticket_id = t.id
+                    ORDER BY ta2.id DESC
+                    LIMIT 1
+                )
+        LEFT JOIN users u ON u.id = ta.assigned_to
+        WHERE t.merged_into IS NULL
+          AND (
+                t.assigned_to = ?
+                OR (ta.assigned_to = ? AND ta.active = 1)
+              )
+        ORDER BY t.updated_at DESC
+    """;
 
     try (Connection c = DB.getConnection();
          PreparedStatement ps = c.prepareStatement(sql)) {
 
+        ps.setInt(1, userId);
+        ps.setInt(2, userId);
         ResultSet rs = ps.executeQuery();
 
         while (rs.next()) {
@@ -55,6 +175,14 @@ public class TicketDAO {
             t.setTitle(rs.getString("title"));
             t.setStatus(rs.getString("status"));
             t.setPriority(rs.getString("priority"));
+            t.setDepartmentName(rs.getString("department_name"));
+            if (rs.getObject("department_id") != null) {
+                t.setDepartmentId(rs.getInt("department_id"));
+            }
+            t.setAssignedToName(rs.getString("assigned_to_name"));
+            if (rs.getObject("assigned_to") != null) {
+                t.setAssignedTo(rs.getInt("assigned_to"));
+            }
 
             list.add(t);
         }
@@ -156,7 +284,36 @@ TicketHistoryDAO.log(
         SET assigned_to = ?, 
             status = 'ASSIGNED',
             updated_by = ?, 
-            updated_at = datetime('now','localtime')
+            updated_at = datetime('now','localtime'),
+            routing_stage = ?,
+            sous_direction_id = CASE
+                WHEN ? = 'SECRETAIRE' AND ? = 'SOUS-DIRECTEUR'
+                    THEN COALESCE((SELECT sous_direction_id FROM users WHERE id = ?), sous_direction_id)
+                ELSE sous_direction_id
+            END,
+            cotation = CASE
+                WHEN ? = 'SOUS-DIRECTEUR' THEN COALESCE(cotation, ?)
+                ELSE cotation
+            END,
+            date_cotation = CASE
+                WHEN ? = 'SOUS-DIRECTEUR' THEN COALESCE(date_cotation, date('now','localtime'))
+                ELSE date_cotation
+            END,
+            cotation_assigned_at = CASE
+                WHEN ? = 'SOUS-DIRECTEUR' THEN COALESCE(cotation_assigned_at, datetime('now','localtime'))
+                ELSE cotation_assigned_at
+            END,
+            recorded_year = CASE
+                WHEN ? = 'SOUS-DIRECTEUR' THEN COALESCE(
+                    CAST(substr(date_enregistrement, 1, 4) AS INTEGER),
+                    CAST(strftime('%Y', 'now', 'localtime') AS INTEGER)
+                )
+                ELSE recorded_year
+            END,
+            recorded_at = CASE
+                WHEN ? = 'SOUS-DIRECTEUR' THEN COALESCE(recorded_at, datetime('now','localtime'))
+                ELSE recorded_at
+            END
         WHERE id = ?
     """;
 
@@ -188,6 +345,10 @@ TicketHistoryDAO.log(
     try (Connection c = DB.getConnection()) {
 
         c.setAutoCommit(false);
+        String fromRoleUpper = normalizeRole(fromRole);
+        String toRoleUpper = normalizeRole(toRole);
+        boolean shouldPersistAfterAssignment = "SOUS-DIRECTEUR".equals(fromRoleUpper)
+                && !hasDateCotation(c, ticketId);
 
         // 1. deactivate old assignments
         try (PreparedStatement ps = c.prepareStatement(deactivateOldAssignments)) {
@@ -197,9 +358,25 @@ TicketHistoryDAO.log(
 
         // 2. update ticket
         try (PreparedStatement ps = c.prepareStatement(updateTicket)) {
+            String nextRoutingStage = switch (fromRoleUpper + "->" + toRoleUpper) {
+                case "COURRIER->SECRETAIRE" -> "TO_SECRETAIRE";
+                case "SECRETAIRE->SOUS-DIRECTEUR" -> "TO_SOUS_DIRECTEUR";
+                default -> "ASSIGNED_TO_AGENT";
+            };
+
             ps.setInt(1, assignedToUserId);
             ps.setInt(2, Session.getUserId());
-            ps.setInt(3, ticketId);
+            ps.setString(3, nextRoutingStage);
+            ps.setString(4, fromRoleUpper);
+            ps.setString(5, toRoleUpper);
+            ps.setInt(6, assignedToUserId);
+            ps.setString(7, fromRoleUpper);
+            ps.setString(8, buildCotationValue(ticketId));
+            ps.setString(9, fromRoleUpper);
+            ps.setString(10, fromRoleUpper);
+            ps.setString(11, fromRoleUpper);
+            ps.setString(12, fromRoleUpper);
+            ps.setInt(13, ticketId);
             ps.executeUpdate();
         }
 
@@ -224,6 +401,10 @@ TicketHistoryDAO.log(
                 "ASSIGNED",
                 "Assigned by " + Session.getUsername() + " to " + targetUser.getUsername()
         );
+
+        if (shouldPersistAfterAssignment) {
+            persistExcelSnapshotIfFinalized(c, ticketId);
+        }
 
         c.commit();
 
@@ -489,8 +670,11 @@ public static boolean areAllTasksCompleted(int ticketId) {
     ObservableList<Ticket> list = FXCollections.observableArrayList();
 
     String sql = """
-        SELECT t.*
+        SELECT 
+            t.*,
+            d.name AS department_name
         FROM tickets t
+        LEFT JOIN departments d ON d.id = t.department_id
         LEFT JOIN ticket_assignments ta 
             ON t.id = ta.ticket_id AND ta.active = 1
         WHERE ta.id IS NULL
@@ -508,7 +692,302 @@ public static boolean areAllTasksCompleted(int ticketId) {
             t.setTitle(rs.getString("title"));
             t.setStatus(rs.getString("status"));
             t.setTicketType(rs.getString("ticket_type"));
+            t.setDepartmentName(rs.getString("department_name"));
+            if (rs.getObject("department_id") != null) {
+                t.setDepartmentId(rs.getInt("department_id"));
+            }
 
+            list.add(t);
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return list;
+}
+
+public static ObservableList<Ticket> getUnassignedTicketsForRole(String role, int userId) {
+    String stage = monitoringRoutingStageForRole(role);
+    if (stage == null || stage.isBlank()) {
+        return FXCollections.observableArrayList();
+    }
+
+    ObservableList<Ticket> list = FXCollections.observableArrayList();
+    String sql = """
+        SELECT
+            t.id,
+            t.title,
+            t.status,
+            t.ticket_type,
+            t.department_id,
+            t.sous_direction_id,
+            t.date_enregistrement,
+            t.expediteur,
+            t.objet,
+            t.cotation,
+            t.date_cotation,
+            d.name AS department_name,
+            sd.name AS sous_direction_name
+        FROM tickets t
+        LEFT JOIN departments d ON d.id = t.department_id
+        LEFT JOIN sous_directions sd ON sd.id = t.sous_direction_id
+        LEFT JOIN ticket_assignments ta ON ta.id = (
+            SELECT ta2.id
+            FROM ticket_assignments ta2
+            WHERE ta2.ticket_id = t.id
+            ORDER BY ta2.id DESC
+            LIMIT 1
+        )
+        WHERE t.routing_stage = ?
+          AND (
+                (? = 'COURRIER' AND t.created_by = ? AND (ta.id IS NULL OR ta.active = 0))
+                OR (? = 'SECRETAIRE' AND ta.assigned_to = ? AND ta.active = 1)
+                OR (? = 'SOUS-DIRECTEUR' AND ta.assigned_to = ? AND ta.active = 1)
+              )
+        ORDER BY t.created_at DESC
+    """;
+
+    try (Connection c = DB.getConnection();
+         PreparedStatement ps = c.prepareStatement(sql)) {
+        ps.setString(1, stage);
+        String normalizedRole = normalizeRole(role);
+        ps.setString(2, normalizedRole);
+        ps.setInt(3, userId);
+        ps.setString(4, normalizedRole);
+        ps.setInt(5, userId);
+        ps.setString(6, normalizedRole);
+        ps.setInt(7, userId);
+
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            Ticket t = new Ticket();
+            t.setId(rs.getInt("id"));
+            t.setTitle(rs.getString("title"));
+            t.setStatus(rs.getString("status"));
+            t.setTicketType(rs.getString("ticket_type"));
+            t.setDepartmentName(rs.getString("department_name"));
+            t.setSubDirection(rs.getString("sous_direction_name"));
+            t.setRegistrationDate(rs.getString("date_enregistrement"));
+            t.setSenderName(rs.getString("expediteur"));
+            t.setSubject(rs.getString("objet"));
+            t.setCotation(rs.getString("cotation"));
+            t.setCotationDate(rs.getString("date_cotation"));
+
+            if (rs.getObject("department_id") != null) {
+                t.setDepartmentId(rs.getInt("department_id"));
+            }
+            if (rs.getObject("sous_direction_id") != null) {
+                t.setSousDirectionId(rs.getInt("sous_direction_id"));
+            }
+
+            list.add(t);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return list;
+}
+
+public static ObservableList<Ticket> getTicketsForMonitoringRole(String role, int userId) {
+    role = normalizeRole(role);
+    if ("COURRIER".equals(role) || "SECRETAIRE".equals(role) || "SOUS-DIRECTEUR".equals(role)) {
+        return getUnassignedTicketsForRole(role, userId);
+    }
+    return getUnassignedTickets();
+}
+
+public static ObservableList<Ticket> getCompletedDataEntries() {
+    ObservableList<Ticket> list = FXCollections.observableArrayList();
+    String sql = """
+        SELECT
+            t.id,
+            t.date_enregistrement,
+            t.expediteur,
+            t.objet,
+            t.cotation,
+            t.date_cotation,
+            t.sous_direction_id,
+            sd.name AS sous_direction_name,
+            t.recorded_year
+        FROM tickets t
+        LEFT JOIN sous_directions sd ON sd.id = t.sous_direction_id
+        WHERE t.date_enregistrement IS NOT NULL
+          AND TRIM(t.date_enregistrement) <> ''
+          AND t.expediteur IS NOT NULL
+          AND TRIM(t.expediteur) <> ''
+          AND t.objet IS NOT NULL
+          AND TRIM(t.objet) <> ''
+          AND t.cotation IS NOT NULL
+          AND TRIM(t.cotation) <> ''
+          AND t.date_cotation IS NOT NULL
+          AND TRIM(t.date_cotation) <> ''
+          AND t.sous_direction_id IS NOT NULL
+          AND t.recorded_year IS NOT NULL
+        ORDER BY t.date_enregistrement DESC, t.id DESC
+    """;
+
+    try (Connection c = DB.getConnection();
+         PreparedStatement ps = c.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+
+        while (rs.next()) {
+            Ticket t = new Ticket();
+            t.setId(rs.getInt("id"));
+            t.setRegistrationDate(rs.getString("date_enregistrement"));
+            t.setSenderName(rs.getString("expediteur"));
+            t.setSubject(rs.getString("objet"));
+            t.setCotation(rs.getString("cotation"));
+            t.setCotationDate(rs.getString("date_cotation"));
+            t.setSubDirection(rs.getString("sous_direction_name"));
+            if (rs.getObject("sous_direction_id") != null) {
+                t.setSousDirectionId(rs.getInt("sous_direction_id"));
+            }
+            list.add(t);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return list;
+}
+
+public static ObservableList<com.app.model.DataEntry> getFinalizedDataEntries() {
+    ObservableList<com.app.model.DataEntry> list = FXCollections.observableArrayList();
+    for (Ticket t : getCompletedDataEntries()) {
+        list.add(new com.app.model.DataEntry(
+                t.getRegistrationDate(),
+                t.getSenderName(),
+                t.getSubject(),
+                t.getCotation(),
+                t.getCotationDate(),
+                t.getSubDirection(),
+                t.getId(),
+                t.getSousDirectionId()
+        ));
+    }
+    return list;
+}
+
+public static void clearFinalizedDataEntry(com.app.model.DataEntry entry) {
+    if (entry == null || entry.getTicketId() == null) {
+        return;
+    }
+
+    String sql = """
+        UPDATE tickets
+        SET cotation = NULL,
+            date_cotation = NULL,
+            cotation_assigned_at = NULL,
+            recorded_year = NULL,
+            recorded_at = NULL
+        WHERE id = ?
+    """;
+    try (Connection c = DB.getConnection();
+         PreparedStatement ps = c.prepareStatement(sql)) {
+        ps.setInt(1, entry.getTicketId());
+        ps.executeUpdate();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
+public static void updateFinalizedDataEntry(com.app.model.DataEntry original,
+                                            String newDateEnreg,
+                                            String newExp,
+                                            String newObj,
+                                            String newCot,
+                                            String newDateCot,
+                                            String newSousDir) {
+    if (original == null || original.getTicketId() == null) {
+        return;
+    }
+
+    String resolveSousDirSql = "SELECT id FROM sous_directions WHERE name = ? LIMIT 1";
+    String updateSql = """
+        UPDATE tickets
+        SET date_enregistrement = ?,
+            expediteur = ?,
+            objet = ?,
+            cotation = ?,
+            date_cotation = ?,
+            sous_direction_id = ?,
+            recorded_year = CASE
+                WHEN ? IS NULL OR TRIM(?) = '' THEN NULL
+                ELSE CAST(substr(?, 1, 4) AS INTEGER)
+            END,
+            recorded_at = datetime('now','localtime')
+        WHERE id = ?
+    """;
+
+    try (Connection c = DB.getConnection()) {
+        Integer sousDirectionId = null;
+        if (newSousDir != null && !newSousDir.isBlank()) {
+            try (PreparedStatement ps = c.prepareStatement(resolveSousDirSql)) {
+                ps.setString(1, newSousDir.trim());
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    sousDirectionId = rs.getInt("id");
+                }
+            }
+        }
+
+        try (PreparedStatement ps = c.prepareStatement(updateSql)) {
+            ps.setString(1, newDateEnreg);
+            ps.setString(2, newExp);
+            ps.setString(3, newObj);
+            ps.setString(4, newCot);
+            ps.setString(5, newDateCot);
+            if (sousDirectionId != null) {
+                ps.setInt(6, sousDirectionId);
+            } else {
+                ps.setNull(6, Types.INTEGER);
+            }
+            ps.setString(7, newDateEnreg);
+            ps.setString(8, newDateEnreg);
+            ps.setString(9, newDateEnreg);
+            ps.setInt(10, original.getTicketId());
+            ps.executeUpdate();
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
+public static ObservableList<Ticket> getUnassignedTicketsCreatedBy(int creatorId) {
+
+    ObservableList<Ticket> list = FXCollections.observableArrayList();
+
+    String sql = """
+        SELECT 
+            t.*,
+            d.name AS department_name
+        FROM tickets t
+        LEFT JOIN departments d ON d.id = t.department_id
+        LEFT JOIN ticket_assignments ta 
+            ON t.id = ta.ticket_id AND ta.active = 1
+        WHERE ta.id IS NULL
+          AND t.created_by = ?
+        ORDER BY t.created_at DESC
+    """;
+
+    try (Connection c = DB.getConnection();
+         PreparedStatement ps = c.prepareStatement(sql)) {
+
+        ps.setInt(1, creatorId);
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            Ticket t = new Ticket();
+            t.setId(rs.getInt("id"));
+            t.setTitle(rs.getString("title"));
+            t.setStatus(rs.getString("status"));
+            t.setTicketType(rs.getString("ticket_type"));
+            t.setDepartmentName(rs.getString("department_name"));
+            if (rs.getObject("department_id") != null) {
+                t.setDepartmentId(rs.getInt("department_id"));
+            }
             list.add(t);
         }
 
@@ -1909,13 +2388,21 @@ public static void updateSlaBreachStatus(int ticketId) {
             department_id,
             created_by,
             assigned_to,
+            date_enregistrement,
+            expediteur,
+            objet,
+            routing_stage,
             created_at
         )
-        VALUES(?, ?, ?, 'OPEN', ?, ?, ?, NULL, datetime('now','localtime'))
+        VALUES(?, ?, ?, 'OPEN', ?, ?, ?, NULL, ?, ?, ?, 'CREATED', datetime('now','localtime'))
     """;
 
     try (Connection c = DB.getConnection();
          PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+        String dateEnregistrement = LocalDate.now().toString();
+        String expediteur = title == null ? "" : title.trim();
+        String objet = description == null ? "" : description.trim();
 
         ps.setString(1, title);
         ps.setString(2, description);
@@ -1923,6 +2410,9 @@ public static void updateSlaBreachStatus(int ticketId) {
         ps.setString(4, ticketType);
         ps.setInt(5, department.getId());
         ps.setInt(6, currentUserId);
+        ps.setString(7, dateEnregistrement);
+        ps.setString(8, expediteur);
+        ps.setString(9, objet);
 
         ps.executeUpdate();
 
@@ -2534,6 +3024,9 @@ public static ObservableList<Ticket> getAllTickets() {
 
             ticket.setAssignedToName(rs.getString("agent_name"));
             ticket.setDepartmentName(rs.getString("department_name"));
+            if (rs.getObject("department_id") != null) {
+                ticket.setDepartmentId(rs.getInt("department_id"));
+            }
 
             ticket.setCreatedByName(rs.getString("creator_name"));
             ticket.setCreatedByRole(rs.getString("creator_role"));
@@ -2861,7 +3354,7 @@ public static Ticket getTicketById(int ticketId) {
         LEFT JOIN users u ON t.created_by = u.id
         LEFT JOIN users u2 ON t.updated_by = u2.id
         LEFT JOIN users u3 ON t.assigned_to = u3.id
-        LEFT JOIN sous_directions d ON t.department_id = d.id
+        LEFT JOIN departments d ON t.department_id = d.id
         WHERE t.id = ?
     """;
 
@@ -2912,6 +3405,9 @@ public static Ticket getTicketById(int ticketId) {
             // DEPARTMENT
             // =========================
             ticket.setDepartmentName(rs.getString("department_name"));
+            if (rs.getObject("department_id") != null) {
+                ticket.setDepartmentId(rs.getInt("department_id"));
+            }
 
             // =========================
             // START DATE (✅ FIXED SOURCE)

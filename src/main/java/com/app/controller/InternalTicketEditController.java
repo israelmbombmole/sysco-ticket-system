@@ -57,11 +57,11 @@ public class InternalTicketEditController {
                     priority
             );
 
-            message.setText("Ticket updated successfully.");
+            message.setText(com.app.util.LanguageManager.getBundle().getString("infoTicketUpdated"));
 
         } catch (Exception e) {
             e.printStackTrace();
-            message.setText("Error updating ticket.");
+            message.setText(com.app.util.LanguageManager.getBundle().getString("errSavingTicket"));
         }
     }
 

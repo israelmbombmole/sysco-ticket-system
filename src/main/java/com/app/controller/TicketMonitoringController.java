@@ -40,6 +40,7 @@ public class TicketMonitoringController {
     @FXML private TableColumn<Ticket, String> colAgentAssigned;
     @FXML private TableColumn<Ticket, String> colStatusAssigned;
     @FXML private ListView<User> listAgents;
+@FXML private ComboBox<String> cmbTargetRole;
 
     @FXML private TextField txtSearch;
 
@@ -64,7 +65,7 @@ public void initialize() {
 
     
     //listAgents.setItems(UserDAO.getAllAgents());
-    listAgents.setTooltip(new Tooltip("Hold CTRL to select multiple agents"));
+    listAgents.setTooltip(new Tooltip(LanguageManager.getBundle().getString("monitoringTooltipMultiSelect")));
     listAgents.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     tableTickets.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     tableAssignments.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -135,7 +136,7 @@ loadUnassignedTickets();
 loadAssignedTickets();
 loadStats();
 loadChart();
-loadAgents();
+initTargetRoleFilter();
 
 
 
@@ -154,9 +155,11 @@ addViewButtonColumn();
     private void deleteTicket(Ticket ticket) {
 
     Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+    java.util.ResourceBundle b = LanguageManager.getBundle();
 
-    confirm.setTitle("Delete Ticket");
-    confirm.setHeaderText("Are you sure you want to delete ticket #" + ticket.getId() + "?");
+    confirm.setTitle(b.getString("deleteTicketTitle"));
+    confirm.setHeaderText(java.text.MessageFormat.format(
+            b.getString("deleteTicketHeader"), ticket.getId()));
 
     confirm.showAndWait().ifPresent(response -> {
 
@@ -185,16 +188,19 @@ addViewButtonColumn();
     
     private void showEscalationDialog(Ticket ticket) {
 
+    java.util.ResourceBundle b = LanguageManager.getBundle();
     Dialog<User> dialog = new Dialog<>();
-    dialog.setTitle("Escalate Ticket");
-    dialog.setHeaderText("Select agent to escalate ticket #" + ticket.getId());
+    dialog.setTitle(b.getString("escalateTicketTitle"));
+    dialog.setHeaderText(java.text.MessageFormat.format(
+            b.getString("escalateTicketHeader"), ticket.getId()));
 
-    ButtonType escalateButtonType = new ButtonType("Escalate", ButtonBar.ButtonData.OK_DONE);
+    ButtonType escalateButtonType = new ButtonType(
+            b.getString("actionEscalate"), ButtonBar.ButtonData.OK_DONE);
     dialog.getDialogPane().getButtonTypes().addAll(escalateButtonType, ButtonType.CANCEL);
 
     ComboBox<User> agentCombo = new ComboBox<>();
     agentCombo.setItems(UserDAO.findAllAgents());
-    agentCombo.setPromptText("Select agent");
+    agentCombo.setPromptText(b.getString("monitoringSelectAgent"));
 
     dialog.getDialogPane().setContent(agentCombo);
 
@@ -222,7 +228,9 @@ addViewButtonColumn();
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
-        alert.setContentText("Ticket escalated to " + selectedAgent.getUsername());
+        alert.setContentText(java.text.MessageFormat.format(
+                LanguageManager.getBundle().getString("infoTicketEscalated"),
+                selectedAgent.getUsername()));
         alert.showAndWait();
 
         reloadAssignments();
@@ -232,14 +240,8 @@ addViewButtonColumn();
     
 
     private void loadUnassignedTickets() {
-
-    String role = com.app.auth.Session.getRole();
-
-    if (RoleFlowUtil.isHighLevel(role)) {
-        tableTickets.setItems(TicketDAO.getUnassignedTickets());
-    } else {
-        tableTickets.setItems(FXCollections.observableArrayList());
-    }
+    String role = Session.getRole();
+    tableTickets.setItems(TicketDAO.getTicketsForMonitoringRole(role, Session.getUserId()));
 }
 
    private void loadAssignedTickets() {
@@ -295,7 +297,7 @@ addViewButtonColumn();
 
         colView.setCellFactory(param -> new TableCell<>() {
 
-            private final Button btn = new Button("👁Voir");
+            private final Button btn = new Button("👁 " + LanguageManager.getBundle().getString("courierViewButton"));
 
             {
                btn.setStyle(
@@ -334,7 +336,8 @@ Parent root = loader.load();
             controller.setTicket(ticket);
 
             Stage stage = new Stage();
-            stage.setTitle("Détail du ticket - TCK-" + ticket.getId());
+            stage.setTitle(LanguageManager.getBundle().getString("stageTicketDetails")
+                    + " - TCK-" + ticket.getId());
             stage.setScene(new Scene(root));
 
             stage.show();
@@ -368,29 +371,64 @@ Parent root = loader.load();
         int open = TicketDAO.countByStatus("OPEN");
         int closed = TicketDAO.countByStatus("CLOSED");
 
+        java.util.ResourceBundle b = LanguageManager.getBundle();
         ticketPieChart.setData(FXCollections.observableArrayList(
-                new PieChart.Data("Open", open),
-                new PieChart.Data("Closed", closed)
+                new PieChart.Data(b.getString("open"), open),
+                new PieChart.Data(b.getString("closed"), closed)
         ));
     }
-private void loadAgents() {
+private void initTargetRoleFilter() {
+    if (cmbTargetRole == null) {
+        return;
+    }
 
-    String currentRole = Session.getRole();
+    cmbTargetRole.getItems().clear();
+    Set<String> allowedRoles = RoleFlowUtil.getAllowedTargetRoles(Session.getRole());
+    cmbTargetRole.getItems().addAll(allowedRoles);
+    if (!cmbTargetRole.getItems().isEmpty()) {
+        cmbTargetRole.getSelectionModel().selectFirst();
+    }
 
-    // 🔥 get allowed roles
-    Set<String> allowedRoles =
-            RoleFlowUtil.getAllowedTargetRoles(currentRole);
+    cmbTargetRole.setOnAction(e -> loadAgentsByTargetRole());
+    loadAgentsByTargetRole();
+}
 
-    // convert to list
-    List<String> rolesList = new ArrayList<>(allowedRoles);
+private void loadAgentsByTargetRole() {
+    if (cmbTargetRole == null) {
+        return;
+    }
 
-    // 🔥 get filtered users
-    ObservableList<User> users =
-            UserDAO.getUsersByRoles(rolesList);
+    String selectedRole = cmbTargetRole.getValue();
+    if (selectedRole == null || selectedRole.isBlank()) {
+        listAgents.setItems(FXCollections.observableArrayList());
+        return;
+    }
 
-    listAgents.setItems(users);
-
+    listAgents.setItems(UserDAO.getUsersByRoles(List.of(selectedRole)));
     listAgents.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+}
+
+private boolean isDirectionCompatible(Ticket ticket, User agent) {
+    if (ticket == null || agent == null) {
+        return false;
+    }
+
+    String sessionRole = Session.getRole() == null ? "" : Session.getRole().toUpperCase();
+
+    if ("SECRETAIRE".equals(sessionRole) && "SOUS-DIRECTEUR".equalsIgnoreCase(agent.getRole())) {
+        Integer ticketSousDirectionId = ticket.getSousDirectionId();
+        Integer agentSousDirectionId = agent.getSousDirectionId();
+        if (ticketSousDirectionId == null || agentSousDirectionId == null) {
+            return false;
+        }
+        return ticketSousDirectionId.equals(agentSousDirectionId);
+    }
+
+    Integer ticketDirectionId = ticket.getDepartmentId();
+    if (ticketDirectionId == null || agent.getDirectionId() == null) {
+        return false;
+    }
+    return ticketDirectionId.equals(agent.getDirectionId());
 }
     
 
@@ -403,7 +441,7 @@ private void handleAssign() {
             listAgents.getSelectionModel().getSelectedItems();
 
     if (selectedTicket == null || selectedAgents.isEmpty()) {
-        showError("Select ticket and at least one agent.");
+        showError(LanguageManager.getBundle().getString("errMustSelectTicketAgent"));
         return;
     }
 
@@ -414,7 +452,13 @@ private void handleAssign() {
         // ===============================
         if (selectedAgents.size() == 1) {
 
-            int userId = selectedAgents.get(0).getId();
+            User selectedAgent = selectedAgents.get(0);
+            if (!isDirectionCompatible(selectedTicket, selectedAgent)) {
+                showError(LanguageManager.getBundle().getString("assignmentDirectionError"));
+                return;
+            }
+
+            int userId = selectedAgent.getId();
 
             TicketDAO.assignTicket(selectedTicket.getId(), userId);
 
@@ -425,12 +469,23 @@ private void handleAssign() {
         // ===============================
         // 🔥 MULTI ASSIGNMENT → POPUP
         // ===============================
-        openTaskAssignmentPopup(selectedTicket, selectedAgents);
+        List<User> directionSafeAgents = selectedAgents
+                .stream()
+                .filter(agent -> isDirectionCompatible(selectedTicket, agent))
+                .toList();
+        if (directionSafeAgents.isEmpty()) {
+            showError(LanguageManager.getBundle().getString("assignmentDirectionError"));
+            return;
+        }
+        if (directionSafeAgents.size() != selectedAgents.size()) {
+            showError(LanguageManager.getBundle().getString("assignmentDirectionError"));
+        }
+        openTaskAssignmentPopup(selectedTicket, directionSafeAgents);
 
     } catch (Exception e) {
 
         e.printStackTrace();
-        showError("Assignment failed: " + e.getMessage());
+        showError(LanguageManager.getBundle().getString("errAssignmentFailed") + " " + e.getMessage());
     }
 }
 
@@ -440,7 +495,8 @@ private void openTaskAssignmentPopup(Ticket ticket, List<User> agents) {
     try {
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/AddTaskPopup.fxml")
+                getClass().getResource("/view/AddTaskPopup.fxml"),
+                LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
@@ -455,7 +511,7 @@ private void openTaskAssignmentPopup(Ticket ticket, List<User> agents) {
         
 
         Stage stage = new Stage();
-        stage.setTitle("Assign Tasks");
+        stage.setTitle(LanguageManager.getBundle().getString("stageAssignTasks"));
         stage.setScene(new Scene(root));
         stage.showAndWait();
 

@@ -7,6 +7,7 @@ import com.app.service.ExcelService;
 import com.app.model.Department;
 import com.app.model.Ticket;
 import com.app.model.User;
+import com.app.util.LanguageManager;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -89,7 +90,7 @@ public class UserExcelEntryController {
     @FXML
     private void handleSave() {
 
-        lblSaveStatus.setText("⏳ Saving...");
+        lblSaveStatus.setText("⏳ " + LanguageManager.getBundle().getString("userExcelSaving"));
         progressSave.setVisible(true);
         lblSaveStatus.setVisible(true);
         btnSave.setDisable(true);
@@ -103,7 +104,7 @@ public class UserExcelEntryController {
                         objet.getText().isEmpty()) {
 
                     Platform.runLater(() -> {
-                        message.setText("Please fill all required fields");
+                        message.setText(LanguageManager.getBundle().getString("errFillRequiredFields"));
                         progressSave.setVisible(false);
                         btnSave.setDisable(false);
                     });
@@ -111,18 +112,6 @@ public class UserExcelEntryController {
                 }
 
                 Platform.runLater(() -> progressSave.setProgress(0.2));
-
-                // =========================
-                // SAVE EXCEL (SIMPLIFIED)
-                // =========================
-                ExcelService.append(
-                        dateEnreg.getValue().toString(),
-                        expediteur.getText().trim(),
-                        objet.getText().trim(),
-                        "N/A",
-                        "N/A",
-                        "N/A"
-                );
 
                 String title = expediteur.getText().trim();
                 String description = objet.getText().trim();
@@ -139,7 +128,7 @@ public class UserExcelEntryController {
                 department.setId(1); // default
 
                 Platform.runLater(() -> {
-                    lblSaveStatus.setText("⏳ Creating ticket...");
+                    lblSaveStatus.setText("⏳ " + LanguageManager.getBundle().getString("userExcelCreatingTicket"));
                     progressSave.setProgress(0.4);
                 });
 
@@ -179,7 +168,7 @@ ticketId = TicketDAO.createTicket(
                 }
 
                 if (ticketId == -1) {
-                    throw new RuntimeException("Ticket creation failed");
+                    throw new RuntimeException(LanguageManager.getBundle().getString("errTicketCreationFailed"));
                 }
 
                 Platform.runLater(() -> progressSave.setProgress(0.6));
@@ -226,7 +215,7 @@ ticketId = TicketDAO.createTicket(
                     selectedFiles.clear();
                     attachmentList.getItems().clear();
 
-                    lblSaveStatus.setText("✔ Saved successfully");
+                    lblSaveStatus.setText("✔ " + LanguageManager.getBundle().getString("userExcelSaved"));
                     lblSaveStatus.setStyle("-fx-text-fill:green;");
 
                     progressSave.setVisible(false);
@@ -238,7 +227,7 @@ ticketId = TicketDAO.createTicket(
                 e.printStackTrace();
 
                 Platform.runLater(() -> {
-                    message.setText("Error: " + e.getMessage());
+                    message.setText(LanguageManager.getBundle().getString("dialogError") + ": " + e.getMessage());
                     progressSave.setVisible(false);
                     btnSave.setDisable(false);
                 });

@@ -38,6 +38,8 @@ public class Ticket {
     private String priority;
     private Integer assignedTo;
     private Integer departmentId;
+    private Integer directionId;
+    private Integer sousDirectionId;
     
     private String createdBy;
     private String updatedBy;
@@ -237,6 +239,12 @@ public void setSlaBreached(boolean slaBreached) {
     this.slaBreached = slaBreached;
 }
 
+private String registrationDate;
+private String senderName;
+private String subject;
+private String cotation;
+private String cotationDate;
+
 public String getDepartmentName() {
     return departmentName;
 }
@@ -245,9 +253,69 @@ public void setDepartmentName(String departmentName) {
     this.departmentName = departmentName;
 }
 
+public String getRegistrationDate() {
+    return registrationDate;
+}
+
+public void setRegistrationDate(String registrationDate) {
+    this.registrationDate = registrationDate;
+}
+
+public String getSenderName() {
+    return senderName;
+}
+
+public void setSenderName(String senderName) {
+    this.senderName = senderName;
+}
+
+public String getSubject() {
+    return subject;
+}
+
+public void setSubject(String subject) {
+    this.subject = subject;
+}
+
+public String getCotation() {
+    return cotation;
+}
+
+public void setCotation(String cotation) {
+    this.cotation = cotation;
+}
+
+public String getCotationDate() {
+    return cotationDate;
+}
+
+public void setCotationDate(String cotationDate) {
+    this.cotationDate = cotationDate;
+}
+
 
 public Integer getDepartmentId() {
     return departmentId;
+}
+
+public void setDepartmentId(Integer departmentId) {
+    this.departmentId = departmentId;
+}
+
+public Integer getDirectionId() {
+    return directionId;
+}
+
+public void setDirectionId(Integer directionId) {
+    this.directionId = directionId;
+}
+
+public Integer getSousDirectionId() {
+    return sousDirectionId;
+}
+
+public void setSousDirectionId(Integer sousDirectionId) {
+    this.sousDirectionId = sousDirectionId;
 }
 
 
@@ -341,8 +409,15 @@ public String getSubDirection() {
     return subDirection;
 }
 
+public void setSubDirection(String subDirection) {
+    this.subDirection = subDirection;
+}
+
 private String sender;
 private String department;
+private String currentOwnerRole;
+private String routingStage;
+private Integer ageHours;
 
 
 public String getSender() {
@@ -359,6 +434,40 @@ public String getDepartment() {
 
 public void setDepartment(String department) {
     this.department = department;
+}
+
+public String getCurrentOwnerRole() {
+    return currentOwnerRole;
+}
+
+public void setCurrentOwnerRole(String currentOwnerRole) {
+    this.currentOwnerRole = currentOwnerRole;
+}
+
+public String getRoutingStage() {
+    return routingStage;
+}
+
+public void setRoutingStage(String routingStage) {
+    this.routingStage = routingStage;
+}
+
+private String smartAging;
+
+public String getSmartAging() {
+    return smartAging;
+}
+
+public void setSmartAging(String smartAging) {
+    this.smartAging = smartAging;
+}
+
+public Integer getAgeHours() {
+    return ageHours;
+}
+
+public void setAgeHours(Integer ageHours) {
+    this.ageHours = ageHours;
 }
 
 public String getTicketNumber() {

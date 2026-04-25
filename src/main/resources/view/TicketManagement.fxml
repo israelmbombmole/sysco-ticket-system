@@ -18,7 +18,7 @@
         <Region HBox.hgrow="ALWAYS"/>
 
         <TextField fx:id="txtSearch"
-                   promptText="Search ticket..."
+                   promptText="%ticketMgmtSearchPrompt"
                    prefWidth="250"/>
 
         <Button text="%Search"
@@ -116,7 +116,7 @@
                        visible="false"/>
 
     <Label fx:id="lblEscalationStatus"
-           text="⏳ Escalation en cours..."
+           text="%ticketMgmtEscalating"
            visible="false"
            style="-fx-text-fill:#ff9800; -fx-font-weight:bold;"/>
 

@@ -1,8 +1,8 @@
 package com.app.ui;
 
+import com.app.dao.TicketDAO;
 import com.app.dao.UserActionDAO;
 import com.app.model.DataEntry;
-import com.app.service.ExcelService;
 import com.app.session.LoggedUser;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -66,13 +66,13 @@ public class EditEntryController {
     @FXML
     private void handleSave() {
 
-        ExcelService.update(
+        TicketDAO.updateFinalizedDataEntry(
                 selectedEntry,
-                dpDateEnreg.getValue().toString(),
+                dpDateEnreg.getValue() == null ? null : dpDateEnreg.getValue().toString(),
                 txtExpediteur.getText(),
                 txtObjet.getText(),
                 txtCotation.getText(),
-                dpDateCotation.getValue().toString(),
+                dpDateCotation.getValue() == null ? null : dpDateCotation.getValue().toString(),
                 cbSousDirection.getValue()
         );
 

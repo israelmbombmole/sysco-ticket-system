@@ -23,7 +23,7 @@
     <HBox spacing="40" alignment="CENTER">
 
         <VBox alignment="CENTER">
-            <Label text="TicketsLogged"/>
+            <Label text="%adminFooterTicketsLogged"/>
             <Label fx:id="lblTickets"
                    text="0"
                    style="-fx-font-size:28px; -fx-font-weight:bold;"/>
@@ -32,7 +32,7 @@
         
 
         <VBox alignment="CENTER">
-            <Label text="Messages"/>
+            <Label text="%adminFooterMessages"/>
             <Label fx:id="lblMessages"
                    text="0"
                    style="-fx-font-size:28px; -fx-font-weight:bold;"/>

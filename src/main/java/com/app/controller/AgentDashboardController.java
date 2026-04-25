@@ -75,10 +75,10 @@ private TableView<TicketTask> tableTickets;
 
     ContextMenu menu = new ContextMenu();
 
-    MenuItem view = new MenuItem("View Details");
+    MenuItem view = new MenuItem(com.app.util.LanguageManager.getBundle().getString("viewDetails"));
     view.setOnAction(e -> openTaskDetails(row.getItem()));
 
-    MenuItem reassign = new MenuItem("Reassign Task");
+    MenuItem reassign = new MenuItem(com.app.util.LanguageManager.getBundle().getString("reassignTaskTitle"));
     reassign.setOnAction(e -> reassignTask(row.getItem()));
 
     menu.getItems().addAll(view, reassign);
@@ -256,8 +256,8 @@ colResolution.setCellValueFactory(data ->
     private void reassignTask(TicketTask task) {
 
     ChoiceDialog<User> dialog = new ChoiceDialog<>();
-    dialog.setTitle("Reassign Task");
-    dialog.setHeaderText("Select new agent");
+    dialog.setTitle(com.app.util.LanguageManager.getBundle().getString("reassignTaskTitle"));
+    dialog.setHeaderText(com.app.util.LanguageManager.getBundle().getString("reassignTaskHeader"));
 
     dialog.getItems().addAll(UserDAO.getAllAgents());
 
@@ -286,7 +286,7 @@ private void handleStart() {
     TicketTask task = tableTickets.getSelectionModel().getSelectedItem();
 
     if (task == null) {
-        showWarning("Please select a task.");
+        showWarning(com.app.util.LanguageManager.getBundle().getString("errMustSelectTask"));
         return;
     }
 
@@ -306,7 +306,7 @@ private void handleStart() {
         // 🔄 refresh
         loadTasks();
 
-        showInfo("Task started successfully");
+        showInfo(com.app.util.LanguageManager.getBundle().getString("infoTaskStarted"));
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -317,8 +317,8 @@ private void handleStart() {
     private void showWarning(String message) {
 
     Alert alert = new Alert(Alert.AlertType.WARNING);
-    alert.setTitle("Ticket System");
-    alert.setHeaderText("Warning");
+    alert.setTitle(com.app.util.LanguageManager.getBundle().getString("stageTicketSystem"));
+    alert.setHeaderText(com.app.util.LanguageManager.getBundle().getString("dialogWarning"));
     alert.setContentText(message);
 
     alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
@@ -333,7 +333,7 @@ private void handleClose() {
     TicketTask task = tableTickets.getSelectionModel().getSelectedItem();
 
     if (task == null) {
-        showError("Please select a task.");
+        showError(com.app.util.LanguageManager.getBundle().getString("errMustSelectTask"));
         return;
     }
 
@@ -341,7 +341,7 @@ private void handleClose() {
 
         // 🚨 IMPORTANT CHECK
         if (task.getStartedAt() == null) {
-            showError("You must START the task before closing it.");
+            showError(com.app.util.LanguageManager.getBundle().getString("errMustStartTaskBeforeClosing"));
             return;
         }
 
@@ -349,7 +349,7 @@ private void handleClose() {
 
         loadTasks();
 
-        showInfo("Task completed successfully");
+        showInfo(com.app.util.LanguageManager.getBundle().getString("infoTaskCompleted"));
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -374,7 +374,7 @@ private void handleClose() {
             TicketDetailsController controller = loader.getController();
             controller.setTicket(ticket);
 
-            stage.setTitle("Ticket Details");
+            stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageTicketDetails"));
             stage.show();
 
         } catch (Exception e) {
@@ -415,7 +415,8 @@ private void handleViewDetails() {
         controller.setTicket(ticket);
 
         Stage stage = new Stage();
-        stage.setTitle("Détail du ticket - TCK-" + ticket.getId());
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageTicketDetails")
+                + " - TCK-" + ticket.getId());
 
         stage.setScene(new Scene(root));
         stage.setMaximized(true);
@@ -458,7 +459,7 @@ private void openChat() {
 
         Stage stage = new Stage();
         stage.setScene(scene);
-        stage.setTitle("Chat");
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageChat"));
         stage.setWidth(450);
         stage.setHeight(600);
         stage.show();
@@ -471,7 +472,7 @@ private void openChat() {
 
 @FXML
 private void handleMerge() {
-    showAlert("Merge is not applicable to tasks.");
+    showAlert(com.app.util.LanguageManager.getBundle().getString("errCannotMergeSelf"));
 }  
 
 private void showAlert(String msg) {
@@ -578,7 +579,8 @@ private void openTaskDetails(TicketTask task) {
 
         Stage stage = new Stage();
         stage.setScene(new Scene(root));
-        stage.setTitle("Task Details - TSK-" + task.getId());
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageTaskDetails")
+                + " - TSK-" + task.getId());
         stage.setWidth(600);
         stage.setHeight(500);
         stage.show();
@@ -602,7 +604,7 @@ private void openNotifications() {
 
         Stage stage = new Stage();
         stage.setScene(new Scene(root));
-        stage.setTitle("Notifications");
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageNotifications"));
         stage.setWidth(400);
         stage.setHeight(500);
         stage.show();

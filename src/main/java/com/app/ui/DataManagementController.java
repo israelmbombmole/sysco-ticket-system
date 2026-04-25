@@ -1,8 +1,8 @@
 package com.app.ui;
 
 import com.app.dao.UserActionDAO;
+import com.app.dao.TicketDAO;
 import com.app.model.DataEntry;
-import com.app.service.ExcelService;
 import com.app.session.LoggedUser;
 import java.util.ResourceBundle;
 import javafx.collections.FXCollections;
@@ -10,7 +10,6 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -59,10 +58,10 @@ tableData.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
     // ===============================
-    // LOAD ALL FROM EXCEL
+    // LOAD ALL FROM FINALIZED TICKETS
     // ===============================
     private void loadAll() {
-        tableData.setItems(ExcelService.readAll());
+        tableData.setItems(TicketDAO.getFinalizedDataEntries());
     }
 
     // ===============================
@@ -71,7 +70,7 @@ tableData.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     @FXML
     private void handleSearch() {
 
-        ObservableList<DataEntry> allData = ExcelService.readAll();
+        ObservableList<DataEntry> allData = TicketDAO.getFinalizedDataEntries();
         ObservableList<DataEntry> filtered = FXCollections.observableArrayList();
 
         String cotation = txtCotation.getText() == null ? "" : txtCotation.getText().toLowerCase();
@@ -124,7 +123,7 @@ private void handleDelete() {
 
     Alert confirm = new Alert(
             Alert.AlertType.CONFIRMATION,
-            "Delete selected record?",
+            com.app.util.LanguageManager.getBundle().getString("dataMgmtDeleteConfirm"),
             ButtonType.YES, ButtonType.NO
     );
 
@@ -135,7 +134,7 @@ private void handleDelete() {
     confirm.showAndWait().ifPresent(btn -> {
         if (btn == ButtonType.YES) {
 
-            ExcelService.delete(selected);
+            TicketDAO.clearFinalizedDataEntry(selected);
             loadAll();
         }
     });
@@ -147,14 +146,15 @@ private void handleExit() {
 
     try {
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/login.fxml")
+                getClass().getResource("/view/login.fxml"),
+                com.app.util.LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
 
         Stage stage = (Stage) tableData.getScene().getWindow();
         stage.setScene(new Scene(root));
-        stage.setTitle("Login");
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageLogin"));
         stage.centerOnScreen();
 
     } catch (Exception e) {
@@ -176,7 +176,7 @@ private void handleEdit() {
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/view/edit_entry.fxml"),
-                ResourceBundle.getBundle("lang.messages")
+                com.app.util.LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
@@ -185,7 +185,7 @@ private void handleEdit() {
         controller.setData(selected, this::loadAll);
 
         Stage stage = new Stage();
-        stage.setTitle("Edit Entry");
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageEditEntry"));
         stage.setScene(new Scene(root));
         stage.show();
 

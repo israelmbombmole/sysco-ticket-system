@@ -30,7 +30,15 @@ public class UserDAO {
     public static User findByUsername(String username) {
 
     String sql = """
-        SELECT id, username, password_hash, role, active
+        SELECT
+            id,
+            username,
+            password_hash,
+            role,
+            active,
+            is_super_admin,
+            direction_id,
+            sous_direction_id
         FROM users
         WHERE username = ?
     """;
@@ -42,13 +50,21 @@ public class UserDAO {
         ResultSet rs = ps.executeQuery();
 
         if (rs.next()) {
-            return new User(
+            User user = new User(
                 rs.getInt("id"),
                 rs.getString("username"),
                 rs.getString("password_hash"), // 🔥 VERY IMPORTANT
                 rs.getString("role"),
                 rs.getInt("active") == 1
             );
+            user.setSuperAdmin(rs.getInt("is_super_admin") == 1);
+            if (rs.getObject("direction_id") != null) {
+                user.setDirectionId(rs.getInt("direction_id"));
+            }
+            if (rs.getObject("sous_direction_id") != null) {
+                user.setSousDirectionId(rs.getInt("sous_direction_id"));
+            }
+            return user;
         }
 
     } catch (Exception e) {
@@ -72,13 +88,21 @@ public class UserDAO {
 
         if (rs.next()) {
 
-            return new User(
+            User user = new User(
                     rs.getInt("id"),
                     rs.getString("username"),
                     rs.getString("password_hash"),
                     rs.getString("role"),
                     rs.getInt("active") == 1   // 🔥 convert int to boolean
             );
+            user.setSuperAdmin(rs.getInt("is_super_admin") == 1);
+            if (rs.getObject("direction_id") != null) {
+                user.setDirectionId(rs.getInt("direction_id"));
+            }
+            if (rs.getObject("sous_direction_id") != null) {
+                user.setSousDirectionId(rs.getInt("sous_direction_id"));
+            }
+            return user;
         }
 
     } catch (Exception e) {
@@ -1060,6 +1084,19 @@ private static void lockUser(Connection c, int userId) {
 
     // 🔥 IMPORTANT (for force password change)
     user.setMustChangePassword(rs.getInt("must_change_password") == 1);
+    try {
+        user.setSuperAdmin(rs.getInt("is_super_admin") == 1);
+    } catch (Exception ignored) {}
+    try {
+        if (rs.getObject("direction_id") != null) {
+            user.setDirectionId(rs.getInt("direction_id"));
+        }
+    } catch (Exception ignored) {}
+    try {
+        if (rs.getObject("sous_direction_id") != null) {
+            user.setSousDirectionId(rs.getInt("sous_direction_id"));
+        }
+    } catch (Exception ignored) {}
 
     return user;
 }
@@ -1072,7 +1109,13 @@ private static void lockUser(Connection c, int userId) {
 
     String placeholders = String.join(",", roles.stream().map(r -> "?").toList());
 
-    String sql = "SELECT * FROM users WHERE role IN (" + placeholders + ") AND active = 1";
+    String sql = """
+        SELECT 
+            u.*,
+            d.name AS direction_name
+        FROM users u
+        LEFT JOIN directions d ON d.id = u.direction_id
+        WHERE u.role IN (""" + placeholders + ") AND u.active = 1";
 
     try (Connection c = DB.getConnection();
          PreparedStatement ps = c.prepareStatement(sql)) {
@@ -1090,6 +1133,10 @@ private static void lockUser(Connection c, int userId) {
             u.setId(rs.getInt("id"));
             u.setUsername(rs.getString("username"));
             u.setRole(rs.getString("role"));
+            if (rs.getObject("direction_id") != null) {
+                u.setDirectionId(rs.getInt("direction_id"));
+            }
+            u.setDirectionName(rs.getString("direction_name"));
 
             list.add(u);
         }
