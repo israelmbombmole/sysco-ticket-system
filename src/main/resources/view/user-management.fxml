@@ -32,7 +32,7 @@
                     <TableColumn fx:id="colRole" text="%role"/>
                     <TableColumn fx:id="colActive" text="%active"/>
                     <TableColumn fx:id="colSousDirection" text="%sousDirection"/>
-                    <TableColumn fx:id="colDelete" text="Delete" prefWidth="100"/>
+                    <TableColumn fx:id="colDelete" text="%columnDelete" prefWidth="100"/>
                 </columns>
 
             </TableView>

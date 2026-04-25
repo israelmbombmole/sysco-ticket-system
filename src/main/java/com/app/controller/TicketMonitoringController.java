@@ -65,7 +65,7 @@ public void initialize() {
 
     
     //listAgents.setItems(UserDAO.getAllAgents());
-    listAgents.setTooltip(new Tooltip("Hold CTRL to select multiple agents"));
+    listAgents.setTooltip(new Tooltip(LanguageManager.getBundle().getString("monitoringTooltipMultiSelect")));
     listAgents.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     tableTickets.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     tableAssignments.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -155,9 +155,11 @@ addViewButtonColumn();
     private void deleteTicket(Ticket ticket) {
 
     Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+    java.util.ResourceBundle b = LanguageManager.getBundle();
 
-    confirm.setTitle("Delete Ticket");
-    confirm.setHeaderText("Are you sure you want to delete ticket #" + ticket.getId() + "?");
+    confirm.setTitle(b.getString("deleteTicketTitle"));
+    confirm.setHeaderText(java.text.MessageFormat.format(
+            b.getString("deleteTicketHeader"), ticket.getId()));
 
     confirm.showAndWait().ifPresent(response -> {
 
@@ -186,16 +188,19 @@ addViewButtonColumn();
     
     private void showEscalationDialog(Ticket ticket) {
 
+    java.util.ResourceBundle b = LanguageManager.getBundle();
     Dialog<User> dialog = new Dialog<>();
-    dialog.setTitle("Escalate Ticket");
-    dialog.setHeaderText("Select agent to escalate ticket #" + ticket.getId());
+    dialog.setTitle(b.getString("escalateTicketTitle"));
+    dialog.setHeaderText(java.text.MessageFormat.format(
+            b.getString("escalateTicketHeader"), ticket.getId()));
 
-    ButtonType escalateButtonType = new ButtonType("Escalate", ButtonBar.ButtonData.OK_DONE);
+    ButtonType escalateButtonType = new ButtonType(
+            b.getString("actionEscalate"), ButtonBar.ButtonData.OK_DONE);
     dialog.getDialogPane().getButtonTypes().addAll(escalateButtonType, ButtonType.CANCEL);
 
     ComboBox<User> agentCombo = new ComboBox<>();
     agentCombo.setItems(UserDAO.findAllAgents());
-    agentCombo.setPromptText("Select agent");
+    agentCombo.setPromptText(b.getString("monitoringSelectAgent"));
 
     dialog.getDialogPane().setContent(agentCombo);
 
@@ -223,7 +228,9 @@ addViewButtonColumn();
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText(null);
-        alert.setContentText("Ticket escalated to " + selectedAgent.getUsername());
+        alert.setContentText(java.text.MessageFormat.format(
+                LanguageManager.getBundle().getString("infoTicketEscalated"),
+                selectedAgent.getUsername()));
         alert.showAndWait();
 
         reloadAssignments();
@@ -290,7 +297,7 @@ addViewButtonColumn();
 
         colView.setCellFactory(param -> new TableCell<>() {
 
-            private final Button btn = new Button("👁Voir");
+            private final Button btn = new Button("👁 " + LanguageManager.getBundle().getString("courierViewButton"));
 
             {
                btn.setStyle(
@@ -329,7 +336,8 @@ Parent root = loader.load();
             controller.setTicket(ticket);
 
             Stage stage = new Stage();
-            stage.setTitle("Détail du ticket - TCK-" + ticket.getId());
+            stage.setTitle(LanguageManager.getBundle().getString("stageTicketDetails")
+                    + " - TCK-" + ticket.getId());
             stage.setScene(new Scene(root));
 
             stage.show();
@@ -363,9 +371,10 @@ Parent root = loader.load();
         int open = TicketDAO.countByStatus("OPEN");
         int closed = TicketDAO.countByStatus("CLOSED");
 
+        java.util.ResourceBundle b = LanguageManager.getBundle();
         ticketPieChart.setData(FXCollections.observableArrayList(
-                new PieChart.Data("Open", open),
-                new PieChart.Data("Closed", closed)
+                new PieChart.Data(b.getString("open"), open),
+                new PieChart.Data(b.getString("closed"), closed)
         ));
     }
 private void initTargetRoleFilter() {
@@ -432,7 +441,7 @@ private void handleAssign() {
             listAgents.getSelectionModel().getSelectedItems();
 
     if (selectedTicket == null || selectedAgents.isEmpty()) {
-        showError("Select ticket and at least one agent.");
+        showError(LanguageManager.getBundle().getString("errMustSelectTicketAgent"));
         return;
     }
 
@@ -476,7 +485,7 @@ private void handleAssign() {
     } catch (Exception e) {
 
         e.printStackTrace();
-        showError("Assignment failed: " + e.getMessage());
+        showError(LanguageManager.getBundle().getString("errAssignmentFailed") + " " + e.getMessage());
     }
 }
 
@@ -486,7 +495,8 @@ private void openTaskAssignmentPopup(Ticket ticket, List<User> agents) {
     try {
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/AddTaskPopup.fxml")
+                getClass().getResource("/view/AddTaskPopup.fxml"),
+                LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
@@ -501,7 +511,7 @@ private void openTaskAssignmentPopup(Ticket ticket, List<User> agents) {
         
 
         Stage stage = new Stage();
-        stage.setTitle("Assign Tasks");
+        stage.setTitle(LanguageManager.getBundle().getString("stageAssignTasks"));
         stage.setScene(new Scene(root));
         stage.showAndWait();
 

@@ -6,11 +6,14 @@ import com.app.dao.UserPermissionDAO;
 import com.app.model.User;
 import com.app.service.AuditService;
 import com.app.session.LoggedUser;
+import com.app.util.LanguageManager;
+import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -46,7 +49,7 @@ private void handleLogin() {
     // VALIDATION
     // ======================
     if (username.isEmpty() || password.isEmpty()) {
-        lblMessage.setText("Veuillez saisir votre nom d'utilisateur et votre mot de passe");
+        lblMessage.setText(LanguageManager.getBundle().getString("loginErrorEmpty"));
         return;
     }
 
@@ -69,13 +72,13 @@ private void handleLogin() {
         User user = loginTask.getValue();
 
         if (user == null) {
-            lblMessage.setText("Identifiants invalides");
+            lblMessage.setText(LanguageManager.getBundle().getString("loginErrorInvalid"));
             return;
         }
 
         // 🔥 FORCE PASSWORD CHANGE
         if (user.isMustChangePassword()) {
-            lblMessage.setText("Vous devez changer votre mot de passe");
+            lblMessage.setText(LanguageManager.getBundle().getString("loginErrorMustChangePassword"));
             openChangePasswordScreen(user); // 👉 you already have this
             return;
         }
@@ -149,7 +152,7 @@ private void handleLogin() {
 
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/view/MainLayout.fxml"),
-                    ResourceBundle.getBundle("lang.messages")
+                    LanguageManager.getBundle()
             );
 
             Scene scene = new Scene(loader.load());
@@ -157,13 +160,13 @@ private void handleLogin() {
             Stage stage = (Stage) txtUsername.getScene().getWindow();
 
             stage.setScene(scene);
-            stage.setTitle("Ticket System - " + user.getUsername());
+            stage.setTitle(LanguageManager.getBundle().getString("stageTicketSystem") + " - " + user.getUsername());
             stage.setMaximized(true);
             stage.centerOnScreen();
 
         } catch (Exception e) {
             e.printStackTrace();
-            lblMessage.setText("Impossible de charger le système");
+            lblMessage.setText(LanguageManager.getBundle().getString("loginErrorLoad"));
         }
 
     });
@@ -177,7 +180,7 @@ private void handleLogin() {
         if (ex != null) {
             lblMessage.setText(ex.getMessage()); // 🔥 SHOW LOCK MESSAGE
         } else {
-            lblMessage.setText("Erreur de connexion");
+            lblMessage.setText(LanguageManager.getBundle().getString("loginErrorGeneric"));
         }
     });
 
@@ -190,7 +193,8 @@ private void openChangePasswordScreen(User user) {
 
     try {
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/change-password.fxml")
+                getClass().getResource("/view/change-password.fxml"),
+                LanguageManager.getBundle()
         );
 
         Scene scene = new Scene(loader.load());
@@ -200,17 +204,39 @@ private void openChangePasswordScreen(User user) {
         controller.setUser(user);
 
         Stage stage = new Stage();
-        stage.setTitle("Changer le mot de passe");
+        stage.setTitle(LanguageManager.getBundle().getString("loginChangePasswordTitle"));
         stage.setScene(scene);
         stage.initOwner(txtUsername.getScene().getWindow());
         stage.show();
 
     } catch (Exception e) {
         e.printStackTrace();
-        lblMessage.setText("Impossible d'ouvrir l'écran de changement de mot de passe");
+        lblMessage.setText(LanguageManager.getBundle().getString("loginChangePasswordOpenError"));
     }
 }
 
-    
-    
+    @FXML
+    private void handleEnglish() {
+        switchLanguage(Locale.ENGLISH);
+    }
+
+    @FXML
+    private void handleFrench() {
+        switchLanguage(Locale.FRENCH);
+    }
+
+    private void switchLanguage(Locale locale) {
+        LanguageManager.setLocale(locale);
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/view/login.fxml"),
+                    LanguageManager.getBundle()
+            );
+            Parent root = loader.load();
+            Stage stage = (Stage) txtUsername.getScene().getWindow();
+            stage.getScene().setRoot(root);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
 }

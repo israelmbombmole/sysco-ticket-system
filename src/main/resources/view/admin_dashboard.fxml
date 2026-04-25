@@ -108,10 +108,10 @@
                           barGap="5"
                           minHeight="300">
                     <xAxis>
-                        <CategoryAxis label="Agent"/>
+                        <CategoryAxis label="%chartAgentAxis"/>
                     </xAxis>
                     <yAxis>
-                        <NumberAxis label="Closed Tickets"/>
+                        <NumberAxis label="%chartClosedTicketsAxis"/>
                     </yAxis>
                 </BarChart>
             </VBox>

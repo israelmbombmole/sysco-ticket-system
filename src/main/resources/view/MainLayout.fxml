@@ -127,7 +127,7 @@
                         styleClass="sidebar-btn"/>
                 
                 <Button fx:id="btnMyWork"
-                        text="My Work"
+                        text="%myWork"
                         onAction="#loadMyWork"
                         styleClass="sidebar-btn"/>
                 

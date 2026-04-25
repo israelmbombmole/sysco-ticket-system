@@ -137,7 +137,7 @@ private void handleUpdate() {
         Department department = cmbDepartment.getValue();
 
         if (department == null) {
-            new Alert(Alert.AlertType.ERROR, "Please select a department").show();
+            new Alert(Alert.AlertType.ERROR, com.app.util.LanguageManager.getBundle().getString("externalSelectDepartment")).show();
             return;
         }
 
@@ -151,7 +151,7 @@ private void handleUpdate() {
         );
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setContentText("Ticket updated successfully.");
+        alert.setContentText(com.app.util.LanguageManager.getBundle().getString("infoTicketUpdated"));
         alert.showAndWait();
 
         Stage stage = (Stage) btnUpdate.getScene().getWindow();

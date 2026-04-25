@@ -14,7 +14,7 @@
               alignment="TOP_CENTER"
               style="-fx-padding:30;">
 
-            <Label text="Edit Internal Ticket"
+            <Label text="%internalEditTitle"
                    style="-fx-font-size:22px; -fx-font-weight:bold;"/>
 
             <VBox spacing="15"
@@ -25,33 +25,33 @@
                          -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.1),10,0,0,4);">
 
                 <VBox spacing="5">
-                    <Label text="Title"/>
+                    <Label text="%Title"/>
                     <TextField fx:id="txtTitle"/>
                 </VBox>
 
                 <VBox spacing="5">
-                    <Label text="Description"/>
+                    <Label text="%Description"/>
                     <TextArea fx:id="txtDescription"
                               prefRowCount="4"/>
                 </VBox>
 
                 <VBox spacing="5">
-                    <Label text="Priority"/>
+                    <Label text="%Priority"/>
                     <ComboBox fx:id="cmbPriority"/>
                 </VBox>
 
                 <VBox spacing="5">
-                    <Label text="Department"/>
+                    <Label text="%Department"/>
                     <ComboBox fx:id="cmbDepartment"/>
                 </VBox>
 
                 <HBox spacing="10" alignment="CENTER_RIGHT">
 
-                    <Button text="Cancel"
+                    <Button text="%cancel"
                             onAction="#handleCancel"
                             style="-fx-background-color:#e5e7eb;"/>
 
-                    <Button text="Update Ticket"
+                    <Button text="%externalUpdateButton"
                             onAction="#handleUpdate"
                             style="-fx-background-color:#2f80ed;
                                    -fx-text-fill:white;"/>

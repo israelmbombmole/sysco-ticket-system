@@ -40,7 +40,7 @@
             <!-- MY SHARED FILES -->
             <Label text="%mySharedFiles" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 <TextField fx:id="txtSearchMyFiles"
-           promptText="searchFiles"
+           promptText="%searchFiles"
            prefWidth="100"/>
             <TableView fx:id="tableMyFiles" prefHeight="200">
 

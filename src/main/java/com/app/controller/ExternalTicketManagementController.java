@@ -74,7 +74,7 @@ private void handleAssign() {
     User agent = cmbAgents.getValue();
 
     if (selected == null || agent == null) {
-        showAlert("Select ticket and agent.");
+        showAlert(com.app.util.LanguageManager.getBundle().getString("externalSelectTicketAndAgent"));
         return;
     }
 
@@ -89,12 +89,12 @@ private void handleEscalate() {
     User agent = cmbAgents.getValue();
 
     if (selected == null) {
-        showAlert("Select ticket first.");
+        showAlert(com.app.util.LanguageManager.getBundle().getString("externalSelectTicket"));
         return;
     }
 
     if (agent == null) {
-        showAlert("Select agent to escalate to.");
+        showAlert(com.app.util.LanguageManager.getBundle().getString("externalSelectAgent"));
         return;
     }
 

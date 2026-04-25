@@ -219,9 +219,10 @@ public void initialize() {
                         .append("\n");
             }
 
+            java.util.ResourceBundle b = com.app.util.LanguageManager.getBundle();
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("New Messages");
-            alert.setHeaderText("You have unread messages");
+            alert.setTitle(b.getString("adminNewMessages"));
+            alert.setHeaderText(b.getString("adminUnreadMessages"));
             alert.setContentText(message.toString());
             alert.show();
         }
@@ -233,12 +234,13 @@ private void openTicketManagement() {
     try {
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/TicketManagement.fxml"));
+                getClass().getResource("/view/TicketManagement.fxml"),
+                com.app.util.LanguageManager.getBundle());
 
         Parent root = loader.load();
 
         Stage stage = new Stage();
-        stage.setTitle("Ticket Management");
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageTicketManagement"));
         stage.setScene(new Scene(root));
         stage.show();
 

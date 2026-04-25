@@ -123,7 +123,7 @@ private void handleDelete() {
 
     Alert confirm = new Alert(
             Alert.AlertType.CONFIRMATION,
-            "Delete selected record?",
+            com.app.util.LanguageManager.getBundle().getString("dataMgmtDeleteConfirm"),
             ButtonType.YES, ButtonType.NO
     );
 
@@ -146,14 +146,15 @@ private void handleExit() {
 
     try {
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/login.fxml")
+                getClass().getResource("/view/login.fxml"),
+                com.app.util.LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
 
         Stage stage = (Stage) tableData.getScene().getWindow();
         stage.setScene(new Scene(root));
-        stage.setTitle("Login");
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageLogin"));
         stage.centerOnScreen();
 
     } catch (Exception e) {
@@ -175,7 +176,7 @@ private void handleEdit() {
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/view/edit_entry.fxml"),
-                ResourceBundle.getBundle("lang.messages")
+                com.app.util.LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
@@ -184,7 +185,7 @@ private void handleEdit() {
         controller.setData(selected, this::loadAll);
 
         Stage stage = new Stage();
-        stage.setTitle("Edit Entry");
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageEditEntry"));
         stage.setScene(new Scene(root));
         stage.show();
 

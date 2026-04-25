@@ -131,7 +131,7 @@
                        style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
                 <LineChart fx:id="performanceChart"
-                           title="Tickets Closed Per Day"
+                           title="%chartTicketsClosedPerDay"
                            minHeight="300">
 
                     <xAxis>
@@ -156,7 +156,7 @@
                 <HBox alignment="CENTER_RIGHT" spacing="10">
 
                     <TextField fx:id="txtSearch"
-                               promptText="🔍 %searchTickets"
+                               promptText="%searchTickets"
                                prefWidth="260"
                                style="-fx-background-radius:6;
                                       -fx-border-radius:6;

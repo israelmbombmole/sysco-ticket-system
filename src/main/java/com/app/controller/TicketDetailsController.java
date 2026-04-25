@@ -244,11 +244,14 @@ public class TicketDetailsController {
 
         if (ticket == null) return;
 
-        lblReference.setText("REF: " + TicketUtil.formatTicketRef(ticket.getId()));
+        lblReference.setText(com.app.util.LanguageManager.getBundle().getString("ticketRefPrefix")
+                + " " + TicketUtil.formatTicketRef(ticket.getId()));
         lblTitle.setText(ticket.getTitle() == null ? "-" : ticket.getTitle());
 
-        lblCreatedBy.setText("Créé par : " + ticket.getCreatedBy());
-        lblUpdatedBy.setText("Dernière mise à jour : " + ticket.getUpdatedBy());
+        lblCreatedBy.setText(com.app.util.LanguageManager.getBundle().getString("ticketCreatedBy")
+                + " " + ticket.getCreatedBy());
+        lblUpdatedBy.setText(com.app.util.LanguageManager.getBundle().getString("ticketLastUpdate")
+                + " " + ticket.getUpdatedBy());
 
         // PRIORITY BADGES
         String priority = ticket.getPriority();
@@ -277,7 +280,7 @@ public class TicketDetailsController {
         String assignedUsers = TicketDAO.getAssignedUsersNames(ticket.getId());
 
 if (assignedUsers == null || assignedUsers.isEmpty()) {
-    lblAssigned.setText("Unassigned");
+    lblAssigned.setText(com.app.util.LanguageManager.getBundle().getString("ticketUnassigned"));
 } else {
     lblAssigned.setText(assignedUsers);
 }
@@ -301,15 +304,15 @@ if (ticket.getClosedAt() != null) {
         double usage = TicketDAO.getSlaUsagePercent(ticket.getId());
 
         if(usage < 80){
-            lblSla.setText("SLA OK");
+            lblSla.setText(com.app.util.LanguageManager.getBundle().getString("slaOk"));
             lblSla.setStyle("-fx-text-fill:#22c55e;");
         }
         else if(usage < 100){
-            lblSla.setText("SLA WARNING");
+            lblSla.setText(com.app.util.LanguageManager.getBundle().getString("slaWarning"));
             lblSla.setStyle("-fx-text-fill:#f59e0b;");
         }
         else{
-            lblSla.setText("SLA BREACHED");
+            lblSla.setText(com.app.util.LanguageManager.getBundle().getString("slaBreached"));
             lblSla.setStyle("-fx-text-fill:#ef4444;");
         }
         
@@ -464,7 +467,7 @@ if (ticket.getClosedAt() != null) {
     private void handleAddComment() {
 
         if (!SecurityUtil.canAccessTicket(ticket.getId())) {
-            showMessage("You are not allowed to comment on this ticket");
+            showMessage(com.app.util.LanguageManager.getBundle().getString("errCannotComment"));
             return;
         }
         String comment = txtNewComment.getText().trim();
@@ -491,7 +494,7 @@ if (ticket.getClosedAt() != null) {
         try {
 
             FileChooser chooser = new FileChooser();
-            chooser.setTitle("Export Ticket PDF");
+            chooser.setTitle(com.app.util.LanguageManager.getBundle().getString("actionExportPDF"));
 
             chooser.getExtensionFilters().add(
                     new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
@@ -691,9 +694,9 @@ if (ticket.getClosedAt() != null) {
     ChoiceDialog<String> dialog = new ChoiceDialog<>("START",
             "START", "COMPLETE", "REASSIGN");
 
-    dialog.setTitle("Task Action");
-    dialog.setHeaderText("Task: " + task.getTitle());
-    dialog.setContentText("Choose action:");
+    dialog.setTitle(com.app.util.LanguageManager.getBundle().getString("stageTaskDetails"));
+    dialog.setHeaderText(com.app.util.LanguageManager.getBundle().getString("columnTask") + ": " + task.getTitle());
+    dialog.setContentText(com.app.util.LanguageManager.getBundle().getString("columnAction") + ":");
 
     dialog.showAndWait().ifPresent(action -> {
 
@@ -778,7 +781,7 @@ private void handleAddTask() {
         controller.initData(currentTicketId, assignableUsers);
 
         Stage stage = new Stage();
-        stage.setTitle("Add Task");
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("addTaskTitle"));
         stage.setScene(new Scene(root));
         stage.showAndWait();
 

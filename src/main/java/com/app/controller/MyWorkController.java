@@ -181,10 +181,10 @@ public class MyWorkController {
 
     colAction.setCellFactory(param -> new TableCell<>() {
 
-        private final Button view = new Button("View");
-        private final Button start = new Button("Start");
-        private final Button close = new Button("Close");
-        private final Button escalate = new Button("Escalate");
+        private final Button view = new Button(com.app.util.LanguageManager.getBundle().getString("actionView"));
+        private final Button start = new Button(com.app.util.LanguageManager.getBundle().getString("actionStart"));
+        private final Button close = new Button(com.app.util.LanguageManager.getBundle().getString("actionCloseAction"));
+        private final Button escalate = new Button(com.app.util.LanguageManager.getBundle().getString("actionEscalate"));
 
         {
             // 🎨 STYLE
@@ -268,8 +268,8 @@ public class MyWorkController {
         ChoiceDialog<User> dialog =
                 new ChoiceDialog<>(users.get(0), users);
 
-        dialog.setTitle("Escalate Ticket");
-        dialog.setHeaderText("Select user to escalate to");
+        dialog.setTitle(com.app.util.LanguageManager.getBundle().getString("escalateTicketTitle"));
+        dialog.setHeaderText(com.app.util.LanguageManager.getBundle().getString("externalSelectAgent"));
 
         dialog.showAndWait().ifPresent(user -> {
 
@@ -295,9 +295,9 @@ public class MyWorkController {
 
     colTaskAction.setCellFactory(param -> new TableCell<>() {
 
-        private final Button start = new Button("Start");
-        private final Button close = new Button("Close");
-        private final Button reassign = new Button("Reassign");
+        private final Button start = new Button(com.app.util.LanguageManager.getBundle().getString("actionStart"));
+        private final Button close = new Button(com.app.util.LanguageManager.getBundle().getString("actionCloseAction"));
+        private final Button reassign = new Button(com.app.util.LanguageManager.getBundle().getString("actionReassign"));
 
         {
             start.setStyle("-fx-background-color:#f59e0b; -fx-text-fill:white; -fx-font-size:11;");
@@ -384,8 +384,8 @@ protected void updateItem(Void item, boolean empty) {
         if (users.isEmpty()) return;
 
         ChoiceDialog<User> dialog = new ChoiceDialog<>(users.get(0), users);
-        dialog.setTitle("Reassign Task");
-        dialog.setHeaderText("Select user");
+        dialog.setTitle(com.app.util.LanguageManager.getBundle().getString("reassignTaskTitle"));
+        dialog.setHeaderText(com.app.util.LanguageManager.getBundle().getString("reassignTaskHeader"));
 
         dialog.showAndWait().ifPresent(user -> {
             TicketTaskDAO.reassignTask(task.getId(), user.getId());
@@ -454,8 +454,8 @@ protected void updateItem(Void item, boolean empty) {
         ChoiceDialog<User> dialog =
                 new ChoiceDialog<>(users.get(0), users);
 
-        dialog.setTitle("Reassign Task");
-        dialog.setHeaderText("Select new user");
+        dialog.setTitle(com.app.util.LanguageManager.getBundle().getString("reassignTaskTitle"));
+        dialog.setHeaderText(com.app.util.LanguageManager.getBundle().getString("reassignTaskHeader"));
 
         dialog.showAndWait().ifPresent(selected -> {
 

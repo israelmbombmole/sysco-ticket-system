@@ -33,19 +33,19 @@
 
             <!-- SYSTEM TITLE -->
 
-            <Label text="SYSCO"
+            <Label text="%appName"
                    style="-fx-font-size:32px;
                           -fx-font-weight:bold;
                           -fx-text-fill:#2c3e50;"/>
 
-            <Label text="Connexion utilisateur"
+            <Label text="%loginUserTitle"
                    style="-fx-font-size:16px;
                           -fx-text-fill:#555;"/>
 
             <!-- USERNAME -->
 
             <TextField fx:id="txtUsername"
-                       promptText="Nom d'utilisateur"
+                       promptText="%loginUsernamePrompt"
                        maxWidth="Infinity"
                        style="
                               -fx-background-radius:8;
@@ -55,7 +55,7 @@
             <!-- PASSWORD -->
 
             <PasswordField fx:id="txtPassword"
-                           promptText="Mot de passe"
+                           promptText="%loginPasswordPrompt"
                            maxWidth="Infinity"
                            style="
                                   -fx-background-radius:8;
@@ -65,7 +65,7 @@
             <!-- LOGIN BUTTON -->
 
             <Button fx:id="btnLogin"
-                    text="SE CONNECTER"
+                    text="%loginButton"
                     defaultButton="true"
                     maxWidth="Infinity"
                     onAction="#handleLogin"
@@ -89,6 +89,16 @@
                    style="-fx-text-fill:red;
                           -fx-font-size:12px;"/>
 
+            <!-- LANGUAGE TOGGLE -->
+            <HBox spacing="8" alignment="CENTER">
+                <Button text="%langEnglish"
+                        onAction="#handleEnglish"
+                        style="-fx-background-color:#e2e8f0; -fx-text-fill:#1f2937; -fx-background-radius:8; -fx-padding:4 12;"/>
+                <Button text="%langFrench"
+                        onAction="#handleFrench"
+                        style="-fx-background-color:#e2e8f0; -fx-text-fill:#1f2937; -fx-background-radius:8; -fx-padding:4 12;"/>
+            </HBox>
+
         </VBox>
 
 
@@ -109,7 +119,7 @@
 
                 </ImageView>
 
-                <Label text="Direction Générale des Douanes et Accises"
+                <Label text="%loginFooterDgda"
                        style="
                               -fx-font-size:22px;
                               -fx-font-weight:bold;
@@ -118,7 +128,7 @@
                               -fx-text-alignment:center;
                        "/>
 
-                <Label text="Direction des Systèmes et Technologies d’Information"
+                <Label text="%loginFooterDsti"
                        style="
                               -fx-font-size:16px;
                               -fx-text-fill:white;
@@ -126,7 +136,7 @@
                               -fx-text-alignment:center;
                        "/>
                 
-                <Label text="Sous-direction de Maintenance et Application (SDMA)"
+                <Label text="%loginFooterSdma"
                        style="
                               -fx-font-size:14px;
                               -fx-text-fill:white;
@@ -136,7 +146,7 @@
                 
                 
 
-                <Label text="Ce système est réservé aux utilisateurs autorisés. Toutes les activités sont surveillées et enregistrées. Tout accès non autorisé ou toute utilisation abusive peut entraîner des sanctions disciplinaires, voire des poursuites judiciaires. En vous connectant, vous consentez à cette surveillance."
+                <Label text="%loginLegalNotice"
        wrapText="true"
        maxWidth="420"
        style="

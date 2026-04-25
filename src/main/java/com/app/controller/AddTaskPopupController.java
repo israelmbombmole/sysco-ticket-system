@@ -115,8 +115,9 @@ private void handleSave() {
     // ============================
     // ✅ STEP 1: BASIC VALIDATION FIRST
     // ============================
+    java.util.ResourceBundle b = com.app.util.LanguageManager.getBundle();
     if (taskTitle.isEmpty() || selectedAgent == null) {
-        showError("Please enter task and select agent.");
+        showError(b.getString("errMustSelectTaskAndAgent"));
         return;
     }
 
@@ -127,12 +128,12 @@ private void handleSave() {
     String targetRole = selectedAgent.getRole();
 
     if (currentRole == null || targetRole == null) {
-        showError("Role configuration error. Contact admin.");
+        showError(b.getString("errRoleConfiguration"));
         return;
     }
 
     if (!canAssignTo(currentRole, targetRole)) {
-        showError("You cannot assign a task to a higher role.");
+        showError(b.getString("errCannotAssignHigherRole"));
         return;
     }
 
@@ -140,7 +141,7 @@ private void handleSave() {
     // ✅ STEP 3: SECURITY CHECK
     // ============================
     if (!SecurityUtil.canAccessTicket(ticketId)) {
-        showError("You are not allowed to add tasks");
+        showError(b.getString("errNotAllowedAddTask"));
         return;
     }
 
@@ -157,7 +158,7 @@ private void handleSave() {
         );
 
         if (taskId == -1) {
-            showError("Failed to create task");
+            showError(b.getString("errTaskCreationFailed"));
             return;
         }
 
@@ -218,7 +219,7 @@ private void handleSave() {
 
     } catch (Exception e) {
         e.printStackTrace();
-        showError("Error saving task");
+        showError(b.getString("errSavingTask"));
     }
 }
     
@@ -231,7 +232,7 @@ private void handleSave() {
     private void handleBrowseFiles() {
 
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Select Attachments");
+        chooser.setTitle(com.app.util.LanguageManager.getBundle().getString("attachmentsLabel"));
 
         List<File> files = chooser.showOpenMultipleDialog(null);
 
@@ -279,7 +280,7 @@ private void handleSave() {
     // ============================
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Error");
+        alert.setTitle(com.app.util.LanguageManager.getBundle().getString("dialogError"));
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();

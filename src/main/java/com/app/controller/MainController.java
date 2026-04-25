@@ -82,6 +82,7 @@ private static MainController instance;
     private String role;
     private Timeline notificationPolling;
     private int lastUnreadCount = -1;
+    private String currentPageFxml;
     
     
     
@@ -111,7 +112,11 @@ public void initialize() throws Exception {
     LanguageManager.localeProperty().addListener((obs, oldVal, newVal) -> {
         updateTexts(username);
         refreshNotificationWidgets(true);
-        loadDashboard();
+        if (currentPageFxml != null) {
+            loadPage(currentPageFxml);
+        } else {
+            loadDashboard();
+        }
     });
 
     // Responsive sidebar
@@ -213,12 +218,11 @@ private void applyPermissions() {
     btnFileShareAudit.setText(bundle.getString("fileShareAudit"));
 
     btnCreateTicket.setText(bundle.getString("createTicket"));
+    if (btnMyWork != null) {
+        btnMyWork.setText(bundle.getString("myWork"));
+    }
 
     btnLogout.setText(bundle.getString("logout"));
-    
-    
-    
-    
 }
 
     @FXML
@@ -245,23 +249,17 @@ private void openTicketManagement() {
         // 🔥 PERMISSION CHECK ONLY (NO ROLE)
         if (!Session.getPermissions().contains("TICKET_MANAGEMENT")) {
 
+            ResourceBundle b = LanguageManager.getBundle();
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Access Denied");
+            alert.setTitle(b.getString("dialogAccessDenied"));
             alert.setHeaderText(null);
-            alert.setContentText("You do not have permission to access Ticket Management.");
+            alert.setContentText(b.getString("errCannotAccessTicketManagement"));
             alert.showAndWait();
 
             return;
         }
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/TicketManagement.fxml"),
-                LanguageManager.getBundle()
-        );
-
-        Parent view = loader.load();
-
-        setCenterContent(view);
+        loadPage("TicketManagement.fxml");
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -274,15 +272,7 @@ private void handleDataShareManagement() {
 
      try {
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/DataShareManagement.fxml"),
-                LanguageManager.getBundle()
-        );
-
-        Parent view = loader.load();
-
-        // Load the screen into the center of the main layout
-        setCenterContent(view);
+        loadPage("DataShareManagement.fxml");
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -368,11 +358,10 @@ public void openChat()  {
                     getClass().getResource("/view/" + fxml),
                     LanguageManager.getBundle()
             );
-            
-            
 
             Parent root = loader.load();
             setCenterContent(root);
+            currentPageFxml = fxml;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -585,10 +574,11 @@ private void showAll() {
     @FXML
 private void handleLogout(ActionEvent event) {
 
+    ResourceBundle bundle = LanguageManager.getBundle();
     Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-    confirm.setTitle("Logout");
-    confirm.setHeaderText("Confirm Logout");
-    confirm.setContentText("Are you sure you want to logout?");
+    confirm.setTitle(bundle.getString("dialogLogout"));
+    confirm.setHeaderText(bundle.getString("dialogConfirmLogout"));
+    confirm.setContentText(bundle.getString("dialogLogoutQuestion"));
 
     Optional<ButtonType> result = confirm.showAndWait();
 
@@ -600,7 +590,8 @@ private void handleLogout(ActionEvent event) {
             Session.clear();
 
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/login.fxml")
+                    getClass().getResource("/view/login.fxml"),
+                    LanguageManager.getBundle()
             );
 
             Parent loginRoot = loader.load();
@@ -610,7 +601,7 @@ private void handleLogout(ActionEvent event) {
             Stage stage = (Stage) btnLogout.getScene().getWindow();
 
             stage.setScene(loginScene);
-            stage.setTitle("Login");
+            stage.setTitle(LanguageManager.getBundle().getString("stageLogin"));
             stage.setMaximized(true);
             stage.centerOnScreen();
             stage.show();
@@ -648,14 +639,7 @@ private void openDataShare() {
 
         System.out.println("Opening DataShare...");
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/DataShare.fxml"),
-                LanguageManager.getBundle()
-        );
-
-        Parent view = loader.load();
-
-        setCenterContent(view);
+        loadPage("DataShare.fxml");
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -699,7 +683,7 @@ private void openNotifications() {
         Parent root = loader.load();
 
         Stage stage = new Stage();
-        stage.setTitle("Notifications");
+        stage.setTitle(LanguageManager.getBundle().getString("stageNotifications"));
 
         Scene scene = new Scene(root);
 
@@ -732,14 +716,7 @@ private void openMyActivity() {
 
     try {
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/UserActivity.fxml"),
-                LanguageManager.getBundle()
-        );
-
-        Parent view = loader.load();
-
-        setCenterContent(view);
+        loadPage("UserActivity.fxml");
 
     } catch (Exception e) {
         e.printStackTrace();

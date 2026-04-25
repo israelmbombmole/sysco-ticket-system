@@ -196,7 +196,7 @@ tableTickets.setItems(sorted);
         
         colEscalate.setCellFactory(param -> new TableCell<>() {
 
-    private final Button btn = new Button("Escalate");
+    private final Button btn = new Button(com.app.util.LanguageManager.getBundle().getString("actionEscalate"));
 
     {
         btn.getStyleClass().add("btn-escalate");
@@ -208,9 +208,10 @@ tableTickets.setItems(sorted);
     ChoiceDialog<String> dialog =
             new ChoiceDialog<>(null, TicketDAO.getAgents());
 
-    dialog.setTitle("Escalate Ticket");
-    dialog.setHeaderText("Select Agent to Escalate");
-    dialog.setContentText("Agent:");
+    java.util.ResourceBundle b = com.app.util.LanguageManager.getBundle();
+    dialog.setTitle(b.getString("escalateTicketTitle"));
+    dialog.setHeaderText(b.getString("ticketMgmtEscalateAgent"));
+    dialog.setContentText(b.getString("ticketMgmtAgent"));
 
     dialog.showAndWait().ifPresent(agentName -> {
 
@@ -220,8 +221,8 @@ tableTickets.setItems(sorted);
 if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
 
     Alert alert = new Alert(Alert.AlertType.WARNING);
-    alert.setTitle("Escalation Not Allowed");
-    alert.setHeaderText("Ticket already escalated");
+    alert.setTitle(com.app.util.LanguageManager.getBundle().getString("ticketMgmtEscalateNotAllowed"));
+    alert.setHeaderText(com.app.util.LanguageManager.getBundle().getString("errTicketAlreadyEscalated"));
     alert.setContentText(
             "Ticket " + TicketUtil.formatTicketRef(ticket.getId())
             + " is already assigned to " + agentName + "."
@@ -234,8 +235,8 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
 
         // 🔹 SHOW MESSAGE
         lblEscalationStatus.setText(
-                "⏳ Escalation en cours... " +
-                TicketUtil.formatTicketRef(ticket.getId())
+                com.app.util.LanguageManager.getBundle().getString("ticketMgmtEscalating")
+                + " " + TicketUtil.formatTicketRef(ticket.getId())
         );
 
         progressEscalation.setVisible(true);
@@ -322,10 +323,11 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
             || role.equalsIgnoreCase("INSPECTEUR")
             || role.equalsIgnoreCase("CONTROLEUR"))) {
 
+        java.util.ResourceBundle b = com.app.util.LanguageManager.getBundle();
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Access Denied");
+        alert.setTitle(b.getString("dialogAccessDenied"));
         alert.setHeaderText(null);
-        alert.setContentText("You are not allowed to access Ticket Management.");
+        alert.setContentText(b.getString("errCannotAccessTicketManagement"));
         alert.showAndWait();
 
         return; // 🔥 STOP loading
@@ -341,7 +343,7 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
         
         colView.setCellFactory(param -> new TableCell<>() {
 
-    private final Button btn = new Button("View");
+    private final Button btn = new Button(com.app.util.LanguageManager.getBundle().getString("actionView"));
 
     {
         btn.getStyleClass().add("btn-view");
@@ -373,7 +375,7 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
         
      colEdit.setCellFactory(param -> new TableCell<>() {
 
-    private final Button btn = new Button("Edit");
+    private final Button btn = new Button(com.app.util.LanguageManager.getBundle().getString("actionEdit"));
 
     {
         btn.getStyleClass().add("btn-edit");
@@ -416,7 +418,7 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
         
         colClose.setCellFactory(param -> new TableCell<>() {
 
-    private final Button btn = new Button("Close");
+    private final Button btn = new Button(com.app.util.LanguageManager.getBundle().getString("actionCloseAction"));
 
     {
         btn.getStyleClass().add("btn-close");
@@ -428,16 +430,17 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
             // ============================
             // CONFIRMATION DIALOG
             // ============================
+            java.util.ResourceBundle b2 = com.app.util.LanguageManager.getBundle();
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Close Ticket");
-            alert.setHeaderText("Confirm Ticket Closure");
+            alert.setTitle(b2.getString("closeTicketTitle"));
+            alert.setHeaderText(b2.getString("closeTicketHeader"));
             alert.setContentText(
-                    "Are you sure you want to close ticket "
-                    + TicketUtil.formatTicketRef(ticket.getId()) + " ?"
+                    b2.getString("closeTicketHeader") + " "
+                    + TicketUtil.formatTicketRef(ticket.getId())
             );
 
-            ButtonType yesBtn = new ButtonType("Yes");
-            ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            ButtonType yesBtn = new ButtonType(b2.getString("dialogYes"));
+            ButtonType cancelBtn = new ButtonType(b2.getString("dialogCancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
 
             alert.getButtonTypes().setAll(yesBtn, cancelBtn);
 
@@ -453,9 +456,10 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
 
                 } catch (Exception e) {
 
+                    java.util.ResourceBundle b3 = com.app.util.LanguageManager.getBundle();
                     Alert error = new Alert(Alert.AlertType.ERROR);
-                    error.setTitle("Error");
-                    error.setHeaderText("Cannot close ticket");
+                    error.setTitle(b3.getString("dialogError"));
+                    error.setHeaderText(b3.getString("errCannotCloseTicket"));
                     error.setContentText(e.getMessage());
                     error.showAndWait();
                 }
@@ -476,7 +480,7 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
         
         colDelete.setCellFactory(param -> new TableCell<>() {
 
-    private final Button btn = new Button("Delete");
+    private final Button btn = new Button(com.app.util.LanguageManager.getBundle().getString("actionDelete"));
 
     {
         btn.getStyleClass().add("btn-delete");
@@ -488,16 +492,16 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
             // ==============================
             // CONFIRMATION DIALOG
             // ==============================
+            java.util.ResourceBundle bd = com.app.util.LanguageManager.getBundle();
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Delete Ticket");
-            alert.setHeaderText("Confirm Deletion");
-            alert.setContentText(
-                    "Are you sure you want to delete ticket "
-                    + TicketUtil.formatTicketRef(ticket.getId()) + " ?"
-            );
+            alert.setTitle(bd.getString("deleteTicketTitle"));
+            alert.setHeaderText(bd.getString("dialogConfirm"));
+            alert.setContentText(java.text.MessageFormat.format(
+                    bd.getString("deleteTicketHeader"),
+                    TicketUtil.formatTicketRef(ticket.getId())));
 
-            ButtonType yesBtn = new ButtonType("Yes");
-            ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            ButtonType yesBtn = new ButtonType(bd.getString("dialogYes"));
+            ButtonType cancelBtn = new ButtonType(bd.getString("dialogCancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
 
             alert.getButtonTypes().setAll(yesBtn, cancelBtn);
 
@@ -557,7 +561,7 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
 
         FXMLLoader loader = new FXMLLoader(
         getClass().getResource("/view/TicketDetails.fxml"),
-        ResourceBundle.getBundle("lang.messages")
+        com.app.util.LanguageManager.getBundle()
 );
 
 Parent root = loader.load();
@@ -566,7 +570,8 @@ Parent root = loader.load();
         controller.setTicket(ticket);
 
         Stage stage = new Stage();
-        stage.setTitle("Ticket Details - TCK-" + ticket.getId());
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageTicketDetails")
+                + " - TCK-" + ticket.getId());
 
         Scene scene = new Scene(root);
         stage.setScene(scene);
@@ -579,7 +584,7 @@ Parent root = loader.load();
 
     } catch (Exception e) {
         e.printStackTrace();
-        showError("Unable to open ticket view.");
+        showError(com.app.util.LanguageManager.getBundle().getString("errCannotOpenTicketView"));
     }
 }
     
@@ -674,7 +679,7 @@ private void handleEdit() {
     Ticket ticket = tableTickets.getSelectionModel().getSelectedItem();
 
     if (ticket == null) {
-        showAlert("Please select a ticket.");
+        showAlert(com.app.util.LanguageManager.getBundle().getString("errMustSelectTicket"));
         return;
     }
 
@@ -682,7 +687,7 @@ private void handleEdit() {
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/view/ticket_create.fxml"),
-                ResourceBundle.getBundle("lang.messages")
+                com.app.util.LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
@@ -693,7 +698,7 @@ private void handleEdit() {
         controller.loadTicket(ticket);
 
         Stage stage = new Stage();
-        stage.setTitle("Edit External Ticket");
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageEditExternalTicket"));
         stage.setScene(new Scene(root));
         stage.show();
 
@@ -712,7 +717,7 @@ private void handleEdit() {
         Ticket ticket = tableTickets.getSelectionModel().getSelectedItem();
 
         if (ticket == null) {
-            showAlert("Please select a ticket.");
+            showAlert(com.app.util.LanguageManager.getBundle().getString("errMustSelectTicket"));
             return;
         }
 
@@ -730,8 +735,9 @@ private void handleMerge() {
     ObservableList<Ticket> selectedTickets =
             tableTickets.getSelectionModel().getSelectedItems();
 
+    java.util.ResourceBundle bm = com.app.util.LanguageManager.getBundle();
     if (selectedTickets.size() != 2) {
-        showAlert("Please select TWO tickets to merge.");
+        showAlert(bm.getString("errSelectTwoTickets"));
         return;
     }
 
@@ -739,15 +745,13 @@ private void handleMerge() {
     Ticket secondaryTicket = selectedTickets.get(1);
 
     Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-    confirm.setTitle("Merge Tickets");
-    confirm.setHeaderText(
-            "Merge " +
-            TicketUtil.formatTicketRef(secondaryTicket.getId()) +
-            " into " +
-            TicketUtil.formatTicketRef(mainTicket.getId())
-    );
+    confirm.setTitle(bm.getString("mergeTicketsTitle"));
+    confirm.setHeaderText(java.text.MessageFormat.format(
+            bm.getString("mergeTicketsHeader"),
+            TicketUtil.formatTicketRef(secondaryTicket.getId()),
+            TicketUtil.formatTicketRef(mainTicket.getId())));
 
-    confirm.setContentText("The second ticket will be closed as MERGED.");
+    confirm.setContentText(bm.getString("mergeTicketsContent"));
 
     if (confirm.showAndWait().get() == ButtonType.OK) {
 
@@ -755,7 +759,7 @@ private void handleMerge() {
 
         loadTickets();
 
-        showAlert("Tickets merged successfully.");
+        showAlert(bm.getString("infoTicketsMerged"));
     }
 }
 
@@ -769,11 +773,11 @@ private void handleClose() {
     Ticket ticket = tableTickets.getSelectionModel().getSelectedItem();
 
     if (ticket == null) {
-        showError("Select a ticket first.");
+        showError(com.app.util.LanguageManager.getBundle().getString("errMustSelectTicket"));
         return;
     }
     if (!SecurityUtil.canAccessTicket(ticket.getId())) {
-    showMessage("You cannot close this ticket");
+    showMessage(com.app.util.LanguageManager.getBundle().getString("errCannotCloseTicket"));
     return;
 }
     
@@ -801,7 +805,7 @@ private void handleClose() {
         Ticket ticket = tableTickets.getSelectionModel().getSelectedItem();
 
         if (ticket == null) {
-            showAlert("Please select a ticket.");
+            showAlert(com.app.util.LanguageManager.getBundle().getString("errMustSelectTicket"));
             return;
         }
 
@@ -815,8 +819,9 @@ private void handleMergeTickets() {
 
     ObservableList<Ticket> selected = tableTickets.getSelectionModel().getSelectedItems();
 
+    java.util.ResourceBundle bm2 = com.app.util.LanguageManager.getBundle();
     if (selected.size() != 2) {
-        showAlert("Please select exactly TWO tickets to merge.");
+        showAlert(bm2.getString("errSelectTwoTickets"));
         return;
     }
 
@@ -824,18 +829,18 @@ private void handleMergeTickets() {
     Ticket secondaryTicket = selected.get(1);
 
     if (mainTicket.getId() == secondaryTicket.getId()) {
-        showAlert("Cannot merge the same ticket.");
+        showAlert(bm2.getString("errCannotMergeSelf"));
         return;
     }
 
     Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-    confirm.setTitle("Merge Tickets");
-    confirm.setHeaderText("Merge Ticket "
-            + TicketUtil.formatTicketRef(secondaryTicket.getId())
-            + " into "
-            + TicketUtil.formatTicketRef(mainTicket.getId()));
+    confirm.setTitle(bm2.getString("mergeTicketsTitle"));
+    confirm.setHeaderText(java.text.MessageFormat.format(
+            bm2.getString("mergeTicketsHeader"),
+            TicketUtil.formatTicketRef(secondaryTicket.getId()),
+            TicketUtil.formatTicketRef(mainTicket.getId())));
 
-    confirm.setContentText("The secondary ticket will be closed as MERGED.");
+    confirm.setContentText(bm2.getString("mergeTicketsContent"));
 
     if (confirm.showAndWait().get() == ButtonType.OK) {
 
@@ -843,7 +848,7 @@ private void handleMergeTickets() {
 
         loadTickets(); // refresh table
 
-        showAlert("Tickets merged successfully.");
+        showAlert(com.app.util.LanguageManager.getBundle().getString("infoTicketsMerged"));
     }
 }
     
@@ -873,7 +878,7 @@ private void handleMergeTickets() {
     private void showError(String message) {
 
     Alert alert = new Alert(Alert.AlertType.ERROR);
-    alert.setTitle("Error");
+    alert.setTitle(com.app.util.LanguageManager.getBundle().getString("dialogError"));
     alert.setHeaderText(null);
     alert.setContentText(message);
     alert.showAndWait();
@@ -887,7 +892,7 @@ private void handleMergeTickets() {
         System.out.println("Ticket Type from DB = " + fullTicket.getTicketType());
 
         if (fullTicket == null) {
-            showError("Unable to load ticket.");
+            showError(com.app.util.LanguageManager.getBundle().getString("errCannotOpenTicketView"));
             return;
         }
 
@@ -932,7 +937,8 @@ else {
 }
 
         Stage stage = new Stage();
-        stage.setTitle("Edit Ticket - " + TicketUtil.formatTicketRef(fullTicket.getId()));
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageEditExternalTicket")
+                + " - " + TicketUtil.formatTicketRef(fullTicket.getId()));
         stage.setScene(new Scene(root));
         stage.setMaximized(true);
         stage.show();
@@ -940,7 +946,7 @@ else {
     } catch (Exception e) {
 
         e.printStackTrace();
-        showError("Unable to open edit window.");
+        showError(com.app.util.LanguageManager.getBundle().getString("errCannotOpenEditWindow"));
 
     }
 }

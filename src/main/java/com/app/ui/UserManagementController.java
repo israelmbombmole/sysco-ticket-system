@@ -220,7 +220,7 @@ private void handleCreate() {
 
     // 🔒 role check
     if (RoleUtil.getLevel(normalizeRole(Session.getRole())) < 5) {
-        showInfo("You are not authorized to create users");
+        showInfo(com.app.util.LanguageManager.getBundle().getString("errPermissionDenied"));
         return;
     }
 
@@ -234,7 +234,7 @@ private void handleDelete() {
     User user = tableUsers.getSelectionModel().getSelectedItem();
 
     if (user == null) {
-        showInfo("Please select a user");
+        showInfo(com.app.util.LanguageManager.getBundle().getString("errSelectUser"));
         return;
     }
 
@@ -264,7 +264,7 @@ private String normalizeRole(String role) {
 
     if (selectedUser == null) {
         new Alert(Alert.AlertType.WARNING,
-                "Please select a user first.",
+                com.app.util.LanguageManager.getBundle().getString("errSelectUser"),
                 ButtonType.OK).showAndWait();
         return null;
     }
@@ -278,7 +278,7 @@ private void handleEdit() {
     User selectedUser = tableUsers.getSelectionModel().getSelectedItem();
 
     if (selectedUser == null) {
-        showInfo("Please select a user");
+        showInfo(com.app.util.LanguageManager.getBundle().getString("errSelectUser"));
         return;
     }
 
@@ -291,7 +291,8 @@ private void openUserForm(User user) {
     try {
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/edit-user.fxml")
+                getClass().getResource("/view/edit-user.fxml"),
+                com.app.util.LanguageManager.getBundle()
         );
 
         Parent root = loader.load(); // ✅ NEW INSTANCE every time
@@ -305,7 +306,9 @@ private void openUserForm(User user) {
         }
 
         Stage stage = new Stage();
-        stage.setTitle(user == null ? "Create User" : "Edit User");
+        stage.setTitle(user == null
+                ? com.app.util.LanguageManager.getBundle().getString("stageCreateUser")
+                : com.app.util.LanguageManager.getBundle().getString("stageEditUser"));
 
         // ✅ FIXED SIZE (for scroll)
         stage.setScene(new Scene(root, 500, 600));
@@ -341,7 +344,7 @@ Parent root = loader.load();
         controller.setUser(user);
 
         Stage stage = new Stage();
-        stage.setTitle("Edit User");
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageEditUser"));
         stage.setScene(new Scene(root));
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.initOwner(tableUsers.getScene().getWindow());
@@ -363,15 +366,16 @@ Parent root = loader.load();
 private void handleToggleActive() {
 
    User selectedUser = tableUsers.getSelectionModel().getSelectedItem();
+   java.util.ResourceBundle b = com.app.util.LanguageManager.getBundle();
 
 if (selectedUser == null) {
-    showMessage("Veuillez sélectionner un utilisateur");
+    showMessage(b.getString("errSelectUser"));
     return;
 }
 
 // 🔥 BLOCK ONLY SELF ACTION
 if (selectedUser.getId() == Session.getUserId()) {
-    showMessage("Vous ne pouvez pas désactiver votre propre compte.");
+    showMessage(b.getString("errCannotDisableSelf"));
     return;
 }
 
@@ -380,14 +384,14 @@ UserDAO.toggleActive(selectedUser.getId());
 
 loadUsers(); // refresh table
 
-showMessage("L'utilisateur a été mis à jour avec succès");
+showMessage(b.getString("infoUserUpdated"));
 }
 
 
 private void showMessage(String message) {
 
     Alert alert = new Alert(Alert.AlertType.INFORMATION);
-    alert.setTitle("Message");
+    alert.setTitle(com.app.util.LanguageManager.getBundle().getString("genericMessage"));
     alert.setHeaderText(null);
     alert.setContentText(message);
 
@@ -403,8 +407,9 @@ private void handleChangeRole() {
 
     User targetUser = tableUsers.getSelectionModel().getSelectedItem();
 
+    java.util.ResourceBundle b = com.app.util.LanguageManager.getBundle();
     if (targetUser == null) {
-        showInfo("Veuillez sélectionner un utilisateur");
+        showInfo(b.getString("errSelectUser"));
         return;
     }
 
@@ -413,7 +418,7 @@ private void handleChangeRole() {
 
     // 🔥 BLOCK if trying to modify equal or higher role
     if (!canManage(currentRole, targetRole)) {
-        showInfo("Vous ne pouvez pas modifier un utilisateur ayant un rôle égal ou supérieur.");
+        showInfo(b.getString("errCannotEditHigherRole"));
         return;
     }
     
@@ -430,8 +435,9 @@ private void handleChangeRole() {
             "COURRIER"
     );
 
-    dialog.setTitle("Change Role");
-    dialog.setHeaderText("Change role for " + targetUser.getUsername());
+    dialog.setTitle(b.getString("changeRoleTitle"));
+    dialog.setHeaderText(java.text.MessageFormat.format(
+            b.getString("changeRoleHeader"), targetUser.getUsername()));
 
     dialog.showAndWait().ifPresent(newRole -> {
 
@@ -483,17 +489,18 @@ private boolean canManage(String currentRole, String targetRole) {
         User u = selected();
         if (u == null) return;
 
+        java.util.ResourceBundle b = com.app.util.LanguageManager.getBundle();
         Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("Reset Password");
+        dialog.setTitle(b.getString("resetPasswordTitle"));
 
         ButtonType resetBtn =
-                new ButtonType("Reset", ButtonBar.ButtonData.OK_DONE);
+                new ButtonType(b.getString("dialogConfirm"), ButtonBar.ButtonData.OK_DONE);
 
         dialog.getDialogPane().getButtonTypes()
                 .addAll(resetBtn, ButtonType.CANCEL);
 
         PasswordField pwd = new PasswordField();
-        pwd.setPromptText("New password");
+        pwd.setPromptText(b.getString("resetPasswordPrompt"));
 
         dialog.getDialogPane().setContent(pwd);
         dialog.setResultConverter(btn -> btn == resetBtn ? pwd.getText() : null);
@@ -512,7 +519,7 @@ private boolean canManage(String currentRole, String targetRole) {
         "Reset password for user: " + u.getUsername()
 );
 
-            showInfo("Password reset successfully");
+            showInfo(b.getString("infoPasswordReset"));
         });
     }
 
@@ -575,19 +582,14 @@ private boolean canManage(String currentRole, String targetRole) {
     @FXML
     private void openAuditLogs() {
         try {
-            Locale locale = new Locale("fr"); // or "en"
-
-ResourceBundle bundle =
-        ResourceBundle.getBundle("lang.messages", locale);
-
 FXMLLoader loader = new FXMLLoader(
         getClass().getResource("/view/audit-log.fxml"),
-        bundle
+        com.app.util.LanguageManager.getBundle()
 );
             Scene scene = new Scene(loader.load(), 900, 550);
 
             Stage stage = new Stage();
-            stage.setTitle("Audit Logs");
+            stage.setTitle(com.app.util.LanguageManager.getBundle().getString("stageAuditLogs"));
             stage.setScene(scene);
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(tableUsers.getScene().getWindow());
@@ -608,7 +610,7 @@ FXMLLoader loader = new FXMLLoader(
 
     colDelete.setCellFactory(param -> new TableCell<>() {
 
-        private final Button btn = new Button("Delete");
+        private final Button btn = new Button(com.app.util.LanguageManager.getBundle().getString("actionDelete"));
 
         {
             btn.setStyle("-fx-background-color:#e74c3c; -fx-text-fill:white;");
@@ -636,17 +638,19 @@ FXMLLoader loader = new FXMLLoader(
     
     private void confirmDelete(User user) {
 
+    java.util.ResourceBundle b = com.app.util.LanguageManager.getBundle();
     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-    alert.setTitle("Delete User");
-    alert.setHeaderText("Are you sure?");
-    alert.setContentText("Delete user: " + user.getUsername());
+    alert.setTitle(b.getString("deleteUserTitle"));
+    alert.setHeaderText(b.getString("deleteUserHeader"));
+    alert.setContentText(java.text.MessageFormat.format(
+            b.getString("deleteUserContent"), user.getUsername()));
 
     Optional<ButtonType> result = alert.showAndWait();
 
     if (result.isPresent() && result.get() == ButtonType.OK) {
 
         if (!verifyAdminPassword()) {
-            showInfo("❌ Incorrect admin password");
+            showInfo("❌ " + b.getString("errAdminPasswordIncorrect"));
             return;
         }
 
@@ -666,7 +670,7 @@ FXMLLoader loader = new FXMLLoader(
                     "User hidden from UI (deactivated): " + user.getUsername()
             );
 
-            showInfo("Utilisateur supprimé de la liste");
+            showInfo(b.getString("infoUserDeleted"));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -676,15 +680,16 @@ FXMLLoader loader = new FXMLLoader(
     
     private boolean verifyAdminPassword() {
 
+    java.util.ResourceBundle b = com.app.util.LanguageManager.getBundle();
     Dialog<String> dialog = new Dialog<>();
-    dialog.setTitle("Admin Verification");
-    dialog.setHeaderText("Enter admin password to confirm deletion");
+    dialog.setTitle(b.getString("stageAdminVerification"));
+    dialog.setHeaderText(b.getString("adminVerificationHeader"));
 
-    ButtonType confirmBtn = new ButtonType("Confirm", ButtonBar.ButtonData.OK_DONE);
+    ButtonType confirmBtn = new ButtonType(b.getString("dialogConfirm"), ButtonBar.ButtonData.OK_DONE);
     dialog.getDialogPane().getButtonTypes().addAll(confirmBtn, ButtonType.CANCEL);
 
     PasswordField passwordField = new PasswordField();
-    passwordField.setPromptText("Admin password");
+    passwordField.setPromptText(b.getString("adminVerificationPrompt"));
 
     dialog.getDialogPane().setContent(passwordField);
 

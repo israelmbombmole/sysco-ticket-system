@@ -42,9 +42,9 @@
                                   prefWidth="200"/>
 
                         <VBox spacing="6">
-                            <Label text="Target Role"/>
+                            <Label text="%targetRole"/>
                             <ComboBox fx:id="cmbTargetRole"
-                                      promptText="Select role"
+                                      promptText="%monitoringSelectAgent"
                                       prefWidth="200"/>
                         </VBox>
 
@@ -66,7 +66,7 @@
                                style="-fx-font-weight:bold;"/>
 
                         <TextField fx:id="txtSearch"
-                                   promptText="Rechercher ID, agent ou statut..."
+                                   promptText="%monitoringSearchPrompt"
                                    HBox.hgrow="ALWAYS"/>
 
                     </HBox>

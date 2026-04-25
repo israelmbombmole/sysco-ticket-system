@@ -1,6 +1,7 @@
 package com.app;
 
 import com.app.util.DB;
+import com.app.util.LanguageManager;
 import java.io.File;
 import java.util.TimeZone;
 
@@ -20,12 +21,13 @@ public class MainApp extends Application {
         new File("uploads").mkdirs();
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/login.fxml")
+                getClass().getResource("/view/login.fxml"),
+                LanguageManager.getBundle()
         );
 
         Scene scene = new Scene(loader.load());
 
-        stage.setTitle("SYSCO 1.0");
+        stage.setTitle(LanguageManager.getBundle().getString("appName") + " 1.0");
 
         Rectangle2D visualBounds = Screen.getPrimary().getVisualBounds();
         double initialWidth = Math.min(1300, visualBounds.getWidth() * 0.92);

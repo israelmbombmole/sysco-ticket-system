@@ -17,7 +17,7 @@
             <HBox spacing="10">
 
                 <TextField fx:id="txtSearch"
-                           promptText="Search file / user..."
+                           promptText="%search"
                            prefWidth="300"/>
 
                 <Button text="%Refresh"

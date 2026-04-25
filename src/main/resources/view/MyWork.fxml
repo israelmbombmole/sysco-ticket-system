@@ -9,24 +9,24 @@
       fx:controller="com.app.controller.MyWorkController">
 
     <!-- TITLE -->
-    <Label text="My Work"
+    <Label text="%myWork"
            style="-fx-font-size:22px; -fx-font-weight:bold;" />
 
     <!-- ================= TICKETS ================= -->
     <VBox spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;">
-        <Label text="My Tickets" style="-fx-font-size:16px; -fx-font-weight:bold;" />
+        <Label text="%myWorkTickets" style="-fx-font-size:16px; -fx-font-weight:bold;" />
 
         <TableView fx:id="tableTickets" prefHeight="250">
 
             <columns>
-                <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
-                <TableColumn fx:id="colTitle" text="Title" prefWidth="200"/>
-                <TableColumn fx:id="colStatus" text="Status" prefWidth="120"/>
-                <TableColumn fx:id="colPriority" text="Priority" prefWidth="100"/>
-                <TableColumn fx:id="colStart" text="Start" prefWidth="150"/>
-                <TableColumn fx:id="colClose" text="Close" prefWidth="150"/>
-                <TableColumn fx:id="colResolution" text="Duration" prefWidth="120"/>
-                <TableColumn fx:id="colAction" text="Action" prefWidth="120"/>
+                <TableColumn fx:id="colId" text="%columnId" prefWidth="60"/>
+                <TableColumn fx:id="colTitle" text="%columnTitle" prefWidth="200"/>
+                <TableColumn fx:id="colStatus" text="%columnStatus" prefWidth="120"/>
+                <TableColumn fx:id="colPriority" text="%columnPriority" prefWidth="100"/>
+                <TableColumn fx:id="colStart" text="%columnStart" prefWidth="150"/>
+                <TableColumn fx:id="colClose" text="%columnClose" prefWidth="150"/>
+                <TableColumn fx:id="colResolution" text="%columnDuration" prefWidth="120"/>
+                <TableColumn fx:id="colAction" text="%columnAction" prefWidth="120"/>
             </columns>
 
         </TableView>
@@ -34,18 +34,18 @@
 
     <!-- ================= TASKS ================= -->
     <VBox spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;">
-        <Label text="My Tasks" style="-fx-font-size:16px; -fx-font-weight:bold;" />
+        <Label text="%myWorkTasks" style="-fx-font-size:16px; -fx-font-weight:bold;" />
 
         <TableView fx:id="tableTasks" prefHeight="300">
 
             <columns>
-                <TableColumn fx:id="colTaskId" text="ID" prefWidth="60"/>
-                <TableColumn fx:id="colTaskTitle" text="Title" prefWidth="220"/>
-                <TableColumn fx:id="colTaskStatus" text="Status" prefWidth="120"/>
-                <TableColumn fx:id="colTaskStart" text="Start" prefWidth="150"/>
-                <TableColumn fx:id="colTaskClose" text="Close" prefWidth="150"/>
-                <TableColumn fx:id="colTaskResolution" text="Duration" prefWidth="120"/>
-                <TableColumn fx:id="colTaskAction" text="Action" prefWidth="200"/>
+                <TableColumn fx:id="colTaskId" text="%columnId" prefWidth="60"/>
+                <TableColumn fx:id="colTaskTitle" text="%columnTitle" prefWidth="220"/>
+                <TableColumn fx:id="colTaskStatus" text="%columnStatus" prefWidth="120"/>
+                <TableColumn fx:id="colTaskStart" text="%columnStart" prefWidth="150"/>
+                <TableColumn fx:id="colTaskClose" text="%columnClose" prefWidth="150"/>
+                <TableColumn fx:id="colTaskResolution" text="%columnDuration" prefWidth="120"/>
+                <TableColumn fx:id="colTaskAction" text="%columnAction" prefWidth="200"/>
             </columns>
 
         </TableView>

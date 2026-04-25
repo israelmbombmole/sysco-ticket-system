@@ -192,20 +192,21 @@ private void handleSave() {
     // ===============================
     // 🔒 VALIDATION
     // ===============================
+    java.util.ResourceBundle b = com.app.util.LanguageManager.getBundle();
     if (username.isEmpty()) {
-        showError("Username cannot be empty.");
+        showError(b.getString("errUsernameEmpty"));
         return;
     }
 
     if (role == null) {
-        showError("Please select a role.");
+        showError(b.getString("errSelectRole"));
         return;
     }
 
     SousDirection sd = cmbSousDirection.getValue();
 
     if (sd == null) {
-        showError("Please select a Sous Direction.");
+        showError(b.getString("errSelectSousDirection"));
         return;
     }
 
@@ -213,7 +214,7 @@ private void handleSave() {
     String password = txtPassword.getText();
 
     if (!editMode && (password == null || password.isBlank())) {
-        showError("Password is required.");
+        showError(b.getString("errPasswordRequired"));
         return;
     }
 
@@ -225,7 +226,7 @@ private void handleSave() {
         Direction dir = cmbDirection.getValue();
 
         if (dir == null) {
-            showError("Please select a Direction.");
+            showError(b.getString("errSelectDirection"));
             return;
         }
 
@@ -243,7 +244,7 @@ private void handleSave() {
 
             // check duplicate username
             if (UserDAO.findByUsername(username) != null) {
-                showError("Username already exists.");
+                showError(b.getString("errUsernameExists"));
                 return;
             }
 
@@ -322,7 +323,7 @@ private void handleSave() {
 
     } catch (Exception e) {
         e.printStackTrace();
-        showError("Something went wrong while saving user.");
+        showError(b.getString("errSavingUser"));
     }
 }
             // =========================
