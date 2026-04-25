@@ -416,6 +416,8 @@ public void setSubDirection(String subDirection) {
 private String sender;
 private String department;
 private String currentOwnerRole;
+private String routingStage;
+private Integer ageHours;
 
 
 public String getSender() {
@@ -440,6 +442,32 @@ public String getCurrentOwnerRole() {
 
 public void setCurrentOwnerRole(String currentOwnerRole) {
     this.currentOwnerRole = currentOwnerRole;
+}
+
+public String getRoutingStage() {
+    return routingStage;
+}
+
+public void setRoutingStage(String routingStage) {
+    this.routingStage = routingStage;
+}
+
+private String smartAging;
+
+public String getSmartAging() {
+    return smartAging;
+}
+
+public void setSmartAging(String smartAging) {
+    this.smartAging = smartAging;
+}
+
+public Integer getAgeHours() {
+    return ageHours;
+}
+
+public void setAgeHours(Integer ageHours) {
+    this.ageHours = ageHours;
 }
 
 public String getTicketNumber() {

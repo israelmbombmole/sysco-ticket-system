@@ -9,12 +9,17 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import com.app.util.TicketUtil;
+import javafx.scene.control.TableCell;
+import javafx.scene.paint.Color;
 
 public class CourierDashboardController {
 
@@ -33,10 +38,18 @@ public class CourierDashboardController {
     @FXML private TableColumn<Ticket, String> colAssignedAgent;
     @FXML private TableColumn<Ticket, String> colAssignedRole;
     @FXML private TableColumn<Ticket, String> colStatus;
+    @FXML private TableColumn<Ticket, String> colSmartStage;
+    @FXML private TableColumn<Ticket, String> colSmartAging;
     @FXML private TableColumn<Ticket, String> colUpdatedAt;
+    @FXML private Label lblEscalationRisk;
+    @FXML private Label lblFlowHealth;
+    @FXML private Label lblStuckCouriers;
+    @FXML private Label lblAvgAgingHours;
+    @FXML private Label lblServiceHealth;
 
     private final ObservableList<Ticket> masterTickets = FXCollections.observableArrayList();
     private FilteredList<Ticket> filteredTickets;
+    private Timeline autoRefresh;
 
     @FXML
     public void initialize() {
@@ -47,6 +60,8 @@ public class CourierDashboardController {
         colAssignedAgent.setCellValueFactory(cell -> new SimpleStringProperty(defaultValue(cell.getValue().getAssignedToName())));
         colAssignedRole.setCellValueFactory(cell -> new SimpleStringProperty(defaultValue(cell.getValue().getCurrentOwnerRole())));
         colStatus.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getStatus()));
+        colSmartStage.setCellValueFactory(cell -> new SimpleStringProperty(defaultValue(cell.getValue().getRoutingStage())));
+        colSmartAging.setCellValueFactory(cell -> new SimpleStringProperty(defaultValue(cell.getValue().getSmartAging())));
         colUpdatedAt.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getCreatedAt()));
 
         cmbStatus.setItems(FXCollections.observableArrayList(
@@ -54,8 +69,11 @@ public class CourierDashboardController {
         ));
         cmbStatus.getSelectionModel().selectFirst();
 
+        styleStatusColumn();
+        styleAgingColumn();
         loadData();
         setupFilters();
+        startAutoRefresh();
     }
 
     private void loadData() {
@@ -73,6 +91,11 @@ public class CourierDashboardController {
         lblAssignedCount.setText(String.valueOf(CourierTrackingDAO.countByStatus(courierId, "ASSIGNED")));
         lblInProgressCount.setText(String.valueOf(CourierTrackingDAO.countByStatus(courierId, "IN_PROGRESS")));
         lblClosedCount.setText(String.valueOf(CourierTrackingDAO.countByStatus(courierId, "CLOSED")));
+        lblEscalationRisk.setText(String.valueOf(CourierTrackingDAO.countEscalationRisk(courierId)));
+        lblStuckCouriers.setText(String.valueOf(CourierTrackingDAO.countStuckTickets(courierId)));
+        lblFlowHealth.setText(CourierTrackingDAO.computeFlowHealth(courierId));
+        lblAvgAgingHours.setText(String.format("%.1f h", CourierTrackingDAO.computeAverageAgingHours(courierId)));
+        lblServiceHealth.setText(CourierTrackingDAO.computeFlowHealth(courierId));
     }
 
     private void setupFilters() {
@@ -96,12 +119,16 @@ public class CourierDashboardController {
             String direction = t.getDepartmentName() == null ? "" : t.getDepartmentName().toLowerCase();
             String assignee = t.getAssignedToName() == null ? "" : t.getAssignedToName().toLowerCase();
             String role = t.getCurrentOwnerRole() == null ? "" : t.getCurrentOwnerRole().toLowerCase();
+            String stage = t.getRoutingStage() == null ? "" : t.getRoutingStage().toLowerCase();
+            String aging = t.getSmartAging() == null ? "" : t.getSmartAging().toLowerCase();
 
             return ref.contains(keyword)
                     || title.contains(keyword)
                     || direction.contains(keyword)
                     || assignee.contains(keyword)
-                    || role.contains(keyword);
+                    || role.contains(keyword)
+                    || stage.contains(keyword)
+                    || aging.contains(keyword);
         });
     }
 
@@ -113,5 +140,60 @@ public class CourierDashboardController {
 
     private String defaultValue(String value) {
         return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private void styleStatusColumn() {
+        colStatus.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                setText(status);
+                String normalized = status.toUpperCase();
+                switch (normalized) {
+                    case "OPEN" -> setTextFill(Color.web("#f59e0b"));
+                    case "ASSIGNED" -> setTextFill(Color.web("#3b82f6"));
+                    case "IN_PROGRESS" -> setTextFill(Color.web("#0ea5e9"));
+                    case "CLOSED" -> setTextFill(Color.web("#16a34a"));
+                    case "ESCALATED" -> setTextFill(Color.web("#ef4444"));
+                    default -> setTextFill(Color.web("#475569"));
+                }
+            }
+        });
+    }
+
+    private void styleAgingColumn() {
+        colSmartAging.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String aging, boolean empty) {
+                super.updateItem(aging, empty);
+                if (empty || aging == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                setText(aging);
+                if (aging.contains("d") && !aging.startsWith("0d")) {
+                    setTextFill(Color.web("#dc2626"));
+                } else if (aging.startsWith("0d")) {
+                    setTextFill(Color.web("#0f766e"));
+                } else {
+                    setTextFill(Color.web("#475569"));
+                }
+            }
+        });
+    }
+
+    private void startAutoRefresh() {
+        autoRefresh = new Timeline(new KeyFrame(Duration.seconds(20), e -> {
+            loadData();
+            applyFilter();
+        }));
+        autoRefresh.setCycleCount(Timeline.INDEFINITE);
+        autoRefresh.play();
     }
 }

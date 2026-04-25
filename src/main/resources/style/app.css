@@ -523,3 +523,246 @@
 .scroll-pane > .viewport {
     -fx-background-color: transparent;
 }
+
+/* =========================
+   SMART COURIER MODERN UX
+========================= */
+.courier-root {
+    -fx-background-color: linear-gradient(to bottom right, #f8fbff, #eef4ff);
+}
+
+.courier-hero {
+    -fx-background-color: linear-gradient(to right, #0f172a, #1e3a8a);
+    -fx-background-radius: 16;
+    -fx-padding: 16;
+    -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.18), 16, 0.25, 0, 6);
+}
+
+.courier-hero-title {
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: 800;
+}
+
+.courier-hero-subtitle {
+    -fx-text-fill: rgba(255,255,255,0.88);
+    -fx-font-size: 13px;
+}
+
+.courier-kpi {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+    -fx-padding: 14;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 14;
+}
+
+.courier-kpi-label {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.courier-kpi-value {
+    -fx-text-fill: #0f172a;
+    -fx-font-size: 24px;
+    -fx-font-weight: 900;
+}
+
+.courier-kpi-value-success {
+    -fx-text-fill: #059669;
+    -fx-font-size: 24px;
+    -fx-font-weight: 900;
+}
+
+.courier-kpi-value-warning {
+    -fx-text-fill: #d97706;
+    -fx-font-size: 24px;
+    -fx-font-weight: 900;
+}
+
+.courier-filter-card {
+    -fx-background-color: rgba(255,255,255,0.96);
+    -fx-background-radius: 14;
+    -fx-padding: 12;
+    -fx-border-color: #dbe7ff;
+    -fx-border-radius: 14;
+}
+
+.courier-pill {
+    -fx-background-radius: 999px;
+    -fx-padding: 5 10;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}
+
+.courier-pill-created {
+    -fx-background-color: #e0e7ff;
+    -fx-text-fill: #3730a3;
+}
+
+.courier-pill-secretaire {
+    -fx-background-color: #e0f2fe;
+    -fx-text-fill: #075985;
+}
+
+.courier-pill-sousdirecteur {
+    -fx-background-color: #fef3c7;
+    -fx-text-fill: #92400e;
+}
+
+.courier-pill-agent {
+    -fx-background-color: #dcfce7;
+    -fx-text-fill: #166534;
+}
+
+.courier-health-badge {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #334155;
+    -fx-background-radius: 999px;
+    -fx-padding: 6 12;
+    -fx-font-weight: 700;
+    -fx-font-size: 12px;
+}
+
+.courier-health-badge-good {
+    -fx-background-color: #dcfce7;
+    -fx-text-fill: #166534;
+}
+
+.courier-health-badge-warning {
+    -fx-background-color: #fef3c7;
+    -fx-text-fill: #92400e;
+}
+
+.courier-health-badge-risk {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #991b1b;
+}
+
+.courier-cards-flow {
+    -fx-hgap: 12;
+    -fx-vgap: 12;
+}
+
+.courier-stat-card {
+    -fx-background-color: white;
+    -fx-background-radius: 16;
+    -fx-border-color: #dbeafe;
+    -fx-border-radius: 16;
+    -fx-padding: 14;
+    -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.10), 12, 0.22, 0, 4);
+}
+
+.courier-stat-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #64748b;
+}
+
+.courier-stat-value {
+    -fx-font-size: 22px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #0f172a;
+}
+
+.courier-panel-card {
+    -fx-background-color: white;
+    -fx-background-radius: 16;
+    -fx-border-color: #dbeafe;
+    -fx-border-radius: 16;
+    -fx-padding: 12;
+}
+
+.courier-filter-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #475569;
+}
+
+.courier-refresh-btn {
+    -fx-background-color: linear-gradient(to right, #2563eb, #1d4ed8);
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+    -fx-background-radius: 10;
+}
+
+.courier-smart-table {
+    -fx-background-color: white;
+    -fx-border-color: #dbeafe;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+}
+
+.courier-cards-flow {
+    -fx-padding: 2 0 2 0;
+}
+
+.courier-stat-card {
+    -fx-background-color: linear-gradient(to bottom right, #ffffff, #f7faff);
+    -fx-background-radius: 14;
+    -fx-border-color: #dbe7ff;
+    -fx-border-radius: 14;
+    -fx-padding: 14 14 12 14;
+    -fx-effect: dropshadow(gaussian, rgba(30,58,138,0.10), 12, 0.2, 0, 4);
+}
+
+.courier-stat-label {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.courier-stat-value {
+    -fx-text-fill: #0f172a;
+    -fx-font-size: 24px;
+    -fx-font-weight: 900;
+}
+
+.courier-panel-card {
+    -fx-background-color: rgba(255,255,255,0.97);
+    -fx-background-radius: 14;
+    -fx-border-color: #dbe7ff;
+    -fx-border-radius: 14;
+    -fx-padding: 12;
+}
+
+.courier-filter-label {
+    -fx-text-fill: #334155;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+}
+
+.courier-refresh-btn {
+    -fx-background-color: linear-gradient(to right, #2563eb, #1d4ed8);
+    -fx-text-fill: white;
+    -fx-font-weight: 800;
+    -fx-background-radius: 10;
+    -fx-padding: 8 14;
+}
+
+.courier-smart-table {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #dbe7ff;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+}
+
+.courier-smart-table .column-header-background {
+    -fx-background-color: #f0f7ff;
+    -fx-background-radius: 10 10 0 0;
+}
+
+.courier-smart-table .column-header {
+    -fx-font-weight: 800;
+    -fx-text-fill: #0f172a;
+}
+
+.courier-health-badge {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #334155;
+    -fx-background-radius: 999px;
+    -fx-padding: 6 12;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+}
