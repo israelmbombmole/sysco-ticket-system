@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.app.controller.MissionController"
+      spacing="12"
+      maxWidth="Infinity"
+      style="-fx-padding:16; -fx-background-color:#f5f7fb;">
+
+    <HBox spacing="12" alignment="CENTER_LEFT">
+        <Label text="%missionsPageTitle" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Button text="%refresh" onAction="#handleRefresh"/>
+        <Button fx:id="btnMissionNew" text="%missionNew" onAction="#handleNew" style="-fx-font-weight:bold;"/>
+    </HBox>
+
+    <VBox spacing="8" style="-fx-background-color:white; -fx-padding:12; -fx-background-radius:8;" maxWidth="Infinity">
+        <Label text="%filters" style="-fx-font-weight:bold;"/>
+        <HBox spacing="12" alignment="CENTER_LEFT">
+            <Label text="%status"/>
+            <ComboBox fx:id="cmbFilterStatus" prefWidth="200"/>
+            <Label text="%search"/>
+            <TextField fx:id="txtSearch" prefWidth="200" promptText="%missionSearchPrompt"/>
+            <Label text="%reportPeriodFrom"/>
+            <DatePicker fx:id="dpFilterFrom" prefWidth="130"/>
+            <Label text="%reportPeriodTo"/>
+            <DatePicker fx:id="dpFilterTo" prefWidth="130"/>
+            <Button text="%apply" onAction="#handleApplyFilters"/>
+        </HBox>
+    </VBox>
+
+    <SplitPane dividerPositions="0.42" VBox.vgrow="ALWAYS" maxWidth="Infinity">
+        <VBox spacing="8" style="-fx-padding:8;" maxWidth="Infinity">
+            <Label text="%missionList" style="-fx-font-weight:bold;"/>
+            <TableView fx:id="tableMissions" VBox.vgrow="ALWAYS" maxWidth="Infinity" minWidth="0">
+                <columns>
+                    <TableColumn fx:id="colCode" text="%missionCode" prefWidth="100"/>
+                    <TableColumn fx:id="colTitle" text="%title" prefWidth="180"/>
+                    <TableColumn fx:id="colSite" text="%missionSite" prefWidth="120"/>
+                    <TableColumn fx:id="colStart" text="%missionStart" prefWidth="95"/>
+                    <TableColumn fx:id="colEnd" text="%missionEnd" prefWidth="95"/>
+                    <TableColumn fx:id="colStatus" text="%status" prefWidth="110"/>
+                    <TableColumn fx:id="colLead" text="%missionLead" prefWidth="100"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <TabPane fx:id="tabMissionViews" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" maxWidth="Infinity">
+            <Tab text="%missionTabMission">
+                <content>
+                    <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
+                        <VBox spacing="14" style="-fx-padding:12;">
+                            <Label text="%missionDetails" style="-fx-font-size:15px; -fx-font-weight:bold;"/>
+                            <GridPane hgap="10" vgap="8">
+                                <columnConstraints>
+                                    <ColumnConstraints minWidth="100" prefWidth="120" hgrow="NEVER"/>
+                                    <ColumnConstraints hgrow="ALWAYS" minWidth="200"/>
+                                </columnConstraints>
+                                <Label text="%missionCode" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtCode" editable="false" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                                <Label text="%title" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtTitle" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                                <Label text="%missionSite" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtSite" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                                <Label text="%missionStart" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                <DatePicker fx:id="dpStart" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                                <Label text="%missionEnd" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                                <DatePicker fx:id="dpEnd" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                                <Label text="%status" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                                <ComboBox fx:id="cmbStatus" prefWidth="200" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                                <Label text="%missionLead" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                                <ComboBox fx:id="cmbLead" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+                            </GridPane>
+
+                            <Label text="%missionDescription" style="-fx-font-weight:bold;"/>
+                            <TextArea fx:id="txtDescription" prefRowCount="5" editable="true"/>
+
+                            <Label text="%missionObjectives" style="-fx-font-weight:bold;"/>
+                            <TextArea fx:id="txtObjectives" prefRowCount="4" editable="true"/>
+
+                            <Label text="%missionOrderSummarySection" style="-fx-font-weight:bold;"/>
+                            <Label fx:id="lblOrderSummary" wrapText="true" style="-fx-text-fill:#555;" text="—"/>
+
+                            <Label text="%missionParticipants" style="-fx-font-weight:bold;"/>
+                            <Label text="%missionParticipantsHint" wrapText="true" style="-fx-text-fill:#666;"/>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="%direction"/>
+                                <ComboBox fx:id="cmbParticipantDirection" prefWidth="200"/>
+                                <Label text="%sousDirection"/>
+                                <ComboBox fx:id="cmbParticipantSousDirection" prefWidth="200"/>
+                                <Label text="%search"/>
+                                <TextField fx:id="txtParticipantSearch" prefWidth="200" promptText="%missionParticipantSearchPrompt"/>
+                            </HBox>
+                            <ListView fx:id="listParticipants" prefHeight="120"/>
+
+                            <Separator/>
+                            <Label text="%mission.detailAttachments" style="-fx-font-weight:bold;"/>
+                            <HBox spacing="8">
+                                <ListView fx:id="listDetailAttachments" prefHeight="120" HBox.hgrow="ALWAYS"/>
+                                <VBox spacing="6">
+                                    <Button fx:id="btnAddDetailAttachment" text="%add" onAction="#handleAddDetailAttachment"/>
+                                    <Button text="%open" onAction="#handleOpenDetailAttachment"/>
+                                    <Button fx:id="btnRemoveDetailAttachment" text="%remove" onAction="#handleRemoveDetailAttachment"/>
+                                </VBox>
+                            </HBox>
+
+                            <HBox spacing="8">
+                                <Button fx:id="btnMissionSave" text="%save" onAction="#handleSave" style="-fx-font-weight:bold;"/>
+                                <Button fx:id="btnMissionDelete" text="%delete" onAction="#handleDelete" styleClass="danger-btn"/>
+                            </HBox>
+                        </VBox>
+                    </ScrollPane>
+                </content>
+            </Tab>
+            <Tab text="%missionTabReport">
+                <content>
+                    <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
+                        <VBox spacing="14" style="-fx-padding:12;">
+                            <Label text="%missionReporting" style="-fx-font-size:15px; -fx-font-weight:bold;"/>
+                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                <Label text="%missionReportSubmitted"/>
+                                <Label fx:id="lblReportSubmitted" text="—" style="-fx-text-fill:#555;"/>
+                            </HBox>
+                            <Label text="%missionReportBody" style="-fx-font-weight:bold;"/>
+                            <TextArea fx:id="txtReport" prefRowCount="10" editable="true"/>
+
+                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                <Button fx:id="btnMarkReportSubmitted" text="%missionMarkReportSubmitted" onAction="#handleMarkReportSubmitted"/>
+                                <Button fx:id="btnReportSave" text="%save" onAction="#handleSave" style="-fx-font-weight:bold;"/>
+                            </HBox>
+
+                            <Separator/>
+                            <Label text="%attachments" style="-fx-font-weight:bold;"/>
+                            <HBox spacing="8">
+                                <ListView fx:id="listAttachments" prefHeight="120" HBox.hgrow="ALWAYS"/>
+                                <VBox spacing="6">
+                                    <Button fx:id="btnAddAttachment" text="%add" onAction="#handleAddAttachment"/>
+                                    <Button text="%open" onAction="#handleOpenAttachment"/>
+                                    <Button fx:id="btnRemoveAttachment" text="%remove" onAction="#handleRemoveAttachment"/>
+                                </VBox>
+                            </HBox>
+                        </VBox>
+                    </ScrollPane>
+                </content>
+            </Tab>
+        </TabPane>
+    </SplitPane>
+</VBox>

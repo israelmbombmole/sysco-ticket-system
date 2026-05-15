@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Agenda</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page agenda-page">
+    <div class="card page-panel agenda-shell">
+        <header class="agenda-hero">
+            <div class="agenda-head-row">
+                <div class="agenda-head-text">
+                    <p class="agenda-hero-kicker" th:text="#{nav.agenda}">Agenda</p>
+                    <h1 class="title-large agenda-hero-title" th:text="#{${pageTitleKey}}">Agenda</h1>
+                </div>
+                <div class="agenda-head-actions">
+                    <a class="secondary-btn btn-sm agenda-hero-refresh" th:href="@{/app/agenda}" th:text="#{agenda.btn.refresh}">Refresh</a>
+                </div>
+            </div>
+            <p class="agenda-intro muted" th:text="#{agenda.hero.subtitle}">...</p>
+        </header>
+
+        <div class="agenda-stack">
+        <div class="page-alerts" th:if="${successKey != null or errorKey != null}">
+            <p class="success-banner" th:if="${successKey != null}" th:text="#{${successKey}}">OK</p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Err</p>
+        </div>
+
+        <div class="agenda-public-holiday-banner" th:if="${agendaPage.publicHolidayAtStateDate}" role="status">
+            <strong th:text="#{agenda.banner.publicHoliday}">Public holiday</strong>
+            <span th:if="${agendaPage.publicHolidayLabel != null}" th:text="| — ${agendaPage.publicHolidayLabel}|"></span>
+        </div>
+
+        <section class="agenda-block agenda-block--insights" aria-labelledby="agenda-insights-h">
+            <div class="agenda-block-head">
+                <h3 id="agenda-insights-h" class="courier-subheading agenda-block-title" th:text="#{agenda.section.insights}">Insights</h3>
+            </div>
+            <ul class="agenda-insight-list">
+                <li th:each="line : ${agendaPage.insightLines}" th:text="${line}">…</li>
+            </ul>
+        </section>
+
+        <section class="agenda-block agenda-block--filters" aria-labelledby="agenda-filters-h">
+            <div class="agenda-block-head">
+                <h3 id="agenda-filters-h" class="courier-subheading agenda-block-title" th:text="#{agenda.section.filters}">Filters</h3>
+                <p class="agenda-block-hint muted" th:text="#{agenda.filters.hint}">Adjust date, search, or calendar view.</p>
+            </div>
+        <form class="agenda-filters-panel" method="get" th:action="@{/app/agenda}" id="agenda-filters-form">
+            <div class="agenda-filter-row agenda-filter-row--primary">
+                <div class="agenda-filter-field">
+                    <label class="form-label" for="agStateDate" th:text="#{agenda.stateAt}">State at</label>
+                    <div class="agenda-filter-inline-controls">
+                        <input id="agStateDate" class="form-input agenda-filter-date" type="date" name="stateDate"
+                               th:value="${agendaPage.stateDate}"/>
+                        <span class="agenda-summary" th:text="${agendaPage.summaryAtDate}">0 / 0</span>
+                    </div>
+                </div>
+                <div class="agenda-filter-field agenda-filter-field--stretch">
+                    <label class="form-label" for="agSearch" th:text="#{leaveMgmt.search}">Search</label>
+                    <input id="agSearch" class="form-input" type="text" name="q" th:value="${agendaPage.q}"
+                           th:placeholder="#{leaveMgmt.searchPlaceholder}"/>
+                </div>
+            </div>
+            <div class="agenda-filter-row agenda-filter-row--secondary">
+                <div class="agenda-filter-field">
+                    <label class="form-label" for="agCalAgent" th:text="#{agenda.cal.pickAgent}">Agent</label>
+                    <select id="agCalAgent" class="form-input agenda-cal-agent-select" name="calendarUserId">
+                        <option th:if="${#lists.isEmpty(agendaPage.calendarAgents)}" value="" disabled selected
+                                th:text="#{agenda.cal.noAgent}">No agent</option>
+                        <option th:each="p : ${agendaPage.calendarAgents}"
+                                th:value="${p.userId}"
+                                th:selected="${agendaPage.calendarUserId != null and agendaPage.calendarUserId == p.userId}"
+                                th:text="${p.username + ' — ' + p.role}">user</option>
+                    </select>
+                </div>
+                <div class="agenda-filter-field agenda-filter-field--month">
+                    <label class="form-label" for="agCalMonth" th:text="#{agenda.cal.month}">Month</label>
+                    <input id="agCalMonth" class="form-input agenda-cal-month-input" type="month" name="calendarMonth"
+                           th:value="${agendaPage.calendarMonth}"/>
+                </div>
+                <div class="agenda-filter-actions">
+                    <div class="agenda-filter-actions-nav">
+                        <span class="form-label agenda-filter-nav-eyebrow" th:text="#{agenda.cal.monthStep}">Month</span>
+                        <div class="agenda-cal-nav-inline">
+                            <a class="secondary-btn agenda-cal-nav-btn" role="button"
+                               th:href="@{/app/agenda(stateDate=${agendaPage.stateDate},q=${agendaPage.q},calendarUserId=${agendaPage.calendarUserId},calendarMonth=${agendaPage.calendarPrevMonth})}"
+                               th:text="#{agenda.cal.prevMonth}">‹</a>
+                            <a class="secondary-btn agenda-cal-nav-btn" role="button"
+                               th:href="@{/app/agenda(stateDate=${agendaPage.stateDate},q=${agendaPage.q},calendarUserId=${agendaPage.calendarUserId},calendarMonth=${agendaPage.calendarNextMonth})}"
+                               th:text="#{agenda.cal.nextMonth}">›</a>
+                        </div>
+                    </div>
+                    <button type="submit" class="primary-btn agenda-filter-apply"
+                            th:text="#{agenda.btn.refresh}">Refresh</button>
+                </div>
+            </div>
+        </form>
+        </section>
+
+        <section class="agenda-block agenda-block--calendar" aria-labelledby="agenda-cal-h">
+            <div class="agenda-cal-shell">
+            <div class="agenda-cal-head">
+                <div>
+                    <h3 id="agenda-cal-h" class="courier-subheading agenda-cal-title" th:text="#{agenda.section.agentCalendar}">Agent calendar</h3>
+                    <p class="agenda-cal-month-label" th:text="${agendaPage.calendarMonthLabel}">May 2026</p>
+                </div>
+            </div>
+            <div class="agenda-cal-legend">
+                <span><i class="agenda-cal-legend-dot chip-holiday"></i><span th:text="#{agenda.cal.legend.holiday}">Holiday</span></span>
+                <span><i class="agenda-cal-legend-dot chip-mission-field"></i><span th:text="#{agenda.cal.legend.fieldMission}">Field mission</span></span>
+                <span><i class="agenda-cal-legend-dot chip-abs-conge"></i><span th:text="#{agenda.cal.legend.leave}">Leave</span></span>
+                <span><i class="agenda-cal-legend-dot chip-abs-mission"></i><span th:text="#{agenda.cal.legend.agendaMission}">Agenda mission</span></span>
+                <span><i class="agenda-cal-legend-dot chip-abs-sick"></i><span th:text="#{agenda.cal.legend.sick}">Sick</span></span>
+                <span><i class="agenda-cal-legend-dot chip-abs-training"></i><span th:text="#{agenda.cal.legend.training}">Training</span></span>
+                <span><i class="agenda-cal-legend-dot chip-abs-other"></i><span th:text="#{agenda.cal.legend.other}">Other</span></span>
+                <span><i class="agenda-cal-legend-dot chip-shift-policy"></i><span th:text="#{agenda.cal.legend.shiftPolicy}">Ma garde windows</span></span>
+                <span><i class="agenda-cal-legend-dot chip-attendance-punch"></i><span th:text="#{agenda.cal.legend.attendance}">Punch-in</span></span>
+            </div>
+            <table class="agenda-cal-grid" th:if="${agendaPage.calendarUserId != null}">
+                <thead>
+                <tr>
+                    <th th:text="#{agenda.cal.dow.mon}">Mon</th>
+                    <th th:text="#{agenda.cal.dow.tue}">Tue</th>
+                    <th th:text="#{agenda.cal.dow.wed}">Wed</th>
+                    <th th:text="#{agenda.cal.dow.thu}">Thu</th>
+                    <th th:text="#{agenda.cal.dow.fri}">Fri</th>
+                    <th th:text="#{agenda.cal.dow.sat}">Sat</th>
+                    <th th:text="#{agenda.cal.dow.sun}">Sun</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="week : ${agendaPage.calendarWeeks}">
+                    <td th:each="cell : ${week}"
+                        th:classappend="${cell.currentMonth ? 'agenda-cal-day-in' : 'agenda-cal-day-out'}">
+                        <div class="agenda-cal-day-num" th:text="${cell.dayOfMonth}">1</div>
+                        <div class="agenda-cal-chips">
+                            <div th:each="ch : ${cell.chips}" class="agenda-cal-chip" th:classappend="${ch.cssClass}"
+                                 th:title="${ch.tooltip}">
+                                <span class="agenda-cal-chip-l1" th:text="${ch.line1}">Label</span>
+                                <span class="agenda-cal-chip-l2" th:if="${not #strings.isEmpty(ch.line2)}"
+                                      th:text="${ch.line2}">Detail</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="muted agenda-cal-empty" th:if="${agendaPage.calendarUserId == null}" th:text="#{agenda.cal.noAgent}">Pick an agent.</p>
+            </div>
+        </section>
+
+        <section class="agenda-block agenda-block--roster">
+            <details class="agenda-roster-details">
+                <summary class="agenda-roster-summary" id="agenda-roster-h">
+                    <span class="agenda-roster-summary-main">
+                        <span class="agenda-roster-chevron" aria-hidden="true"></span>
+                        <span class="agenda-roster-summary-title" th:text="#{agenda.section.roster}">Availability</span>
+                    </span>
+                    <span class="agenda-roster-summary-counts muted"
+                          th:text="#{agenda.roster.summaryCounts(${#lists.size(agendaPage.availableUsers)}, ${#lists.size(agendaPage.onLeaveNow)})}">0 / 0</span>
+                </summary>
+                <p class="agenda-roster-scope-hint muted" th:if="${agendaPage.rosterScopedToDirection}"
+                   th:text="#{agenda.roster.scopeDirection}">Direction scope</p>
+                <div class="agenda-roster-panel">
+                    <div class="agenda-split">
+                        <div class="agenda-split-card">
+                            <h4 class="agenda-table-heading" th:text="#{leaveMgmt.availableTitle}">Available</h4>
+                            <div class="agenda-roster-table-wrap">
+                                <table class="sysco-table">
+                                    <thead>
+                                    <tr>
+                                        <th th:text="#{leaveMgmt.col.username}">Username</th>
+                                        <th th:text="#{leaveMgmt.col.role}">Role</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="u : ${agendaPage.availableUsers}">
+                                        <td>
+                                            <a class="agenda-roster-userlink"
+                                               th:href="@{/app/agenda(stateDate=${agendaPage.stateDate},q=${agendaPage.q},calendarUserId=${u.userId()},calendarMonth=${agendaPage.calendarMonth})}"
+                                               th:text="${u.username}">admin</a>
+                                        </td>
+                                        <td th:text="${u.role}">ADMIN</td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(agendaPage.availableUsers)}">
+                                        <td colspan="2" class="muted" th:text="#{leaveMgmt.emptyTable}">—</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="agenda-split-card">
+                            <h4 class="agenda-table-heading" th:text="#{leaveMgmt.onLeaveTitle}">On leave</h4>
+                            <div class="agenda-roster-table-wrap">
+                                <table class="sysco-table">
+                                    <thead>
+                                    <tr>
+                                        <th th:text="#{leaveMgmt.col.username}">Username</th>
+                                        <th th:text="#{leaveMgmt.col.type}">Type</th>
+                                        <th th:text="#{leaveMgmt.col.from}">From</th>
+                                        <th th:text="#{leaveMgmt.col.to}">To</th>
+                                        <th th:text="#{agenda.col.days}">Days</th>
+                                        <th th:text="#{leaveMgmt.col.remarks}">Remarks</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="l : ${agendaPage.onLeaveNow}">
+                                        <td>
+                                            <a class="agenda-roster-userlink"
+                                               th:href="@{/app/agenda(stateDate=${agendaPage.stateDate},q=${agendaPage.q},calendarUserId=${l.userId()},calendarMonth=${agendaPage.calendarMonth})}"
+                                               th:text="${l.username}">user</a>
+                                        </td>
+                                        <td th:text="${l.type}">CONGÉ</td>
+                                        <td th:text="${l.startDate}">2026-05-04</td>
+                                        <td th:text="${l.endDate}">2026-05-11</td>
+                                        <td th:text="${l.durationDays}">8</td>
+                                        <td th:text="${l.remarks}">…</td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(agendaPage.onLeaveNow)}">
+                                        <td colspan="6" class="muted" th:text="#{leaveMgmt.emptyTable}">—</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </section>
+
+        <section class="agenda-block agenda-block--timeline" aria-labelledby="agenda-timeline-h">
+            <div class="agenda-block-head">
+                <h3 id="agenda-timeline-h" class="courier-subheading agenda-block-title" th:text="#{agenda.section.timeline}">Timeline</h3>
+            </div>
+            <div class="agenda-subpanel agenda-subpanel--timeline">
+                <div class="agenda-table-scroll">
+                    <table class="sysco-table agenda-timeline-table">
+                        <thead>
+                        <tr>
+                            <th th:text="#{leaveMgmt.col.from}">From</th>
+                            <th th:text="#{leaveMgmt.col.to}">To</th>
+                            <th th:text="#{leaveMgmt.col.type}">Kind</th>
+                            <th th:text="#{agenda.col.detail}">Detail</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="tl : ${agendaPage.upcomingTimeline}">
+                            <td class="agenda-cell-date" th:text="${tl.startDate}">2026-05-01</td>
+                            <td class="agenda-cell-date" th:text="${tl.endDate}">2026-05-01</td>
+                            <td>
+                                <span class="agenda-kind holiday" th:if="${tl.kind == 'HOLIDAY'}" th:text="${tl.subtitle}">Holiday</span>
+                                <span class="agenda-kind absence" th:unless="${tl.kind == 'HOLIDAY'}" th:text="${tl.subtitle}">Absence</span>
+                            </td>
+                            <td class="agenda-cell-detail" th:text="${tl.title}">Label</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(agendaPage.upcomingTimeline)}">
+                            <td colspan="4" class="muted agenda-cell-empty" th:text="#{leaveMgmt.emptyTable}">—</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="agenda-block agenda-block--register" aria-labelledby="agenda-register-h">
+            <div class="agenda-block-head">
+                <h3 id="agenda-register-h" class="courier-subheading agenda-block-title" th:text="#{agenda.section.registerAbsence}">Register</h3>
+            </div>
+            <form method="post" th:action="@{/app/agenda/absence/add}" class="agenda-register-form agenda-form-card">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="stateDate" th:value="${agendaPage.stateDate}"/>
+                <input type="hidden" name="q" th:value="${agendaPage.q}" th:if="${not #strings.isEmpty(agendaPage.q)}"/>
+                <input type="hidden" name="calendarUserId" th:value="${agendaPage.calendarUserId}" th:if="${agendaPage.calendarUserId != null}"/>
+                <input type="hidden" name="calendarMonth" th:value="${agendaPage.calendarMonth}"/>
+                <div class="agenda-register-grid">
+                    <div class="agenda-form-field">
+                        <label class="form-label agenda-form-label-cap" for="agAbsUsername" th:text="#{leaveMgmt.col.username}">Username</label>
+                        <select id="agAbsUsername" class="form-input" name="username">
+                            <option th:each="u : ${agendaPage.usernames}" th:value="${u}" th:text="${u}">admin</option>
+                        </select>
+                    </div>
+                    <div class="agenda-form-field">
+                        <label class="form-label agenda-form-label-cap" for="agAbsType" th:text="#{leaveMgmt.col.type}">Type</label>
+                        <select id="agAbsType" class="form-input" name="type">
+                            <option th:each="tp : ${agendaPage.absenceTypeOptions}" th:value="${tp}" th:text="${tp}">CONGÉ</option>
+                        </select>
+                    </div>
+                    <div class="agenda-form-field">
+                        <label class="form-label agenda-form-label-cap" for="agAbsFrom" th:text="#{leaveMgmt.col.from}">From</label>
+                        <input id="agAbsFrom" class="form-input" type="date" name="from" required/>
+                    </div>
+                    <div class="agenda-form-field">
+                        <label class="form-label agenda-form-label-cap" for="agAbsTo" th:text="#{leaveMgmt.col.to}">To</label>
+                        <input id="agAbsTo" class="form-input" type="date" name="to" required/>
+                    </div>
+                    <div class="agenda-form-field agenda-form-field--full">
+                        <label class="form-label agenda-form-label-cap" for="agAbsRemarks" th:text="#{agenda.remarks.optional}">Remarks</label>
+                        <input id="agAbsRemarks" class="form-input" name="remarks" th:placeholder="#{leaveMgmt.remarksPlaceholder}"/>
+                    </div>
+                </div>
+                <div class="agenda-register-footer">
+                    <button type="submit" class="primary-btn agenda-register-submit" th:text="#{leaveMgmt.addBtn}">Add</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="agenda-block agenda-block--holidays" aria-labelledby="agenda-holidays-h">
+            <div class="agenda-block-head">
+                <h3 id="agenda-holidays-h" class="courier-subheading agenda-block-title" th:text="#{agenda.section.holidays}">Holidays</h3>
+            </div>
+            <div class="agenda-subpanel agenda-subpanel--holidays">
+                <div class="agenda-table-scroll">
+                    <table class="sysco-table agenda-holidays-table">
+                        <thead>
+                        <tr>
+                            <th th:text="#{agenda.holiday.start}">Start</th>
+                            <th th:text="#{agenda.holiday.end}">End</th>
+                            <th th:text="#{agenda.holiday.label}">Label</th>
+                            <th class="agenda-col-actions" th:text="#{agenda.col.actions}">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="h : ${agendaPage.publicHolidays}">
+                            <td class="agenda-cell-date" th:text="${h.startDate}">2026-01-01</td>
+                            <td class="agenda-cell-date" th:text="${h.endDate}">2026-01-01</td>
+                            <td th:text="${h.label}">New Year</td>
+                            <td class="agenda-col-actions">
+                                <form method="post" th:action="@{/app/agenda/holiday/{id}/delete(id=${h.id})}" class="inline-form">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <input type="hidden" name="stateDate" th:value="${agendaPage.stateDate}"/>
+                                    <input type="hidden" name="q" th:value="${agendaPage.q}" th:if="${not #strings.isEmpty(agendaPage.q)}"/>
+                                    <input type="hidden" name="calendarUserId" th:value="${agendaPage.calendarUserId}" th:if="${agendaPage.calendarUserId != null}"/>
+                                    <input type="hidden" name="calendarMonth" th:value="${agendaPage.calendarMonth}"/>
+                                    <button type="submit" class="danger-btn btn-sm agenda-btn-compact" th:text="#{agenda.holiday.delete}">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(agendaPage.publicHolidays)}">
+                            <td colspan="4" class="muted agenda-cell-empty" th:text="#{leaveMgmt.emptyTable}">—</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="agenda-holiday-add-divider"></div>
+                <form method="post" th:action="@{/app/agenda/holiday/add}" class="agenda-holiday-add agenda-holiday-add-form">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="stateDate" th:value="${agendaPage.stateDate}"/>
+                    <input type="hidden" name="q" th:value="${agendaPage.q}" th:if="${not #strings.isEmpty(agendaPage.q)}"/>
+                    <input type="hidden" name="calendarUserId" th:value="${agendaPage.calendarUserId}" th:if="${agendaPage.calendarUserId != null}"/>
+                    <input type="hidden" name="calendarMonth" th:value="${agendaPage.calendarMonth}"/>
+                    <p class="agenda-holiday-add-title" th:text="#{agenda.holiday.addSectionTitle}">Add period</p>
+                    <div class="agenda-holiday-add-grid">
+                        <div class="agenda-form-field">
+                            <label class="form-label agenda-form-label-cap" for="agHolStart" th:text="#{agenda.holiday.start}">Start</label>
+                            <input id="agHolStart" class="form-input" type="date" name="start" required/>
+                        </div>
+                        <div class="agenda-form-field">
+                            <label class="form-label agenda-form-label-cap" for="agHolEnd" th:text="#{agenda.holiday.end}">End</label>
+                            <input id="agHolEnd" class="form-input" type="date" name="end" required/>
+                        </div>
+                        <div class="agenda-form-field agenda-form-field--grow">
+                            <label class="form-label agenda-form-label-cap" for="agHolLabel" th:text="#{agenda.holiday.label}">Label</label>
+                            <input id="agHolLabel" class="form-input" name="label" required th:placeholder="#{agenda.holiday.labelExample}"/>
+                        </div>
+                        <div class="agenda-form-field agenda-form-field--submit">
+                            <span class="agenda-form-label-spacer" aria-hidden="true">&nbsp;</span>
+                            <button type="submit" class="secondary-btn agenda-holiday-submit" th:text="#{agenda.holiday.add}">Add</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="agenda-block agenda-block--records" aria-labelledby="agenda-records-h">
+            <div class="agenda-block-head">
+                <h3 id="agenda-records-h" class="courier-subheading agenda-block-title" th:text="#{agenda.section.allRecords}">All records</h3>
+            </div>
+        <table class="sysco-table agenda-records-table">
+            <thead>
+            <tr>
+                <th th:text="#{leaveMgmt.col.username}">Username</th>
+                <th th:text="#{leaveMgmt.col.type}">Type</th>
+                <th th:text="#{leaveMgmt.col.from}">From</th>
+                <th th:text="#{leaveMgmt.col.to}">To</th>
+                <th th:text="#{agenda.col.days}">Days</th>
+                <th th:text="#{leaveMgmt.col.remarks}">Remarks</th>
+                <th th:text="#{agenda.col.actions}">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${agendaPage.allAbsences}">
+                <td>
+                    <a class="agenda-roster-userlink"
+                       th:href="@{/app/agenda(stateDate=${agendaPage.stateDate},q=${agendaPage.q},calendarUserId=${m.userId()},calendarMonth=${agendaPage.calendarMonth})}"
+                       th:text="${m.username}">user</a>
+                </td>
+                <td th:text="${m.type}">MISSION</td>
+                <td th:text="${m.startDate}">2026-04-27</td>
+                <td th:text="${m.endDate}">2026-05-04</td>
+                <td th:text="${m.durationDays}">9</td>
+                <td th:text="${m.remarks}">…</td>
+                <td>
+                    <form method="post" th:action="@{/app/agenda/absence/{id}/delete(id=${m.id})}" class="inline-form">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <input type="hidden" name="stateDate" th:value="${agendaPage.stateDate}"/>
+                        <input type="hidden" name="q" th:value="${agendaPage.q}" th:if="${not #strings.isEmpty(agendaPage.q)}"/>
+                        <input type="hidden" name="calendarUserId" th:value="${agendaPage.calendarUserId}" th:if="${agendaPage.calendarUserId != null}"/>
+                        <input type="hidden" name="calendarMonth" th:value="${agendaPage.calendarMonth}"/>
+                        <button type="submit" class="danger-btn btn-sm" th:text="#{delete}">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(agendaPage.allAbsences)}"><td colspan="7" class="muted" th:text="#{leaveMgmt.emptyTable}">—</td></tr>
+            </tbody>
+        </table>
+        </section>
+        </div><!-- /.agenda-stack -->
+        <script>
+            (function () {
+                var form = document.getElementById('agenda-filters-form');
+                if (!form) return;
+                var agent = document.getElementById('agCalAgent');
+                var month = document.getElementById('agCalMonth');
+                function submitFilters() {
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                }
+                if (agent) {
+                    agent.addEventListener('change', submitFilters);
+                }
+                if (month) {
+                    month.addEventListener('change', submitFilters);
+                }
+            })();
+        </script>
+    </div>
+</section>
+</body>
+</html>

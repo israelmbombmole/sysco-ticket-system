@@ -5,6 +5,7 @@ import static com.app.dao.TicketDAO.logEvent;
 import com.app.model.AgentStats;
 import com.app.model.TicketAssignment;
 import com.app.util.DB;
+import com.app.util.SqlDialect;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -165,15 +166,14 @@ public class TicketAssignmentDAO {
     // =========================
     public static void close(int ticketId, int userId) {
 
-    String sql = """
-        UPDATE ticket_assignments
-        SET status = 'CLOSED',
-            closed_at = CURRENT_TIMESTAMP,
-            duration_minutes =
-                CAST((julianday(CURRENT_TIMESTAMP) - julianday(started_at)) * 24 * 60 AS INTEGER)
-        WHERE ticket_id = ?
-          AND agent_id = ?
-    """;
+    String sql =
+        "UPDATE ticket_assignments\n" +
+        "SET status = 'CLOSED',\n" +
+        "    closed_at = CURRENT_TIMESTAMP,\n" +
+        "    duration_minutes =\n" +
+        "        CAST(" + SqlDialect.minutesBetweenNowAnd("started_at") + " AS INTEGER)\n" +
+        "WHERE ticket_id = ?\n" +
+        "  AND agent_id = ?";
 
     try (Connection c = DB.getConnection();
          PreparedStatement ps = c.prepareStatement(sql)) {

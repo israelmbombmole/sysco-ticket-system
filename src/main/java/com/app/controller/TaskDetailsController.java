@@ -1,17 +1,26 @@
 package com.app.controller;
 
+import com.app.auth.Session;
 import com.app.dao.AttachmentDAO;
 import com.app.dao.EscalationDAO;
 import com.app.dao.NotificationDAO;
 import com.app.dao.TicketTaskDAO;
 import com.app.model.Attachment;
 import com.app.model.Escalation;
+import com.app.model.TicketEvent;
 import com.app.model.TicketTask;
+import com.app.util.I18n;
+import com.app.util.TimelineEventDescriptionLocalizer;
 
 import java.awt.Desktop;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -29,8 +38,22 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 
 public class TaskDetailsController {
+    private static final DateTimeFormatter ASSIGNED_AT_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DB_TIME =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter UI_TIME =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @FXML private Label lblTitle;
     @FXML private Label lblAssigned;
@@ -47,9 +70,11 @@ public class TaskDetailsController {
     @FXML private VBox escalationBox;
     @FXML private Label lblNoEscalation;
     @FXML private TableView<TicketTask> tableTasks;
+    @FXML private VBox taskContainer;
 
     @FXML private TableColumn<TicketTask, String> colTitle;
     @FXML private TableColumn<TicketTask, String> colAssigned;
+    @FXML private TableColumn<TicketTask, String> colAssignedAt;
     @FXML private TableColumn<TicketTask, String> colStatus;
     
     
@@ -76,6 +101,20 @@ public void initialize() {
     // STATUS
     // ============================
     cmbStatus.getItems().addAll("PENDING", "IN_PROGRESS", "COMPLETED");
+    cmbStatus.setCellFactory(cb -> new ListCell<>() {
+        @Override
+        protected void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            setText(empty || item == null ? null : I18n.status(item));
+        }
+    });
+    cmbStatus.setButtonCell(new ListCell<>() {
+        @Override
+        protected void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            setText(empty || item == null ? null : I18n.status(item));
+        }
+    });
 
     // ============================
     // ATTACHMENT CLICK (PREVIEW)
@@ -108,40 +147,55 @@ public void initialize() {
         }
     });
 
-    // ============================
-    // ⚠ ESCALATION COLUMN (SAFE)
-    // ============================
-
-    // ❗ Avoid adding duplicate column on reload
-    boolean columnExists = tableTasks.getColumns().stream()
-            .anyMatch(c -> "⚠".equals(c.getText()));
-
-    if (!columnExists) {
-
-        TableColumn<TicketTask, String> colEscalation = new TableColumn<>("⚠");
-
-        colEscalation.setCellValueFactory(data ->
-                new SimpleStringProperty(
-                        data.getValue().isEscalated() ? "⚠" : ""
-                )
-        );
-
-        colEscalation.setPrefWidth(60); // nice size
-
-        tableTasks.getColumns().add(0, colEscalation); // add as FIRST column
-    }
-
     colTitle.setCellValueFactory(c ->
     new SimpleStringProperty(c.getValue().getTitle())
 );
 
-colAssigned.setCellValueFactory(c ->
-    new SimpleStringProperty(c.getValue().getAssignedToName())
-);
+colAssigned.setCellValueFactory(c -> {
+    TicketTask t = c.getValue();
+    String assignee = t.getAssignedToName();
+    if (assignee == null || assignee.isBlank() || "-".equals(assignee)) {
+        assignee = t.getCreatedByName();
+    }
+    return new SimpleStringProperty(assignee);
+});
+
+colAssignedAt.setCellValueFactory(c -> {
+    TicketTask t = c.getValue();
+    return new SimpleStringProperty(formatAssignedAt(t.getCreatedAt(), t.getCreatedByName()));
+});
 
 colStatus.setCellValueFactory(c ->
     new SimpleStringProperty(c.getValue().getStatus())
 );
+
+colStatus.setCellFactory(column -> new TableCell<>() {
+    @Override
+    protected void updateItem(String status, boolean empty) {
+        super.updateItem(status, empty);
+        if (empty || status == null) {
+            setText(null);
+            setStyle("");
+            return;
+        }
+
+        setText(I18n.status(status));
+        switch (status) {
+            case "PENDING" ->
+                setStyle("-fx-font-weight:bold; -fx-alignment:CENTER; -fx-text-fill:#b45309;");
+            case "IN_PROGRESS" ->
+                setStyle("-fx-font-weight:bold; -fx-alignment:CENTER; -fx-text-fill:#1d4ed8;");
+            case "COMPLETED" ->
+                setStyle("-fx-font-weight:bold; -fx-alignment:CENTER; -fx-text-fill:#15803d;");
+            default ->
+                setStyle("-fx-font-weight:bold; -fx-alignment:CENTER;");
+        }
+    }
+});
+
+tableTasks.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+tableTasks.setFixedCellSize(34);
+tableTasks.setPlaceholder(new Label(I18n.t("noTasksAvailable", "No tasks available")));
     
     
     
@@ -186,7 +240,7 @@ if (assigned == null || assigned.isEmpty()) {
     assigned = task.getAssignedToName(); // fallback
 }
 
-lblAssigned.setText("Assigned to: " + (assigned != null ? assigned : "N/A"));
+lblAssigned.setText(I18n.t("assignedTo", "Assigned To") + ": " + (assigned != null ? assigned : "N/A"));
 
     txtDescription.setText(
             task.getDescription() != null ? task.getDescription() : ""
@@ -206,7 +260,14 @@ lblAssigned.setText("Assigned to: " + (assigned != null ? assigned : "N/A"));
     // 🔥 LOAD EVERYTHING
     loadTimeline();
     loadAttachments();
-    loadTasks(task.getTicketId());   // ← IMPORTANT
+    int ticketIdForTasks = task.getTicketId();
+    if (ticketIdForTasks <= 0) {
+        TicketTask fresh = TicketTaskDAO.getTaskById(task.getId());
+        if (fresh != null) {
+            ticketIdForTasks = fresh.getTicketId();
+        }
+    }
+    loadTasks(ticketIdForTasks);   // ← IMPORTANT
     loadEscalations(task.getId());   // ← IMPORTANT
 }
 
@@ -222,7 +283,7 @@ lblAssigned.setText("Assigned to: " + (assigned != null ? assigned : "N/A"));
         File file = new File(path);
 
         if (!file.exists()) {
-            previewContainer.getChildren().add(new Label("File not found"));
+            previewContainer.getChildren().add(new Label(I18n.t("fileNotFound", "File not found")));
             return;
         }
 
@@ -263,9 +324,9 @@ lblAssigned.setText("Assigned to: " + (assigned != null ? assigned : "N/A"));
                 VBox box = new VBox(10);
                 box.setStyle("-fx-alignment:center;");
 
-                Label label = new Label("Preview not available");
+                Label label = new Label(I18n.t("previewNotAvailable", "Preview not available"));
 
-                Button openBtn = new Button("Open File");
+                Button openBtn = new Button(I18n.t("openFile", "Open File"));
                 openBtn.setOnAction(ev -> handleOpenAttachment());
 
                 box.getChildren().addAll(label, openBtn);
@@ -285,7 +346,7 @@ lblAssigned.setText("Assigned to: " + (assigned != null ? assigned : "N/A"));
     private void handleOpenAttachment() {
 
         if (selectedAttachment == null) {
-            showWarning("No file selected");
+            showWarning(I18n.t("noFileSelected", "No file selected"));
             return;
         }
 
@@ -293,7 +354,7 @@ lblAssigned.setText("Assigned to: " + (assigned != null ? assigned : "N/A"));
             File file = new File(selectedAttachment.getFilePath());
 
             if (!file.exists()) {
-                showWarning("File not found");
+                showWarning(I18n.t("fileNotFound", "File not found"));
                 return;
             }
 
@@ -311,14 +372,14 @@ lblAssigned.setText("Assigned to: " + (assigned != null ? assigned : "N/A"));
 private void handleDownloadAttachment() {
 
     if (selectedAttachment == null) {
-        showWarning("No file selected");
+        showWarning(I18n.t("noFileSelected", "No file selected"));
         return;
     }
 
     File source = new File(selectedAttachment.getFilePath());
 
     if (!source.exists()) {
-        showWarning("File not found");
+        showWarning(I18n.t("fileNotFound", "File not found"));
         return;
     }
 
@@ -362,7 +423,7 @@ private void handleDownloadAttachment() {
                 StandardCopyOption.REPLACE_EXISTING
         );
 
-        showInfo("File downloaded successfully");
+        showInfo(I18n.t("fileDownloadedSuccess", "File downloaded successfully"));
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -403,14 +464,238 @@ private void handleDownloadAttachment() {
             Label user = new Label(ev.getUsername());
             user.setStyle("-fx-font-weight:bold;");
 
-            Label text = new Label(ev.getDescription());
-            Label time = new Label(ev.getCreatedAt());
+            Label text = new Label(TimelineEventDescriptionLocalizer.localizeTaskTimelineDescription(
+                    ev.getType(), ev.getDescription()));
+            Label time = new Label(formatToSystemTime(ev.getCreatedAt()));
             time.setStyle("-fx-font-size:10px; -fx-text-fill:gray;");
 
             card.getChildren().addAll(user, text, time);
 
             timelineContainer.getChildren().add(card);
         }
+    }
+
+    /**
+     * Task event timestamps are stored as UTC text in SQLite; convert to local system time for UI.
+     */
+    private String formatToSystemTime(String dbTimeText) {
+        if (dbTimeText == null || dbTimeText.isBlank()) {
+            return "";
+        }
+        try {
+            LocalDateTime utc = LocalDateTime.parse(dbTimeText.trim(), DB_TIME);
+            return utc.atZone(ZoneOffset.UTC)
+                    .withZoneSameInstant(ZoneId.systemDefault())
+                    .toLocalDateTime()
+                    .format(UI_TIME);
+        } catch (Exception ignored) {
+            return dbTimeText;
+        }
+    }
+
+    private String formatAssignedAt(LocalDateTime assignedAt, String assignedByName) {
+        if (assignedAt == null) {
+            return "-";
+        }
+        String by = (assignedByName == null || assignedByName.isBlank()) ? "-" : assignedByName;
+        return assignedAt.format(ASSIGNED_AT_FORMATTER) + " (" + by + ")";
+    }
+
+    @FXML
+    private void handleTrackTask() {
+        if (task == null) return;
+        List<TicketEvent> events = TicketTaskDAO.getTaskTrackingEvents(task.getId());
+        String title = I18n.t("trackTaskTitle", "Task Tracking") + " - " + task.getTitle();
+        showTrackingDialog(title, events);
+    }
+
+    private void showTrackingDialog(String title, List<TicketEvent> events) {
+        TableView<TrackingRow> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setPrefSize(820, 400);
+
+        TableColumn<TrackingRow, String> colTime = new TableColumn<>(I18n.t("track.time", "Time"));
+        colTime.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().time()));
+
+        TableColumn<TrackingRow, String> colBy = new TableColumn<>(I18n.t("track.actionBy", "Action By"));
+        colBy.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().actionBy()));
+
+        TableColumn<TrackingRow, String> colAction = new TableColumn<>(I18n.t("track.action", "Action"));
+        colAction.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().action()));
+
+        TableColumn<TrackingRow, String> colTarget = new TableColumn<>(I18n.t("track.targetUser", "Target User"));
+        colTarget.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().targetUser()));
+
+        table.getColumns().setAll(colTime, colBy, colAction, colTarget);
+
+        if (events != null) {
+            for (TicketEvent event : events) {
+                String when = event.getCreatedAt() == null ? "-" : formatToSystemTime(event.getCreatedAt());
+                String who = (event.getUsername() == null || event.getUsername().isBlank()) ? "-" : event.getUsername();
+                String rawDescription = event.getDescription() == null ? "-" : event.getDescription();
+                String what = I18n.t("track.action." + event.getType(), rawDescription);
+                String target = extractTargetUser(rawDescription);
+                table.getItems().add(new TrackingRow(when, who, what, target));
+            }
+        }
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(I18n.t("trackTask", "Track Task"));
+        alert.setHeaderText(title);
+        alert.getDialogPane().setContent(table);
+        if (events == null || events.isEmpty()) {
+            alert.setContentText(I18n.t("track.noEvents", "No tracking events found."));
+        }
+        alert.showAndWait();
+    }
+
+    private String extractTargetUser(String description) {
+        if (description == null || description.isBlank()) return "-";
+        String[] markers = {
+                "assigned to ",
+                "Assigned ticket to ",
+                "Reassigned ticket to ",
+                "Escalated ticket to ",
+                "reassigned to ",
+                " and assigned to "
+        };
+        for (String marker : markers) {
+            int idx = description.indexOf(marker);
+            if (idx >= 0) {
+                String value = description.substring(idx + marker.length()).trim();
+                return value.isBlank() ? "-" : value;
+            }
+        }
+        return "-";
+    }
+
+    private record TrackingRow(String time, String actionBy, String action, String targetUser) {}
+
+    @FXML
+    private void handleExportPDF() {
+        if (task == null) return;
+        try {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle(I18n.t("exportTaskPdf", "Export Task PDF"));
+            chooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
+            chooser.setInitialFileName("TSK-" + task.getId() + ".pdf");
+
+            File file = chooser.showSaveDialog(lblTitle.getScene().getWindow());
+            if (file == null) return;
+
+            PdfWriter writer = new PdfWriter(file.getAbsolutePath());
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
+
+            document.add(new Paragraph(I18n.t("taskDetails", "Task Details"))
+                    .setBold()
+                    .setFontSize(16)
+                    .setTextAlignment(TextAlignment.CENTER));
+            document.add(new Paragraph(" "));
+
+            Table info = new Table(UnitValue.createPercentArray(new float[]{2, 5})).useAllAvailableWidth();
+            addInfoRow(info, I18n.t("title", "Title"), lblTitle.getText());
+            addInfoRow(info, I18n.t("assignedTo", "Assigned To"), lblAssigned.getText());
+            addInfoRow(info, I18n.t("status", "Status"), cmbStatus.getValue());
+            addInfoRow(info, I18n.t("progress", "Progress"), lblProgress.getText());
+            document.add(info);
+
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(I18n.t("description", "Description")).setBold());
+            document.add(new Paragraph(safe(txtDescription.getText())));
+
+            List<Attachment> attachments = AttachmentDAO.getTaskAttachments(task.getId());
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(I18n.t("attachments", "Attachments")).setBold());
+            Table attachmentTable = new Table(UnitValue.createPercentArray(new float[]{3, 5})).useAllAvailableWidth();
+            attachmentTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("fileName", "File Name")).setBold()));
+            attachmentTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("description", "Path")).setBold()));
+            if (attachments != null && !attachments.isEmpty()) {
+                for (Attachment a : attachments) {
+                    attachmentTable.addCell(safe(a.getFileName()));
+                    attachmentTable.addCell(safe(a.getFilePath()));
+                }
+            } else {
+                attachmentTable.addCell(new Cell(1, 2).add(new Paragraph("-")));
+            }
+            document.add(attachmentTable);
+
+            List<TicketTask> siblingTasks = TicketTaskDAO.getTasksByTicket(task.getTicketId());
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(I18n.t("tasks", "Tasks")).setBold());
+            Table taskTable = new Table(UnitValue.createPercentArray(new float[]{3, 2, 3, 2})).useAllAvailableWidth();
+            taskTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("title", "Title")).setBold()));
+            taskTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("assignedTo", "Assigned To")).setBold()));
+            taskTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("assignedAt", "Assigned At")).setBold()));
+            taskTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("status", "Status")).setBold()));
+            if (siblingTasks != null && !siblingTasks.isEmpty()) {
+                for (TicketTask t : siblingTasks) {
+                    taskTable.addCell(safe(t.getTitle()));
+                    taskTable.addCell(safe(t.getAssignedToName()));
+                    taskTable.addCell(formatAssignedAt(t.getCreatedAt(), t.getCreatedByName()));
+                    taskTable.addCell(I18n.status(safe(t.getStatus())));
+                }
+            } else {
+                taskTable.addCell(new Cell(1, 4).add(new Paragraph(I18n.t("noTasksAvailable", "No tasks available"))));
+            }
+            document.add(taskTable);
+
+            List<Escalation> escalations = EscalationDAO.getByTask(task.getId());
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(I18n.t("escalations", "Escalations")).setBold());
+            Table escTable = new Table(UnitValue.createPercentArray(new float[]{2, 2, 4, 2})).useAllAvailableWidth();
+            escTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("dateTime", "Date & Time")).setBold()));
+            escTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("from", "From")).setBold()));
+            escTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("details", "Details")).setBold()));
+            escTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("to", "To")).setBold()));
+            if (escalations != null && !escalations.isEmpty()) {
+                for (Escalation e : escalations) {
+                    escTable.addCell(safe(e.getCreatedAt()));
+                    escTable.addCell(safe(e.getFromUserName()));
+                    escTable.addCell(I18n.t("escalatedFrom", "Escalated from") + " "
+                            + safe(e.getFromUserName()) + " -> " + safe(e.getToUserName()));
+                    escTable.addCell(safe(e.getToUserName()));
+                }
+            } else {
+                escTable.addCell(new Cell(1, 4).add(new Paragraph(I18n.t("noEscalation", "No escalation"))));
+            }
+            document.add(escTable);
+
+            List<TicketEvent> events = TicketTaskDAO.getTaskEvents(task.getId());
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(I18n.t("activityComments", "Activity / Comments")).setBold());
+            Table eventTable = new Table(UnitValue.createPercentArray(new float[]{2, 2, 2, 5})).useAllAvailableWidth();
+            eventTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("dateTime", "Date & Time")).setBold()));
+            eventTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("user", "User")).setBold()));
+            eventTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("action", "Action")).setBold()));
+            eventTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("details", "Details")).setBold()));
+            if (events != null && !events.isEmpty()) {
+                for (TicketEvent e : events) {
+                    eventTable.addCell(formatToSystemTime(e.getCreatedAt()));
+                    eventTable.addCell(safe(e.getUsername()));
+                    eventTable.addCell(I18n.t("event." + safe(e.getType()), safe(e.getType())));
+                    eventTable.addCell(safe(TimelineEventDescriptionLocalizer.localizeTaskTimelineDescription(
+                            e.getType(), e.getDescription())));
+                }
+            } else {
+                eventTable.addCell(new Cell(1, 4).add(new Paragraph("-")));
+            }
+            document.add(eventTable);
+
+            document.close();
+        } catch (Exception e) {
+            showWarning(e.getMessage());
+        }
+    }
+
+    private static String safe(String value) {
+        return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private static void addInfoRow(Table table, String key, String value) {
+        table.addCell(new Cell().add(new Paragraph(safe(key)).setBold()));
+        table.addCell(new Cell().add(new Paragraph(safe(value))));
     }
 
     // ============================
@@ -436,7 +721,7 @@ private void handleDownloadAttachment() {
     List<Escalation> list = EscalationDAO.getByTask(taskId);
 
     if (list.isEmpty()) {
-        lblNoEscalation.setText("No escalation");
+        lblNoEscalation.setText(I18n.t("noEscalation", "No escalation"));
         escalationBox.getChildren().add(lblNoEscalation);
         return;
     }
@@ -444,7 +729,7 @@ private void handleDownloadAttachment() {
     for (Escalation e : list) {
 
         Label lbl = new Label(
-                "⚠ Escalated from " + e.getFromUserName() +
+                I18n.t("escalatedFrom", "Escalated from") + " " + e.getFromUserName() +
                 " → " + e.getToUserName() +
                 " (" + e.getCreatedAt() + ")"
         );
@@ -461,10 +746,45 @@ private void handleDownloadAttachment() {
 }
     
     private void loadTasks(int ticketId) {
+    int effectiveTicketId = ticketId;
+    if (effectiveTicketId <= 0 && task != null) {
+        effectiveTicketId = task.getTicketId();
+    }
+    if (effectiveTicketId <= 0 && task != null) {
+        TicketTask fresh = TicketTaskDAO.getTaskById(task.getId());
+        if (fresh != null) {
+            effectiveTicketId = fresh.getTicketId();
+        }
+    }
 
-    List<TicketTask> tasks = TicketTaskDAO.getTasksByTicket(ticketId);
+    List<TicketTask> tasks = effectiveTicketId > 0
+            ? TicketTaskDAO.getTasksByTicket(effectiveTicketId)
+            : new ArrayList<>();
+
+    // Show only peer tasks on the same ticket for this detail view.
+    int currentUserId = Session.getUserId();
+    if (currentUserId > 0) {
+        tasks.removeIf(t ->
+                t == null
+                        || t.getAssignedTo() == currentUserId
+                        || isSyntheticAssignmentTask(t.getTitle()));
+    } else {
+        tasks.removeIf(t -> t == null || isSyntheticAssignmentTask(t.getTitle()));
+    }
+
+    // Fallback only when ticket linkage is missing.
+    if (tasks.isEmpty() && task != null && effectiveTicketId <= 0) {
+        tasks.add(task);
+    }
 
     tableTasks.getItems().setAll(tasks);
+}
+
+private static boolean isSyntheticAssignmentTask(String title) {
+    if (title == null) {
+        return false;
+    }
+    return "task assignment".equalsIgnoreCase(title.trim());
 }
     
     

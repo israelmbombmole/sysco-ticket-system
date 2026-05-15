@@ -9,8 +9,12 @@ public class Notification {
     private String type;
     private int isRead;
     private String createdAt;
+    private String targetType;
+    private Integer targetId;
+    private String targetRef;
 
-    public Notification(int id,int userId,String title,String message,String type,int isRead,String createdAt){
+    public Notification(int id,int userId,String title,String message,String type,int isRead,String createdAt,
+                        String targetType, Integer targetId, String targetRef){
         this.id=id;
         this.userId=userId;
         this.title=title;
@@ -18,6 +22,9 @@ public class Notification {
         this.type=type;
         this.isRead=isRead;
         this.createdAt=createdAt;
+        this.targetType = targetType;
+        this.targetId = targetId;
+        this.targetRef = targetRef;
     }
 
     public int getId(){return id;}
@@ -27,4 +34,7 @@ public class Notification {
     public String getType(){return type;}
     public int getIsRead(){return isRead;}
     public String getCreatedAt(){return createdAt;}
+    public String getTargetType(){return targetType;}
+    public Integer getTargetId(){return targetId;}
+    public String getTargetRef(){return targetRef;}
 }

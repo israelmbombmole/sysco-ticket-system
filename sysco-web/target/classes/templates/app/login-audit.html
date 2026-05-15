@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Login audit</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page login-audit-page">
+    <div class="card page-panel audit-shell">
+        <h1 class="title-large" th:text="#{loginAudit.title}">Journal d’audit du système</h1>
+
+        <p class="muted login-audit-scope-hint" th:if="${loginAuditNoDirection}" th:text="#{loginAudit.scopeNoDirection}">
+            No direction.
+        </p>
+        <p class="muted login-audit-scope-hint" th:if="${!loginAuditNoDirection && !page.viewingAllDirections}"
+           th:text="#{loginAudit.scopeDirectionOnly}">
+            Direction scope.
+        </p>
+
+        <form class="audit-filter-row" method="get" th:action="@{/app/login-audit}">
+            <select class="form-input" name="action">
+                <option value="">Tous</option>
+                <option value="CONNEXION" th:selected="${page.action == 'CONNEXION'}">CONNEXION</option>
+                <option value="DÉCONNEXION" th:selected="${page.action == 'DÉCONNEXION'}">DÉCONNEXION</option>
+            </select>
+            <input class="form-input" type="date" name="from" th:value="${page.from}"/>
+            <input class="form-input" type="date" name="to" th:value="${page.to}"/>
+            <input class="form-input" th:placeholder="#{loginAudit.searchDetailsPlaceholder}" type="text" name="detailsQ" th:value="${page.detailsQ}"/>
+            <button type="submit" class="primary-btn" th:text="#{loginAudit.apply}">Appliquer</button>
+            <a class="secondary-btn" th:href="@{/app/login-audit}" th:text="#{dataMgmt.reset}">Réinitialiser</a>
+        </form>
+
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{loginAudit.col.user}">Utilisateur</th>
+                <th th:text="#{loginAudit.col.action}">Action</th>
+                <th th:text="#{loginAudit.col.entity}">Entité</th>
+                <th th:text="#{loginAudit.col.details}">Détails</th>
+                <th th:text="#{loginAudit.col.when}">Date & Heure</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${page.rows}">
+                <td th:text="${r.user}">admin</td>
+                <td th:text="${r.action}">CONNEXION</td>
+                <td th:text="${r.entity}">SYSTÈME</td>
+                <td th:text="${r.details}">Utilisateur connecté</td>
+                <td th:text="${r.whenFmt()}">2026-04-28 11:30</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.rows)}">
+                <td colspan="5" class="muted" th:text="#{loginAudit.emptyTable}">No content in table</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="audit-actions-row">
+            <a class="secondary-btn"
+               th:href="@{/app/login-audit/export.csv(action=${page.action},from=${page.from},to=${page.to},detailsQ=${page.detailsQ})}"
+               th:text="#{loginAudit.exportCsv}">Exporter CSV</a>
+            <a class="secondary-btn" th:href="@{/app/login-audit}" th:text="#{fileShareMgmt.refresh}">Actualiser</a>
+        </div>
+    </div>
+</section>
+</body>
+</html>
+

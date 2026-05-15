@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Notifications</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page notifications-viewport-page">
+    <div class="card page-panel notif-page">
+        <div class="notif-head">
+            <h1 class="title-large" th:text="#{notifications.pageTitle}">Notifications</h1>
+            <span class="notif-unread-chip"
+                  th:text="#{notifications.unread(${page.unreadCount()})}">0 unread</span>
+        </div>
+        <div class="notification-list-scroll">
+            <div class="notification-list">
+                <div class="notif-card" th:classappend="${!n.read()} ? ' unread' : ''" th:each="n : ${page.rows}">
+                    <div class="notif-card-head">
+                        <div class="notif-head-left">
+                            <span class="notif-icon" th:classappend="${' ' + n.iconClass()}">
+                                <i></i>
+                            </span>
+                            <div>
+                                <strong th:text="${n.title()}">Titre</strong>
+                                <div class="notif-meta-row">
+                                    <span class="notif-type-chip" th:text="${n.typeLabel()}">Ticket</span>
+                                    <span class="muted" th:text="${n.createdAt()}">time</span>
+                                    <span class="muted" th:text="${n.relativeTime()}">2m</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="notif-message" th:text="${n.message()}">message</p>
+                    <div class="notif-actions">
+                        <a th:if="${n.targetType() == 'TICKET' and n.targetId() != null}"
+                           class="secondary-btn btn-sm"
+                           th:href="@{/app/ticket-management/{id}(id=${n.targetId()})}"
+                           th:text="#{notifications.viewTicket}">View ticket</a>
+                        <a th:if="${n.targetType() == 'COURIER' and n.targetId() != null}"
+                           class="secondary-btn btn-sm"
+                           th:href="@{/app/courier(selected=${n.targetId()})}"
+                           th:text="#{notifications.viewCourier}">View courier</a>
+                        <a th:if="${n.targetType() == 'DATASHARE'}"
+                           class="secondary-btn btn-sm"
+                           th:href="@{/app/data-share}"
+                           th:text="#{nav.dataShare}">Data share</a>
+                        <form th:if="${!n.read()}" method="post" th:action="@{/app/notifications/{id}/read(id=${n.id()})}">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="secondary-btn btn-sm" th:text="#{notifications.markRead}">Mark read</button>
+                        </form>
+                        <form method="post" th:action="@{/app/notifications/{id}/delete(id=${n.id()})}">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="notif-delete-btn btn-sm"
+                                    onclick="return confirm(this.dataset.confirmMsg);"
+                                    th:data-confirm-msg="#{notifications.confirmDelete}"
+                                    th:text="#{notifications.delete}">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <p class="muted notif-empty" th:if="${#lists.isEmpty(page.rows())}"
+               th:text="#{notifications.empty}">No notifications.</p>
+        </div>
+    </div>
+</section>
+</body>
+</html>

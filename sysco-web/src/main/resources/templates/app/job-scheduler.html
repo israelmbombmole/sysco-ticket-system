@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Task planner</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page job-scheduler-page">
+    <div class="card page-panel scheduler-shell">
+        <h1 class="title-large" th:text="#{scheduler.hero.title}">Planificateur de tâches</h1>
+        <p class="subtitle muted scheduler-intro" th:text="#{scheduler.hero.intro}">
+            Plan tasks with due date and time, assign an agent, and optionally link an active ticket (SYSCO-style planning).
+        </p>
+
+        <div class="page-alerts" th:if="${successKey != null or errorKey != null}">
+            <p class="success-banner" th:if="${successKey != null}" th:text="#{${successKey}}">Succès</p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Erreur</p>
+        </div>
+
+        <h3 class="courier-subheading" th:text="#{scheduler.form.sectionNew}">New scheduled task</h3>
+        <form id="scheduler-new-job-form" method="post" th:action="@{/app/job-scheduler/save}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <div class="scheduler-grid">
+                <div class="scheduler-grid-stack">
+                    <div class="scheduler-grid-stack-row">
+                        <label class="form-label" th:text="#{scheduler.form.title}">Title</label>
+                        <input name="title" class="form-input scheduler-grid-stack-field" required maxlength="500"
+                               th:placeholder="#{scheduler.form.titlePlaceholder}"/>
+                    </div>
+                    <div class="scheduler-grid-stack-row">
+                        <label class="form-label" th:text="#{scheduler.form.assignee}">Assignees</label>
+                        <div class="scheduler-assignee-field">
+                            <button type="button" class="scheduler-assignee-open-btn" id="scheduler-open-assignees"
+                                    th:attr="aria-haspopup='dialog', aria-controls='scheduler-assignee-dialog'"
+                                    th:text="#{scheduler.form.showAssigneeList}">Show assignees</button>
+                            <p class="muted form-hint scheduler-assignee-hint-inline" th:text="#{scheduler.form.assigneesMultiHint}">
+                                Hint
+                            </p>
+                            <p id="scheduler-assignee-summary-text" class="scheduler-assignee-summary-line muted is-empty"
+                               th:text="#{scheduler.form.assigneeSummaryNone}">—</p>
+                            <div id="scheduler-assignee-hidden"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="form-label" th:text="#{scheduler.form.linkedTicket}">Ticket (optional)</label>
+                <select class="form-input" name="ticketId">
+                    <option value="" th:text="#{scheduler.form.noTicket}">None</option>
+                    <option th:each="tk : ${page.linkedTickets}" th:value="${tk.id}"
+                            th:text="${tk.ticketNumber + ' — ' + tk.titleShort}">TCK</option>
+                </select>
+
+                <label class="form-label" th:text="#{scheduler.form.dueDate}">Due date</label>
+                <input class="form-input" type="date" name="dueDate" required
+                       th:value="${T(java.time.LocalDate).now()}"/>
+
+                <label class="form-label" th:text="#{scheduler.form.reminder}">Reminder (minutes)</label>
+                <input class="form-input" type="number" min="1" max="10080" value="60" name="reminderMinutes"/>
+
+                <label class="form-label" th:text="#{scheduler.form.dueTime}">Due time</label>
+                <input class="form-input" type="time" name="dueTime" required value="09:00"/>
+
+                <label class="form-label" th:text="#{scheduler.form.recurrence}">Recurrence</label>
+                <select class="form-input" name="recurrence">
+                    <option value="ONCE" th:text="#{scheduler.recurrence.once}">Once</option>
+                    <option value="DAILY" th:text="#{scheduler.recurrence.daily}">Daily</option>
+                    <option value="WEEKLY" th:text="#{scheduler.recurrence.weekly}">Weekly</option>
+                    <option value="MONTHLY" th:text="#{scheduler.recurrence.monthly}">Monthly</option>
+                </select>
+            </div>
+            <div class="scheduler-desc-row">
+                <label class="form-label" th:text="#{scheduler.form.description}">Description</label>
+                <textarea class="form-textarea" name="description" rows="4" maxlength="12000"></textarea>
+            </div>
+            <div class="scheduler-actions">
+                <button type="submit" class="primary-btn" th:text="#{scheduler.form.save}">Save</button>
+                <a class="secondary-btn" th:href="@{/app/job-scheduler}" th:text="#{scheduler.form.refresh}">Refresh</a>
+            </div>
+        </form>
+
+        <dialog id="scheduler-assignee-dialog" class="sysco-escalate-dialog scheduler-assignee-dialog" aria-modal="true">
+            <div class="sysco-escalate-dialog-surface">
+                <header class="sysco-escalate-dialog-header">
+                    <h2 class="sysco-escalate-dialog-title" th:text="#{scheduler.form.assigneeModalTitle}">Choose assignees</h2>
+                    <button type="button" class="sysco-escalate-dialog-x" id="scheduler-assignee-close-x"
+                            th:attr="aria-label=#{myWork.escalate.closeDialog}">×</button>
+                </header>
+                <div class="sysco-escalate-dialog-body">
+                    <p class="muted my-work-escalate-heading" th:text="#{scheduler.form.assigneesMultiHint}">Hint</p>
+                    <div class="scheduler-assignee-modal-filter-wrap ticket-monitoring-search">
+                        <label class="form-label" for="scheduler-assignee-modal-filter"
+                               th:text="#{scheduler.form.assigneeModalSearchLabel}">Search</label>
+                        <input id="scheduler-assignee-modal-filter" class="form-input" type="search" autocomplete="off"
+                               th:placeholder="#{scheduler.form.assigneeModalSearchPlaceholder}"/>
+                    </div>
+                    <div class="scheduler-assignee-modal-list" id="scheduler-dialog-assignee-list" role="group"
+                         th:attr="aria-label=#{scheduler.form.assignee}">
+                        <p id="scheduler-assignee-modal-no-match" class="muted scheduler-assignee-modal-no-match" hidden
+                           th:text="#{scheduler.form.assigneeModalNoMatches}">No matches</p>
+                        <label th:each="a : ${page.assignees}" class="scheduler-assignee-modal-option"
+                               th:data-matricule="${a.matricule ?: ''}">
+                            <input type="checkbox" class="scheduler-assignee-cb" th:data-assignee-id="${a.id}"/>
+                            <span th:text="${a.username + ' — ' + a.role}">user</span>
+                        </label>
+                    </div>
+                    <div class="scheduler-assignee-modal-actions">
+                        <button type="button" class="secondary-btn btn-sm" id="scheduler-assignee-cancel"
+                                th:text="#{ticketMgmt.task.cancel}">Cancel</button>
+                        <button type="button" class="primary-btn btn-sm" id="scheduler-assignee-done"
+                                th:text="#{ticketMgmt.task.assigneeDone}">Done</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <h3 class="courier-subheading" th:text="#{scheduler.list.title}">Scheduled tasks</h3>
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{scheduler.col.title}">Title</th>
+                <th th:text="#{scheduler.col.due}">Due</th>
+                <th th:text="#{scheduler.col.assignee}">Assignee</th>
+                <th th:text="#{scheduler.col.ticket}">Ticket</th>
+                <th th:text="#{scheduler.col.recurrence}">Recurrence</th>
+                <th th:text="#{dash.col.status}">Status</th>
+                <th th:text="#{scheduler.col.actions}">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="j : ${page.jobs}" th:id="|scheduler-job-${j.id}|">
+                <td th:text="${j.title}">—</td>
+                <td th:text="${j.dueAt}">—</td>
+                <td th:text="${j.assignees}">—</td>
+                <td>
+                    <span th:if="${#strings.isEmpty(j.linkedTicket)}" class="muted">—</span>
+                    <span th:unless="${#strings.isEmpty(j.linkedTicket)}" th:text="${j.linkedTicket}">TCK</span>
+                </td>
+                <td>
+                    <th:block th:with="rec=${j.recurrence != null ? #strings.toUpperCase(j.recurrence) : 'ONCE'}" th:switch="${rec}">
+                        <span th:case="'ONCE'" th:text="#{scheduler.recurrence.once}">—</span>
+                        <span th:case="'DAILY'" th:text="#{scheduler.recurrence.daily}">—</span>
+                        <span th:case="'WEEKLY'" th:text="#{scheduler.recurrence.weekly}">—</span>
+                        <span th:case="'MONTHLY'" th:text="#{scheduler.recurrence.monthly}">—</span>
+                        <span th:case="*" th:text="${j.recurrence}">—</span>
+                    </th:block>
+                </td>
+                <td th:text="${j.status}">—</td>
+                <td>
+                    <form method="post" th:action="@{/app/job-scheduler/{id}/toggle(id=${j.id})}" class="inline-form">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="secondary-btn btn-sm" th:text="#{scheduler.action.toggle}">Toggle</button>
+                    </form>
+                    <form method="post" th:action="@{/app/job-scheduler/{id}/delete(id=${j.id})}" class="inline-form">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="my-work-pill my-work-pill-close user-pill-btn"
+                                th:text="#{scheduler.action.delete}">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.jobs)}">
+                <td colspan="7" class="muted" th:text="#{scheduler.list.empty}">No rows.</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h3 class="courier-subheading" th:text="#{scheduler.reports.title}">Monthly reports</h3>
+        <form class="scheduler-report-row" method="post" th:action="@{/app/job-scheduler/report}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <label class="form-label" th:text="#{scheduler.report.from}">From</label>
+            <input class="form-input" type="date" name="from" th:value="${T(java.time.LocalDate).now().minusDays(30)}"/>
+            <label class="form-label" th:text="#{scheduler.report.to}">To</label>
+            <input class="form-input" type="date" name="to" th:value="${T(java.time.LocalDate).now()}"/>
+            <button type="submit" class="secondary-btn" th:text="#{scheduler.report.generate}">Generate report</button>
+        </form>
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{scheduler.reports.col.period}">Period</th>
+                <th th:text="#{scheduler.reports.col.generated}">Generated</th>
+                <th th:text="#{scheduler.reports.col.summary}">Summary</th>
+                <th th:text="#{scheduler.reports.col.path}">Path</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${page.reports}">
+                <td th:text="${r.monthKey}">—</td>
+                <td th:text="${r.generatedAt}">—</td>
+                <td th:text="${r.summary}">—</td>
+                <td th:text="${r.filePath}" class="muted scheduler-path-cell">—</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.reports)}">
+                <td colspan="4" class="muted" th:text="#{scheduler.reports.empty}">No reports.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <script th:inline="javascript">
+        (function () {
+            var dialog = document.getElementById('scheduler-assignee-dialog');
+            var openBtn = document.getElementById('scheduler-open-assignees');
+            var doneBtn = document.getElementById('scheduler-assignee-done');
+            var cancelBtn = document.getElementById('scheduler-assignee-cancel');
+            var closeX = document.getElementById('scheduler-assignee-close-x');
+            var hiddenWrap = document.getElementById('scheduler-assignee-hidden');
+            var summaryEl = document.getElementById('scheduler-assignee-summary-text');
+            var listEl = document.getElementById('scheduler-dialog-assignee-list');
+            var filterInput = document.getElementById('scheduler-assignee-modal-filter');
+            var noMatchEl = document.getElementById('scheduler-assignee-modal-no-match');
+            var form = document.getElementById('scheduler-new-job-form');
+            var noneText = /*[[#{scheduler.form.assigneeSummaryNone}]]*/ '';
+            var requiredMsg = /*[[#{scheduler.error.assigneeRequired}]]*/ '';
+
+            function filterAssigneeModalList() {
+                if (!listEl || !dialog) {
+                    return;
+                }
+                var q = (filterInput && filterInput.value ? filterInput.value : '').trim().toLowerCase();
+                var opts = listEl.querySelectorAll('.scheduler-assignee-modal-option');
+                var visible = 0;
+                opts.forEach(function (lab) {
+                    var span = lab.querySelector('span');
+                    var txt = span ? span.textContent.toLowerCase() : '';
+                    var mat = (lab.getAttribute('data-matricule') || '').trim().toLowerCase();
+                    var cb = lab.querySelector('.scheduler-assignee-cb');
+                    var idStr =
+                        cb && cb.getAttribute('data-assignee-id')
+                            ? String(cb.getAttribute('data-assignee-id')).toLowerCase()
+                            : '';
+                    var hay = txt + ' ' + mat + ' ' + idStr;
+                    var match = !q || hay.indexOf(q) !== -1;
+                    lab.hidden = !match;
+                    if (match) {
+                        lab.style.removeProperty('display');
+                        visible++;
+                    } else {
+                        lab.style.setProperty('display', 'none', 'important');
+                    }
+                });
+                if (noMatchEl) {
+                    var showEmpty = visible === 0 && opts.length > 0;
+                    noMatchEl.hidden = !showEmpty;
+                    if (showEmpty) {
+                        noMatchEl.style.removeProperty('display');
+                    } else {
+                        noMatchEl.style.setProperty('display', 'none', 'important');
+                    }
+                }
+            }
+
+            function applyCommittedToDialog() {
+                if (!listEl || !hiddenWrap) {
+                    return;
+                }
+                var want = new Set();
+                hiddenWrap.querySelectorAll('input[name="assigneeIds"]').forEach(function (inp) {
+                    want.add(String(inp.value));
+                });
+                listEl.querySelectorAll('.scheduler-assignee-cb').forEach(function (cb) {
+                    var id = cb.getAttribute('data-assignee-id');
+                    cb.checked = id != null && want.has(String(id));
+                });
+            }
+
+            function syncDialogToHidden() {
+                if (!hiddenWrap || !listEl || !summaryEl) {
+                    return;
+                }
+                hiddenWrap.innerHTML = '';
+                var labels = [];
+                listEl.querySelectorAll('.scheduler-assignee-cb:checked').forEach(function (cb) {
+                    var id = cb.getAttribute('data-assignee-id');
+                    if (!id) {
+                        return;
+                    }
+                    var h = document.createElement('input');
+                    h.type = 'hidden';
+                    h.name = 'assigneeIds';
+                    h.value = id;
+                    hiddenWrap.appendChild(h);
+                    var span = cb.closest('label') && cb.closest('label').querySelector('span');
+                    labels.push(span ? span.textContent.trim() : id);
+                });
+                if (!labels.length) {
+                    summaryEl.textContent = noneText || '';
+                    summaryEl.classList.add('is-empty');
+                } else {
+                    summaryEl.textContent = labels.join(', ');
+                    summaryEl.classList.remove('is-empty');
+                }
+            }
+
+            function closeDialog() {
+                if (dialog && typeof dialog.close === 'function') {
+                    dialog.close();
+                }
+            }
+
+            if (openBtn && dialog && typeof dialog.showModal === 'function') {
+                openBtn.addEventListener('click', function () {
+                    applyCommittedToDialog();
+                    if (filterInput) {
+                        filterInput.value = '';
+                    }
+                    dialog.showModal();
+                    filterAssigneeModalList();
+                    if (filterInput) {
+                        filterInput.focus();
+                    }
+                });
+            }
+            if (filterInput) {
+                filterInput.addEventListener('input', filterAssigneeModalList);
+                filterInput.addEventListener('keyup', filterAssigneeModalList);
+                filterInput.addEventListener('search', filterAssigneeModalList);
+                filterInput.addEventListener('paste', function () {
+                    window.requestAnimationFrame(filterAssigneeModalList);
+                });
+            }
+            if (doneBtn) {
+                doneBtn.addEventListener('click', function () {
+                    syncDialogToHidden();
+                    closeDialog();
+                });
+            }
+            [cancelBtn, closeX].forEach(function (b) {
+                if (b) {
+                    b.addEventListener('click', closeDialog);
+                }
+            });
+            if (dialog) {
+                dialog.addEventListener('close', function () {
+                    applyCommittedToDialog();
+                });
+            }
+            if (form) {
+                form.addEventListener(
+                        'submit',
+                        function (ev) {
+                            if (!hiddenWrap) {
+                                return;
+                            }
+                            var any = hiddenWrap.querySelectorAll('input[name="assigneeIds"]');
+                            if (!any.length) {
+                                ev.preventDefault();
+                                ev.stopImmediatePropagation();
+                                window.alert(requiredMsg || '');
+                            }
+                        },
+                        true);
+            }
+        })();
+    </script>
+</section>
+</body>
+</html>

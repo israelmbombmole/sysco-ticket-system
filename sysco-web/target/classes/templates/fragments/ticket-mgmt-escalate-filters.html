@@ -1,0 +1,8 @@
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="escalateListFilters">
+    <input type="hidden" name="status" th:value="${page.status}"/>
+    <input type="hidden" name="agent" th:value="${page.agent}"/>
+    <input type="hidden" name="q" th:value="${page.q}"/>
+    <input type="hidden" name="tstatus" th:value="${page.taskStatus}"/>
+    <input type="hidden" name="tagent" th:value="${page.taskAgent}"/>
+    <input type="hidden" name="tq" th:value="${page.taskQ}"/>
+</th:block>

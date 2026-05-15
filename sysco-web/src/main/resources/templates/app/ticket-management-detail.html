@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Ticket</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page ticket-management-page">
+    <div class="card page-panel ticket-management-shell">
+        <div class="page-alerts" th:if="${successKey != null or tasksCreatedCount != null or errorKey != null}">
+            <p class="success-banner" th:if="${tasksCreatedCount != null}"
+               th:text="#{ticketMgmt.flash.tasksCreatedFromTicket(${tasksCreatedCount})}">Success</p>
+            <p class="success-banner" th:if="${successKey != null && tasksCreatedCount == null}"
+               th:text="#{${successKey}}">Success</p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Error</p>
+        </div>
+
+        <div class="ticket-fx-section ticket-merged-absorbed-banner" th:if="${ticket.mergedIntoTicketId != null}">
+            <p class="muted" th:text="#{ticketMgmt.merge.absorbedBanner(${ticket.ticketNumber}, ${ticket.mergedIntoTicketRef})}">
+                This ticket was merged into another.</p>
+            <a class="primary-btn btn-sm" th:href="@{/app/ticket-management/{id}(id=${ticket.mergedIntoTicketId})}"
+               th:text="#{ticketMgmt.merge.openSurvivor}">Open survivor</a>
+        </div>
+
+        <div class="ticket-fx-head-actions">
+            <a class="secondary-btn btn-sm" th:href="${ticketDetailBackHref}">Retour</a>
+            <th:block th:if="${canWrite}">
+                <a class="primary-btn btn-sm" th:href="@{|/app/ticket-management/${ticket.id}?tab=genealogy#genealogy|}">Suivre le ticket</a>
+            </th:block>
+            <a class="primary-btn btn-sm" th:if="${showPdfExport}"
+               th:href="@{/app/ticket-management/{id}/export.pdf(id=${ticket.id})}">Exporter en PDF</a>
+            <form th:if="${canReopenTicket}" method="post" class="ticket-fx-inline-form"
+                  th:action="@{/app/ticket-management/{id}/reopen(id=${ticket.id})}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="secondary-btn btn-sm" th:text="#{ticketMgmt.detail.reopen}">Reopen</button>
+            </form>
+        </div>
+
+        <div class="ticket-fx-hero">
+            <p class="ticket-fx-status"
+               th:classappend="${ticket.status == 'CLOSE_REQUESTED'} ? ' ticket-fx-status-close-requested-badge' : ''">
+                <th:block th:if="${ticket.status == 'CLOSE_REQUESTED'}" th:text="#{ticketMgmt.status.closeRequested}">Pending</th:block>
+                <th:block th:if="${ticket.status != 'CLOSE_REQUESTED'}"
+                          th:text="${#strings.isEmpty(ticket.status) ? '—' : @uiLabels.ticketStatus(ticket.status, #locale)}">OPEN</th:block>
+            </p>
+            <p class="ticket-fx-ref" th:text="|REF: ${ticket.ticketNumber}|">REF: TCK-2026-007</p>
+            <h1 class="ticket-fx-title" th:text="${ticket.title}">[AUTO JOB] XX</h1>
+            <p class="ticket-fx-meta">
+                Cree par:
+                <span th:text="${#strings.isEmpty(ticket.createdBy) ? '-' : ticket.createdBy}">israel</span>
+                <span class="ticket-fx-meta-sep">|</span>
+                Derniere maj par:
+                <span th:text="${#strings.isEmpty(ticket.updatedBy) ? '-' : ticket.updatedBy}">israel</span>
+            </p>
+        </div>
+
+        <div class="ticket-fx-section">
+            <h3 class="courier-subheading">Informations du ticket</h3>
+            <div class="ticket-fx-info-grid">
+                <div class="ticket-fx-label">Prioite :</div>
+                <div>
+                    <span class="ticket-fx-priority"
+                          th:text="${#strings.isEmpty(ticket.priority) ? '—' : @uiLabels.ticketPriority(ticket.priority, #locale)}">MEDIUM</span>
+                </div>
+                <div class="ticket-fx-label">SLA :</div>
+                <div class="ticket-fx-sla" th:classappend="${' ' + ticket.slaCssClass}"
+                     th:switch="${ticket.slaStatus}">
+                    <th:block th:case="'NA'" th:text="#{ticketMgmt.sla.na}">—</th:block>
+                    <th:block th:case="'OK'" th:text="#{ticketMgmt.sla.ok(${ticket.slaDueFormatted})}">OK</th:block>
+                    <th:block th:case="'WARNING'" th:text="#{ticketMgmt.sla.warning(${ticket.slaDueFormatted})}">Warn</th:block>
+                    <th:block th:case="'BREACH'" th:text="#{ticketMgmt.sla.breach(${ticket.slaDueFormatted})}">Breach</th:block>
+                    <th:block th:case="'CLOSED_OK'"
+                              th:text="#{ticketMgmt.sla.closedOk(${ticket.slaResolvedFormatted},${ticket.slaDueFormatted})}">Closed OK</th:block>
+                    <th:block th:case="'CLOSED_BREACH'"
+                              th:text="#{ticketMgmt.sla.closedBreach(${ticket.slaResolvedFormatted},${ticket.slaDueFormatted})}">Closed breach</th:block>
+                </div>
+                <div class="ticket-fx-label">Agent assigne :</div>
+                <div th:text="${#strings.isEmpty(ticket.assignedAgent) ? '-' : ticket.assignedAgent}">deo</div>
+                <div class="ticket-fx-label" th:if="${ticket.showPluralAgentsRow}">Agents assignes :</div>
+                <div th:if="${ticket.showPluralAgentsRow}">
+                    <span th:if="${#lists.isEmpty(ticket.assignedAgents)}">-</span>
+                    <span th:unless="${#lists.isEmpty(ticket.assignedAgents)}"
+                          th:text="${#strings.listJoin(ticket.assignedAgents, ', ')}">agent1, agent2</span>
+                </div>
+                <div class="ticket-fx-label">Debut :</div>
+                <div th:text="${#strings.isEmpty(ticket.createdAt) ? '-' : ticket.createdAt}">27 Apr 2026 14:05</div>
+                <div class="ticket-fx-label">Cloture :</div>
+                <div th:text="${ticket.status == 'CLOSED' ? ticket.updatedAt : '-'}">-</div>
+                <div class="ticket-fx-label">Resolution :</div>
+                <div th:text="${ticket.status == 'CLOSED' ? 'Resolue' : '-'}">-</div>
+            </div>
+        </div>
+
+        <div class="ticket-fx-section ticket-closure-panel" th:if="${ticket.closeRequested}">
+            <div class="ticket-closure-waiting" th:unless="${ticket.viewerMayFinalizeClosure}">
+                <p class="ticket-closure-waiting-lead" th:text="#{ticketMgmt.closure.banner.lead}">Closure pending.</p>
+                <p th:if="${ticket.closureReviewUsesTaskCreators}"
+                   th:text="#{ticketMgmt.closure.banner.taskCreators(${ticket.closeRequestedByUsername}, ${ticket.closureReviewerNames})}">
+                    Task creators must review.</p>
+                <p th:if="${ticket.closureSeniorPoolReview}"
+                   th:text="#{ticketMgmt.closure.banner.seniorPool(${ticket.closeRequestedByUsername})}">
+                    Senior pool must review.</p>
+                <p th:if="${!ticket.closureReviewUsesTaskCreators && !ticket.closureSeniorPoolReview && !#strings.isEmpty(ticket.closeReviewRoleLabel)}"
+                   th:text="#{ticketMgmt.closure.banner.escalated(${ticket.closeRequestedByUsername}, ${ticket.closeReviewRoleLabel})}">
+                    Waiting for reviewer role.</p>
+                <p th:if="${!ticket.closureReviewUsesTaskCreators && !ticket.closureSeniorPoolReview && #strings.isEmpty(ticket.closeReviewRoleLabel)}"
+                   th:text="#{ticketMgmt.closure.banner.assignee(${ticket.closeRequestedByUsername})}">
+                    Waiting for assignee reviewer.</p>
+                <p class="muted ticket-closure-readonly-hint" th:text="#{ticketMgmt.closure.readOnlyTourHint}">
+                    Use the checklist below to review the dossier; only an authorized reviewer can confirm closure.</p>
+            </div>
+            <div class="ticket-closure-ai" th:if="${!#strings.isEmpty(ticket.closureAiBriefingText)}">
+                <div class="ticket-closure-ai-head">
+                    <span class="ticket-closure-ai-badge" aria-hidden="true">✦</span>
+                    <div>
+                        <h3 class="ticket-closure-ai-title" th:text="#{ticketMgmt.closure.ai.title}">Assistant</h3>
+                        <p class="muted ticket-closure-ai-sub" th:text="#{ticketMgmt.closure.ai.subtitle}">Subtitle</p>
+                        <div class="ticket-closure-ai-source-row">
+                            <span th:if="${ticket.closureAiBriefingLocalFallback}"
+                                  class="ticket-closure-ai-chip ticket-closure-ai-chip-local"
+                                  th:text="#{ticketMgmt.closure.ai.fallbackBadge}">Local</span>
+                            <span th:unless="${ticket.closureAiBriefingLocalFallback}"
+                                  class="ticket-closure-ai-chip ticket-closure-ai-chip-ai"
+                                  th:text="#{ticketMgmt.closure.ai.aiPoweredBadge}">AI</span>
+                            <span class="muted ticket-closure-ai-source-detail"
+                                  th:if="${ticket.closureAiBriefingLocalFallback}"
+                                  th:text="#{ticketMgmt.closure.ai.fallbackBadgeDetail}">Detail</span>
+                        </div>
+                        <div class="ticket-closure-ai-speech-row">
+                            <button type="button" class="secondary-btn btn-sm" id="closure-briefing-speak"
+                                    th:text="#{ticketMgmt.closure.ai.speakListen}">Listen</button>
+                            <button type="button" class="secondary-btn btn-sm" id="closure-briefing-speak-stop"
+                                    style="display:none;"
+                                    th:text="#{ticketMgmt.closure.ai.speakStop}">Stop</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="ticket-closure-ai-body" id="closure-briefing-body"
+                     th:text="${ticket.closureAiBriefingText}">Briefing</div>
+            </div>
+            <div class="ticket-closure-tour">
+                <h3 class="courier-subheading" th:text="#{ticketMgmt.closure.tourTitle}">Review checklist</h3>
+                <p class="muted ticket-closure-readonly-badge" th:if="${!ticket.viewerMayFinalizeClosure}"
+                   th:text="#{ticketMgmt.closure.readOnlyMode}">Read-only review</p>
+                <p class="muted ticket-closure-finalizer-note" th:if="${ticket.viewerMayFinalizeClosure}"
+                   th:text="#{ticketMgmt.closure.finalizerGuideLead}">Complete each step, then confirm closure.</p>
+                <p class="muted ticket-closure-step-label" id="closure-step-label"></p>
+                <div class="ticket-closure-step-body muted" id="closure-step-body"></div>
+                <div class="ticket-closure-actions">
+                    <button type="button" class="secondary-btn btn-sm" id="closure-tour-prev" style="display:none"
+                            th:text="#{ticketMgmt.closure.prev}">Previous</button>
+                    <button type="button" class="primary-btn btn-sm" id="closure-tour-next"
+                            th:text="#{ticketMgmt.closure.next}">Next</button>
+                </div>
+                <p class="muted ticket-closure-readonly-footer" th:if="${!ticket.viewerMayFinalizeClosure}"
+                   id="closure-readonly-footer" style="display:none;"
+                   th:text="#{ticketMgmt.closure.readOnlyFooter}">End of review walkthrough.</p>
+                <form method="post" class="ticket-closure-final-form"
+                      th:action="@{/app/ticket-management/{id}/finalize-closure(id=${ticket.id})}" id="closure-finalize-form"
+                      th:if="${ticket.viewerMayFinalizeClosure}"
+                      style="display:none;">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="returnTo" th:value="${ticketEditReturnTo}"/>
+                    <input type="hidden" name="closureTourAck" value="true"/>
+                    <button type="submit" class="success-btn btn-sm" th:text="#{ticketMgmt.closure.submitClose}">Close ticket</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="ticket-fx-section">
+            <h3 class="courier-subheading">Description</h3>
+            <div id="ticket-description-area" class="ticket-fx-description" th:text="${#strings.isEmpty(ticket.description) ? '-' : ticket.description}">xx</div>
+        </div>
+
+        <div class="ticket-fx-section" id="ticket-tasks-area">
+            <div class="ticket-fx-tasks-head">
+                <h3 class="courier-subheading">Taches</h3>
+                <button type="button" class="success-btn btn-sm" th:if="${canWrite}" id="tm-open-task-modal">+ Ajouter une tache</button>
+            </div>
+            <table class="sysco-table ticket-fx-table">
+                <thead>
+                <tr>
+                    <th>Tache</th>
+                    <th>Assigne a</th>
+                    <th th:text="#{ticketMgmt.detail.status}">Status</th>
+                    <th>Echeance</th>
+                    <th>Debut</th>
+                    <th>Fermer</th>
+                    <th>Duree</th>
+                    <th th:text="#{ticketMgmt.detail.priority}">Priority</th>
+                    <th>Voir</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="t : ${ticket.tasks}">
+                    <td th:text="${t.title}">Task title</td>
+                    <td th:text="${#strings.isEmpty(t.assignee) ? '-' : t.assignee}">user</td>
+                    <td th:text="${#strings.isEmpty(t.status) ? '—' : @uiLabels.taskStatus(t.status, #locale)}">OPEN</td>
+                    <td th:text="${#strings.isEmpty(t.dueAt) ? '-' : t.dueAt}">2026-04-29 13:00</td>
+                    <td th:text="${#strings.isEmpty(t.startedAt) ? '-' : t.startedAt}">-</td>
+                    <td th:text="${#strings.isEmpty(t.closedAt) ? '-' : t.closedAt}">-</td>
+                    <td th:text="${#strings.isEmpty(t.duration) ? '-' : t.duration}">-</td>
+                    <td th:text="${#strings.isEmpty(t.priority) ? '—' : @uiLabels.ticketPriority(t.priority, #locale)}">MEDIUM</td>
+                    <td><a class="link-pill" th:href="@{/app/my-work/task/{id}(id=${t.id})}">Voir</a></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(ticket.tasks)}">
+                    <td colspan="9" class="muted ticket-fx-empty-row">No content in table</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="tm-task-modal" th:if="${canWrite}" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1200;">
+            <div style="background:#fff; width:min(760px, 92vw); margin:6vh auto; border-radius:10px; padding:16px; max-height:88vh; overflow:auto;">
+                <h3 class="courier-subheading" style="margin-top:0;" th:text="#{ticketMgmt.task.modalTitle}">Task</h3>
+                <form method="post" th:action="@{/app/ticket-management/{id}/task(id=${ticket.id})}" enctype="multipart/form-data"
+                      data-upload-enhanced="true">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <div th:if="${ticket.taskAssignmentSousDirectionPicker}">
+                        <label class="form-label" th:text="#{ticketMgmt.task.sousDirection}">Sous-direction</label>
+                        <select class="form-input" name="taskSousDirectionId" id="tm-task-sous-direction" required>
+                            <option th:each="sd : ${ticket.taskSousDirectionOptions}"
+                                    th:value="${sd.id}"
+                                    th:selected="${ticket.defaultTaskSousDirectionId != null && ticket.defaultTaskSousDirectionId == sd.id}"
+                                    th:text="${sd.name}">SD</option>
+                        </select>
+                        <p class="muted form-hint" th:text="#{ticketMgmt.task.sousDirectionHint}">Hint</p>
+                    </div>
+                    <label class="form-label" th:text="#{ticketMgmt.task.assignee}">Assignee</label>
+                    <button type="button" class="secondary-btn btn-sm" id="tm-open-assignee-picker"
+                            th:text="#{ticketMgmt.task.chooseAssignee}">Choose an agent…</button>
+                    <p id="tm-task-assignee-summary" class="tm-task-assignee-summary is-empty" th:text="#{ticketMgmt.task.assigneeSummaryNone}">—</p>
+                    <div id="tm-task-assignee-hidden"></div>
+                    <label class="form-label" th:text="#{ticketMgmt.task.title}">Title</label>
+                    <input class="form-input" name="taskTitle" th:value="#{ticketMgmt.task.defaultTitle}" required/>
+                    <label class="form-label" th:text="#{ticketMgmt.task.description}">Description</label>
+                    <input class="form-input" name="taskDescription"/>
+                    <label class="form-label" th:text="#{ticketMgmt.task.due}">Due</label>
+                    <input class="form-input" name="taskDueAt" type="datetime-local"/>
+                    <label class="form-label" th:text="#{ticketMgmt.task.priority}">Priority</label>
+                    <select class="form-input" name="priority">
+                        <option value="LOW" th:text="${@uiLabels.ticketPriority('LOW', #locale)}">LOW</option>
+                        <option value="MEDIUM" selected th:text="${@uiLabels.ticketPriority('MEDIUM', #locale)}">MEDIUM</option>
+                        <option value="HIGH" th:text="${@uiLabels.ticketPriority('HIGH', #locale)}">HIGH</option>
+                        <option value="CRITICAL" th:text="${@uiLabels.ticketPriority('CRITICAL', #locale)}">CRITICAL</option>
+                    </select>
+                    <label class="form-label" th:text="#{ticketMgmt.task.reminderMinutes}">Reminder</label>
+                    <input class="form-input" name="reminderMinutes" type="number" min="1" value="30"/>
+                    <label class="form-label" th:text="#{ticketMgmt.task.attachments}">Attachments</label>
+                    <input class="form-input" type="file" name="attachments" multiple data-dnd-uploader="true"/>
+                    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                        <button type="button" class="secondary-btn btn-sm" id="tm-close-task-modal" th:text="#{ticketMgmt.task.cancel}">Cancel</button>
+                        <button type="submit" class="primary-btn btn-sm" th:text="#{ticketMgmt.task.submit}">Add task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <dialog id="tm-assignee-picker-dialog" class="sysco-escalate-dialog" th:if="${canWrite}">
+            <div class="sysco-escalate-dialog-surface">
+                <header class="sysco-escalate-dialog-header">
+                    <h2 class="sysco-escalate-dialog-title" th:text="#{ticketMgmt.task.assignee}">Assign to</h2>
+                    <button type="button" class="sysco-escalate-dialog-x" id="tm-assignee-picker-close-x"
+                            th:attr="aria-label=#{myWork.escalate.closeDialog}">×</button>
+                </header>
+                <div class="sysco-escalate-dialog-body">
+                    <div class="scheduler-assignee-disclosure">
+                        <details class="scheduler-assignee-details tm-assignee-picker-details" open>
+                            <summary class="scheduler-assignee-summary" th:text="#{scheduler.form.showAssigneeList}">Show assignees</summary>
+                            <p class="muted form-hint scheduler-assignee-hint" th:text="#{ticketMgmt.task.assigneesMultiHint}">Hint</p>
+                            <div id="tm-task-assignee-list" class="tm-task-assignee-list ticket-monitoring-user-list scheduler-assignee-checkboxes"
+                                 role="group" th:attr="aria-label=#{ticketMgmt.task.assignee}"></div>
+                        </details>
+                    </div>
+                    <div class="tm-assignee-picker-actions">
+                        <button type="button" class="secondary-btn btn-sm" id="tm-assignee-picker-cancel"
+                                th:text="#{ticketMgmt.task.cancel}">Cancel</button>
+                        <button type="button" class="primary-btn btn-sm" id="tm-assignee-picker-done"
+                                th:text="#{ticketMgmt.task.assigneeDone}">Done</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <div class="ticket-fx-section" id="ticket-comments-area">
+            <h3 class="courier-subheading">Activite / Commentaires</h3>
+            <div class="ticket-fx-comments">
+                <div th:each="c : ${ticket.comments}" class="ticket-fx-comment-row">
+                    <p><strong th:text="${#strings.isEmpty(c.author) ? 'system' : c.author}">admin</strong> - Commentaire</p>
+                    <p th:text="${c.text}">Comment text</p>
+                    <p class="muted"><span th:text="${c.createdAt}">2026-04-28 12:15:31</span></p>
+                    <div class="ticket-fx-comment-attachments" th:if="${!#lists.isEmpty(c.attachmentPaths())}">
+                        <div class="ticket-fx-attachment-card"
+                             th:each="p,iter : ${c.attachmentPaths()}"
+                             th:with="attUrl=@{/app/ticket-management/comment-attachment/{commentId}(commentId=${c.id},idx=${iter.index})},
+                                      lp=${#strings.toLowerCase(p)},
+                                      isImg=${#strings.endsWith(lp, '.png') or #strings.endsWith(lp, '.jpg') or #strings.endsWith(lp, '.jpeg') or #strings.endsWith(lp, '.gif') or #strings.endsWith(lp, '.webp')}">
+                            <div class="ticket-fx-attachment-body">
+                                <a th:if="${isImg}" class="ticket-fx-attachment-thumb-link" th:href="${attUrl}" target="_blank" rel="noopener">
+                                    <img class="ticket-fx-attachment-preview" th:src="${attUrl}" alt=""/>
+                                </a>
+                                <div th:unless="${isImg}" class="ticket-fx-attachment-doc">
+                                    <span class="ticket-fx-attachment-doc-icon" aria-hidden="true">📎</span>
+                                    <span class="ticket-fx-attachment-doc-label" th:text="#{ticketMgmt.comment.fileAttachment}">Attachment</span>
+                                </div>
+                            </div>
+                            <div class="ticket-fx-attachment-footer">
+                                <span class="ticket-fx-attachment-name muted"
+                                      th:text="#{ticketMgmt.comment.partLabel(${iter.index + 1})}">piece-1</span>
+                                <div class="ticket-fx-attachment-actions">
+                                    <a class="ticket-fx-attachment-action" th:href="${attUrl}" target="_blank" rel="noopener"
+                                       th:text="#{ticketMgmt.comment.preview}">Preview</a>
+                                    <span class="ticket-fx-attachment-actions-sep" aria-hidden="true">·</span>
+                                    <a class="ticket-fx-attachment-action"
+                                       th:href="${attUrl}"
+                                       download=""
+                                       th:text="#{ticketMgmt.comment.download}">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="muted" th:if="${#lists.isEmpty(ticket.comments)}">Aucun commentaire pour ce ticket.</p>
+            </div>
+            <form class="ticket-fx-comment-box" th:if="${canWrite or canSelfEditTicket}"
+                  method="post" th:action="@{/app/ticket-management/{id}/comment(id=${ticket.id})}" enctype="multipart/form-data">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="button" class="secondary-btn btn-sm" id="ticket-comment-plus">+</button>
+                <input class="form-input" type="text" name="commentText" placeholder="Ecrire un commentaire..." />
+                <input class="ticket-fx-hidden-file-input" type="file" name="attachment" id="ticket-comment-files" multiple />
+                <button type="submit" class="secondary-btn btn-sm ticket-fx-comment-submit-btn" th:text="#{ticketMgmt.comment.submitAdd}">Ajouter</button>
+            </form>
+            <div class="ticket-fx-comment-draft-attachments" id="ticket-comment-draft"></div>
+            <div class="ticket-fx-hidden-file-frame"></div>
+        </div>
+
+        <div class="ticket-fx-section" id="genealogy">
+            <h3 class="courier-subheading" th:text="#{ticketMgmt.genealogy.title}">Généalogie du ticket</h3>
+            <div class="ticket-fx-tree-group">
+                <h4 class="ticket-fx-tree-group-title" th:text="#{ticketMgmt.genealogy.group.creation}">Création</h4>
+                <ul class="ticket-fx-tree">
+                <li th:each="g : ${ticket.genealogy}" th:if="${g.title == 'Created'}">
+                    <div class="ticket-fx-tree-node" th:attr="data-stage=${g.title}">
+                        <span class="ticket-fx-node-icon">●</span>
+                        <strong class="ticket-fx-stage-badge"><th:block th:replace="~{fragments/ticket-genealogy-badges :: eventBadge(stage=${g.title})}"/></strong>
+                        <span class="ticket-fx-node-actor" th:text="${#strings.isEmpty(g.actor) ? 'system' : g.actor}">admin</span>
+                        <span th:if="${!#strings.isEmpty(g.target)}" th:text="| -> ${g.target}|"></span>
+                        <span class="muted ticket-fx-node-time" th:text="${g.when}">2026-04-28 17:05</span>
+                    </div>
+                    <div class="muted ticket-fx-node-note" th:if="${!#strings.isEmpty(g.note)}"
+                         th:text="${@uiLabels.genealogyNote(g.note, #locale)}">note</div>
+                </li>
+                </ul>
+            </div>
+
+            <div class="ticket-fx-tree-group">
+                <h4 class="ticket-fx-tree-group-title" th:text="#{ticketMgmt.genealogy.mergeGroup}">Fusion</h4>
+                <ul class="ticket-fx-tree">
+                    <li th:each="g : ${ticket.genealogy}" th:if="${g.title == 'Merged'}">
+                        <div class="ticket-fx-tree-node" th:attr="data-stage=${g.title}">
+                            <span class="ticket-fx-node-icon">●</span>
+                            <strong class="ticket-fx-stage-badge"><th:block th:replace="~{fragments/ticket-genealogy-badges :: eventBadge(stage=${g.title})}"/></strong>
+                            <span class="ticket-fx-node-actor" th:text="${#strings.isEmpty(g.actor) ? 'system' : g.actor}">admin</span>
+                            <span th:if="${!#strings.isEmpty(g.target)}" th:text="| -> ${g.target}|"></span>
+                            <span class="muted ticket-fx-node-time" th:text="${g.when}">2026-04-28 17:05</span>
+                        </div>
+                        <div class="muted ticket-fx-node-note" th:if="${!#strings.isEmpty(g.note)}"
+                         th:text="${@uiLabels.genealogyNote(g.note, #locale)}">note</div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="ticket-fx-tree-group">
+                <h4 class="ticket-fx-tree-group-title" th:text="#{ticketMgmt.genealogy.group.assignment}">Assignation</h4>
+                <ul class="ticket-fx-tree">
+                    <li th:each="g : ${ticket.genealogy}" th:if="${g.title == 'Assigned' || g.title == 'Escalated'}">
+                        <div class="ticket-fx-tree-node" th:attr="data-stage=${g.title}">
+                            <span class="ticket-fx-node-icon">●</span>
+                            <strong class="ticket-fx-stage-badge"><th:block th:replace="~{fragments/ticket-genealogy-badges :: eventBadge(stage=${g.title})}"/></strong>
+                            <span class="ticket-fx-node-actor" th:text="${#strings.isEmpty(g.actor) ? 'system' : g.actor}">admin</span>
+                            <span th:if="${!#strings.isEmpty(g.target)}" th:text="| -> ${g.target}|"></span>
+                            <span class="muted ticket-fx-node-time" th:text="${g.when}">2026-04-28 17:05</span>
+                        </div>
+                        <div class="muted ticket-fx-node-note" th:if="${!#strings.isEmpty(g.note)}"
+                         th:text="${@uiLabels.genealogyNote(g.note, #locale)}">note</div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="ticket-fx-tree-group">
+                <h4 class="ticket-fx-tree-group-title" th:text="#{ticketMgmt.genealogy.group.resolution}">Résolution</h4>
+                <ul class="ticket-fx-tree">
+                    <li th:each="g : ${ticket.genealogy}" th:if="${g.title == 'Closed' || g.title == 'Updated'}">
+                        <div class="ticket-fx-tree-node" th:attr="data-stage=${g.title}">
+                            <span class="ticket-fx-node-icon">●</span>
+                            <strong class="ticket-fx-stage-badge"><th:block th:replace="~{fragments/ticket-genealogy-badges :: eventBadge(stage=${g.title})}"/></strong>
+                            <span class="ticket-fx-node-actor" th:text="${#strings.isEmpty(g.actor) ? 'system' : g.actor}">admin</span>
+                            <span th:if="${!#strings.isEmpty(g.target)}" th:text="| -> ${g.target}|"></span>
+                            <span class="muted ticket-fx-node-time" th:text="${g.when}">2026-04-28 17:05</span>
+                        </div>
+                        <div class="muted ticket-fx-node-note" th:if="${!#strings.isEmpty(g.note)}"
+                         th:text="${@uiLabels.genealogyNote(g.note, #locale)}">note</div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="ticket-fx-tree-group">
+                <h4 class="ticket-fx-tree-group-title" th:text="#{ticketMgmt.genealogy.group.followUp}">Suivi</h4>
+                <ul class="ticket-fx-tree">
+                    <li th:each="g : ${ticket.genealogy}" th:if="${g.title == 'Commented' || g.title == 'Task created' || g.title == 'PDF exported' || g.title == 'Reopened'}">
+                        <div class="ticket-fx-tree-node" th:attr="data-stage=${g.title}">
+                            <span class="ticket-fx-node-icon">●</span>
+                            <strong class="ticket-fx-stage-badge"><th:block th:replace="~{fragments/ticket-genealogy-badges :: eventBadge(stage=${g.title})}"/></strong>
+                            <span class="ticket-fx-node-actor" th:text="${#strings.isEmpty(g.actor) ? 'system' : g.actor}">admin</span>
+                            <span th:if="${!#strings.isEmpty(g.target)}" th:text="| -> ${g.target}|"></span>
+                            <span class="muted ticket-fx-node-time" th:text="${g.when}">2026-04-28 17:05</span>
+                        </div>
+                        <div class="muted ticket-fx-node-note" th:if="${!#strings.isEmpty(g.note)}"
+                         th:text="${@uiLabels.genealogyNote(g.note, #locale)}">note</div>
+                    </li>
+                </ul>
+            </div>
+
+            <p class="muted" th:if="${#lists.isEmpty(ticket.genealogy)}" th:text="#{ticketMgmt.genealogy.empty}">Aucun événement.</p>
+        </div>
+
+        <div class="ticket-fx-section">
+            <h3 class="courier-subheading">Courriers lies</h3>
+            <table class="sysco-table">
+            <thead>
+            <tr>
+                <th>Reference</th>
+                <th>Titre</th>
+                <th th:text="#{ticketMgmt.detail.status}">Status</th>
+                <th>Cree le</th>
+                <th>Voir</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${ticket.linkedCouriers}">
+                <td th:text="${c.refCode}">REF-001</td>
+                <td th:text="${c.title}">Courier title</td>
+                <td th:text="${@uiLabels.courierPacketStatus(c.status, #locale)}">OPEN</td>
+                <td th:text="${c.createdAt}">27 Apr 2026 - 14:06</td>
+                <td><a class="link-pill" th:href="@{/app/courier(selected=${c.id})}">Voir</a></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(ticket.linkedCouriers)}">
+                <td colspan="5" class="muted">No content in table</td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        (function () {
+            const openBtn = document.getElementById('tm-open-task-modal');
+            const closeBtn = document.getElementById('tm-close-task-modal');
+            const modal = document.getElementById('tm-task-modal');
+            const assigneeDialog = document.getElementById('tm-assignee-picker-dialog');
+            const openAssigneePickerBtn = document.getElementById('tm-open-assignee-picker');
+            const assigneePickerDone = document.getElementById('tm-assignee-picker-done');
+            const assigneePickerCancel = document.getElementById('tm-assignee-picker-cancel');
+            const assigneePickerCloseX = document.getElementById('tm-assignee-picker-close-x');
+            const assigneeSummaryEl = document.getElementById('tm-task-assignee-summary');
+            const assigneeHiddenWrap = document.getElementById('tm-task-assignee-hidden');
+            const plusBtn = document.getElementById('ticket-comment-plus');
+            const commentFiles = document.getElementById('ticket-comment-files');
+            const commentDraft = document.getElementById('ticket-comment-draft');
+            const tmAssigneesRaw = /*[[${ticket.taskAssigneesBySousDirectionJson}]]*/ '{}';
+            const tmSdPicker = /*[[${ticket.taskAssignmentSousDirectionPicker}]]*/ false;
+            const tmNoAgents = /*[[#{ticketMgmt.task.noAgentsAvailable}]]*/ '';
+            const tmAssigneesRequired = /*[[#{ticketMgmt.task.assigneesRequired}]]*/ '';
+            const tmAssigneeSummaryNone = /*[[#{ticketMgmt.task.assigneeSummaryNone}]]*/ '';
+            const sdSelectEl = document.getElementById('tm-task-sous-direction');
+            let tmGroups = {};
+            try {
+                tmGroups = JSON.parse(tmAssigneesRaw);
+            } catch (e) {
+                tmGroups = {};
+            }
+            function clearCommittedAssignees() {
+                if (assigneeHiddenWrap) {
+                    assigneeHiddenWrap.innerHTML = '';
+                }
+                if (assigneeSummaryEl) {
+                    assigneeSummaryEl.textContent = tmAssigneeSummaryNone || '';
+                    assigneeSummaryEl.classList.add('is-empty');
+                }
+            }
+            function syncHiddenFromPickerCheckboxes() {
+                if (!assigneeHiddenWrap) {
+                    return;
+                }
+                assigneeHiddenWrap.innerHTML = '';
+                const listEl = document.getElementById('tm-task-assignee-list');
+                if (!listEl) {
+                    return;
+                }
+                const checked = listEl.querySelectorAll('input[type="checkbox"]:checked');
+                const labels = [];
+                checked.forEach(function (cb) {
+                    const id = cb.getAttribute('data-assignee-id');
+                    if (!id) {
+                        return;
+                    }
+                    const h = document.createElement('input');
+                    h.type = 'hidden';
+                    h.name = 'assigneeIds';
+                    h.value = id;
+                    assigneeHiddenWrap.appendChild(h);
+                    const span = cb.closest('label') && cb.closest('label').querySelector('.tm-task-assignee-label-text');
+                    labels.push(span ? span.textContent.trim() : id);
+                });
+                if (assigneeSummaryEl) {
+                    if (!labels.length) {
+                        assigneeSummaryEl.textContent = tmAssigneeSummaryNone || '';
+                        assigneeSummaryEl.classList.add('is-empty');
+                    } else {
+                        assigneeSummaryEl.textContent = labels.join(', ');
+                        assigneeSummaryEl.classList.remove('is-empty');
+                    }
+                }
+            }
+            function applyCommittedToPickerCheckboxes() {
+                const listEl = document.getElementById('tm-task-assignee-list');
+                if (!listEl || !assigneeHiddenWrap) {
+                    return;
+                }
+                const want = new Set();
+                assigneeHiddenWrap.querySelectorAll('input[name="assigneeIds"]').forEach(function (inp) {
+                    want.add(String(inp.value));
+                });
+                listEl.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+                    const id = cb.getAttribute('data-assignee-id');
+                    cb.checked = id != null && want.has(String(id));
+                });
+            }
+            function refillTaskAssignees() {
+                const wrap = document.getElementById('tm-task-assignee-list');
+                if (!wrap) {
+                    return;
+                }
+                wrap.innerHTML = '';
+                const key = tmSdPicker && sdSelectEl ? String(sdSelectEl.value) : 'legacy';
+                const list = tmGroups[key] || [];
+                if (!list.length) {
+                    const empty = document.createElement('p');
+                    empty.className = 'muted form-hint tm-task-assignee-empty';
+                    empty.textContent = tmNoAgents || '';
+                    wrap.appendChild(empty);
+                    return;
+                }
+                list.forEach(function (row) {
+                    const lab = document.createElement('label');
+                    lab.className = 'tm-task-assignee-option';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.setAttribute('data-assignee-id', String(row.id));
+                    const span = document.createElement('span');
+                    span.className = 'tm-task-assignee-label-text';
+                    span.textContent = row.label;
+                    lab.appendChild(cb);
+                    lab.appendChild(span);
+                    wrap.appendChild(lab);
+                });
+            }
+            function closeAssigneePicker() {
+                if (assigneeDialog && typeof assigneeDialog.close === 'function') {
+                    assigneeDialog.close();
+                }
+            }
+            if (!openBtn || !closeBtn || !modal) {
+                return;
+            }
+            openBtn.addEventListener('click', function () {
+                modal.style.display = 'block';
+                clearCommittedAssignees();
+            });
+            closeBtn.addEventListener('click', function () { modal.style.display = 'none'; });
+            if (sdSelectEl) {
+                sdSelectEl.addEventListener('change', function () {
+                    clearCommittedAssignees();
+                });
+            }
+            if (openAssigneePickerBtn && assigneeDialog && typeof assigneeDialog.showModal === 'function') {
+                openAssigneePickerBtn.addEventListener('click', function () {
+                    refillTaskAssignees();
+                    applyCommittedToPickerCheckboxes();
+                    assigneeDialog.showModal();
+                });
+            }
+            if (assigneePickerDone) {
+                assigneePickerDone.addEventListener('click', function () {
+                    syncHiddenFromPickerCheckboxes();
+                    closeAssigneePicker();
+                });
+            }
+            [assigneePickerCancel, assigneePickerCloseX].forEach(function (b) {
+                if (b) {
+                    b.addEventListener('click', closeAssigneePicker);
+                }
+            });
+            if (assigneeDialog) {
+                assigneeDialog.addEventListener('close', function () {
+                    applyCommittedToPickerCheckboxes();
+                });
+            }
+            const tmTaskForm = modal.querySelector('form');
+            if (tmTaskForm) {
+                tmTaskForm.addEventListener(
+                        'submit',
+                        function (ev) {
+                            const any = assigneeHiddenWrap
+                                    ? assigneeHiddenWrap.querySelectorAll('input[name="assigneeIds"]')
+                                    : [];
+                            if (!any.length) {
+                                ev.preventDefault();
+                                ev.stopImmediatePropagation();
+                                window.alert(tmAssigneesRequired || '');
+                            }
+                        },
+                        true);
+            }
+            if (plusBtn && commentFiles && commentDraft) {
+                plusBtn.addEventListener('click', function () {
+                    commentFiles.click();
+                });
+                commentFiles.addEventListener('change', function () {
+                    commentDraft.innerHTML = '';
+                    Array.from(commentFiles.files || []).forEach(function (file) {
+                        const card = document.createElement('div');
+                        card.className = 'ticket-fx-attachment-card';
+                        const body = document.createElement('div');
+                        body.className = 'ticket-fx-attachment-body';
+                        if (file.type && file.type.startsWith('image/')) {
+                            const wrap = document.createElement('div');
+                            wrap.className = 'ticket-fx-attachment-thumb-link';
+                            const img = document.createElement('img');
+                            img.className = 'ticket-fx-attachment-preview';
+                            img.alt = '';
+                            img.src = URL.createObjectURL(file);
+                            wrap.appendChild(img);
+                            body.appendChild(wrap);
+                        } else {
+                            const doc = document.createElement('div');
+                            doc.className = 'ticket-fx-attachment-doc';
+                            const icon = document.createElement('span');
+                            icon.className = 'ticket-fx-attachment-doc-icon';
+                            icon.setAttribute('aria-hidden', 'true');
+                            icon.textContent = '\uD83D\uDCCE';
+                            const lab = document.createElement('span');
+                            lab.className = 'ticket-fx-attachment-doc-label';
+                            lab.textContent = /*[[#{ticketMgmt.comment.fileAttachment}]]*/ 'File';
+                            doc.appendChild(icon);
+                            doc.appendChild(lab);
+                            body.appendChild(doc);
+                        }
+                        const footer = document.createElement('div');
+                        footer.className = 'ticket-fx-attachment-footer';
+                        const fname = document.createElement('span');
+                        fname.className = 'ticket-fx-attachment-name muted';
+                        fname.textContent = file.name;
+                        footer.appendChild(fname);
+                        card.appendChild(body);
+                        card.appendChild(footer);
+                        commentDraft.appendChild(card);
+                    });
+                });
+            }
+        })();
+        (function () {
+            const tourRoot = document.querySelector('.ticket-closure-tour');
+            if (!tourRoot) {
+                return;
+            }
+            const labelEl = document.getElementById('closure-step-label');
+            const bodyEl = document.getElementById('closure-step-body');
+            const btnPrev = document.getElementById('closure-tour-prev');
+            const btnNext = document.getElementById('closure-tour-next');
+            const formEl = document.getElementById('closure-finalize-form');
+            const readOnlyFooter = document.getElementById('closure-readonly-footer');
+            const canFinalize = !!formEl;
+            const steps = [
+                {
+                    anchor: 'ticket-description-area',
+                    title: /*[[#{ticketMgmt.closure.step1.title}]]*/ 'Step 1',
+                    body: /*[[#{ticketMgmt.closure.step1.body}]]*/ ''
+                },
+                {
+                    anchor: 'ticket-comments-area',
+                    title: /*[[#{ticketMgmt.closure.step2.title}]]*/ 'Step 2',
+                    body: /*[[#{ticketMgmt.closure.step2.body}]]*/ ''
+                },
+                {
+                    anchor: 'ticket-tasks-area',
+                    title: /*[[#{ticketMgmt.closure.step3.title}]]*/ 'Step 3',
+                    body: /*[[#{ticketMgmt.closure.step3.body}]]*/ ''
+                },
+                {
+                    anchor: '',
+                    title: /*[[#{ticketMgmt.closure.step4.title}]]*/ 'Step 4',
+                    body: /*[[#{ticketMgmt.closure.step4.body}]]*/ ''
+                }
+            ];
+            let idx = 0;
+            let lastHl = null;
+            function clearHl() {
+                if (lastHl) {
+                    lastHl.classList.remove('ticket-closure-flash');
+                    lastHl = null;
+                }
+            }
+            function scrollToAnchor(anchorId) {
+                clearHl();
+                if (!anchorId) {
+                    return;
+                }
+                const el = document.getElementById(anchorId);
+                if (!el) {
+                    return;
+                }
+                lastHl = el;
+                el.classList.add('ticket-closure-flash');
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            function render() {
+                const step = steps[idx];
+                if (labelEl) {
+                    labelEl.textContent = step.title;
+                }
+                if (bodyEl) {
+                    bodyEl.textContent = step.body;
+                }
+                if (btnPrev) {
+                    btnPrev.style.display = idx > 0 ? '' : 'none';
+                }
+                const last = idx >= steps.length - 1;
+                if (btnNext) {
+                    btnNext.style.display = last ? 'none' : '';
+                }
+                if (formEl) {
+                    formEl.style.display = last ? '' : 'none';
+                }
+                if (readOnlyFooter) {
+                    readOnlyFooter.style.display = !canFinalize && last ? '' : 'none';
+                }
+                scrollToAnchor(step.anchor);
+            }
+            if (btnNext) {
+                btnNext.addEventListener('click', function () {
+                    if (idx < steps.length - 1) {
+                        idx += 1;
+                        render();
+                    }
+                });
+            }
+            if (btnPrev) {
+                btnPrev.addEventListener('click', function () {
+                    if (idx > 0) {
+                        idx -= 1;
+                        render();
+                    }
+                });
+            }
+            render();
+        })();
+        (function () {
+            const speakBtn = document.getElementById('closure-briefing-speak');
+            const stopBtn = document.getElementById('closure-briefing-speak-stop');
+            const bodyEl = document.getElementById('closure-briefing-body');
+            const speakUnavailable = /*[[#{ticketMgmt.closure.ai.speakUnavailable}]]*/ '';
+            const speakIntro = /*[[#{ticketMgmt.closure.ai.speakIntro}]]*/ '';
+            const speakBridge = /*[[#{ticketMgmt.closure.ai.speakBridge}]]*/ '';
+            const speakOutro = /*[[#{ticketMgmt.closure.ai.speakOutro}]]*/ '';
+            if (!speakBtn || !stopBtn || !bodyEl) {
+                return;
+            }
+
+            function frenchVoice() {
+                const synth = window.speechSynthesis;
+                if (!synth) {
+                    return null;
+                }
+                const voices = synth.getVoices();
+                if (!voices || !voices.length) {
+                    return null;
+                }
+                let best = null;
+                for (let i = 0; i < voices.length; i++) {
+                    const lang = (voices[i].lang || '').toLowerCase();
+                    if (lang.startsWith('fr')) {
+                        if (lang === 'fr-fr' || lang === 'fr-ca' || lang === 'fr-be' || lang === 'fr-ch') {
+                            return voices[i];
+                        }
+                        if (!best) {
+                            best = voices[i];
+                        }
+                    }
+                }
+                return best;
+            }
+
+            function briefingText() {
+                return (bodyEl.textContent || '').trim();
+            }
+
+            function setSpeaking(on) {
+                speakBtn.style.display = on ? 'none' : '';
+                stopBtn.style.display = on ? '' : 'none';
+            }
+
+            function applyFrenchVoice(u) {
+                u.lang = 'fr-FR';
+                const v = frenchVoice();
+                if (v) {
+                    u.voice = v;
+                }
+                u.rate = 0.9;
+                u.pitch = 1;
+            }
+
+            /** SYSCO narrates an intro, then the briefing, then a closing cue — queued utterances. */
+            function startSpeak() {
+                const synth = window.speechSynthesis;
+                const body = briefingText();
+                if (!body || !synth) {
+                    return;
+                }
+                synth.cancel();
+                const parts = [];
+                if (speakIntro && speakIntro.trim()) {
+                    parts.push(speakIntro.trim());
+                }
+                if (speakBridge && speakBridge.trim()) {
+                    parts.push(speakBridge.trim());
+                }
+                parts.push(body);
+                if (speakOutro && speakOutro.trim()) {
+                    parts.push(speakOutro.trim());
+                }
+                let index = 0;
+                function speakNext() {
+                    if (index >= parts.length) {
+                        setSpeaking(false);
+                        return;
+                    }
+                    const chunk = parts[index];
+                    index += 1;
+                    const u = new SpeechSynthesisUtterance(chunk);
+                    applyFrenchVoice(u);
+                    u.onend = speakNext;
+                    u.onerror = function () {
+                        setSpeaking(false);
+                    };
+                    synth.speak(u);
+                }
+                setSpeaking(true);
+                speakNext();
+            }
+
+            speakBtn.addEventListener('click', function () {
+                if (!briefingText()) {
+                    return;
+                }
+                if (!window.speechSynthesis) {
+                    window.alert(speakUnavailable);
+                    return;
+                }
+                const synth = window.speechSynthesis;
+                const run = function () {
+                    startSpeak();
+                };
+                if (synth.getVoices().length) {
+                    run();
+                } else {
+                    synth.addEventListener(
+                            'voiceschanged',
+                            function once() {
+                                synth.removeEventListener('voiceschanged', once);
+                                run();
+                            });
+                    window.setTimeout(run, 500);
+                }
+            });
+
+            stopBtn.addEventListener('click', function () {
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+                setSpeaking(false);
+            });
+        })();
+        /*]]>*/
+    </script>
+</section>
+</body>
+</html>

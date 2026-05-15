@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.app.controller.CourierController"
+      styleClass="gov-work-page"
+      spacing="8" style="-fx-padding:12;" maxWidth="Infinity" maxHeight="Infinity">
+    <Label text="%courierDataEntryTitle" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+    <Label text="%courierDataEntryHint" wrapText="true" maxWidth="900" style="-fx-text-fill:#4b5563;"/>
+    <HBox fx:id="boxFilterBar" spacing="10" alignment="CENTER_LEFT">
+        <Label text="%filterDirection"/>
+        <ComboBox fx:id="cmbFilterDirection" prefWidth="220"/>
+        <Label text="%filterStatus"/>
+        <ComboBox fx:id="cmbFilterStatus" prefWidth="140"/>
+        <Button text="%refresh" onAction="#refresh" styleClass="primary-btn"/>
+        <Region HBox.hgrow="ALWAYS"/>
+    </HBox>
+    <TitledPane fx:id="titledRegister" text="%courierRegister" collapsible="true" expanded="false">
+        <content>
+            <GridPane hgap="12" vgap="10" style="-fx-padding:8;">
+                <Label text="%courierFieldRegDate" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <DatePicker fx:id="dpRegDate" GridPane.rowIndex="0" GridPane.columnIndex="1" prefWidth="200"/>
+                <Label text="%courierFieldSender" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <TextField fx:id="txtSender" GridPane.rowIndex="1" GridPane.columnIndex="1" prefWidth="400"/>
+                <Label text="%courierFieldObject" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                <TextField fx:id="txtObject" GridPane.rowIndex="2" GridPane.columnIndex="1" prefWidth="400"/>
+                <Label text="%description" GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.valignment="TOP"/>
+                <TextArea fx:id="txtNewDesc" GridPane.rowIndex="3" GridPane.columnIndex="1" prefRowCount="4" prefWidth="400" wrapText="true"/>
+                <Label text="%priority" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                <ComboBox fx:id="cmbPriority" GridPane.rowIndex="4" GridPane.columnIndex="1" prefWidth="200"/>
+                <Label text="%courierAttachment" GridPane.rowIndex="5" GridPane.columnIndex="0" GridPane.valignment="TOP"/>
+                <VBox spacing="6" GridPane.rowIndex="5" GridPane.columnIndex="1">
+                    <TextField fx:id="txtAttachment" editable="false" prefWidth="400"/>
+                    <HBox spacing="8">
+                        <Button text="%browse" onAction="#onAttachBrowse" styleClass="primary-btn"/>
+                        <Button text="%remove" onAction="#onAttachRemove" styleClass="danger-btn"/>
+                    </HBox>
+                </VBox>
+                <HBox spacing="12" GridPane.rowIndex="6" GridPane.columnIndex="1">
+                    <Button text="%save" onAction="#register" defaultButton="true" styleClass="success-btn" style="-fx-padding:8 24;"/>
+                </HBox>
+            </GridPane>
+        </content>
+    </TitledPane>
+    <!-- Vertical split keeps the table from being squeezed to zero when the registration block or Parcours is tall. -->
+    <SplitPane dividerPositions="0.45" orientation="VERTICAL" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
+        <TableView fx:id="table" minHeight="260" prefHeight="400" minWidth="0" maxWidth="Infinity" maxHeight="Infinity">
+            <columns>
+                <TableColumn fx:id="colRef" text="%ref" prefWidth="100"/>
+                <TableColumn fx:id="colTitle" text="%title" prefWidth="160"/>
+                <TableColumn fx:id="colSender" text="%courierFieldSender" prefWidth="120"/>
+                <TableColumn fx:id="colPri" text="%priority" prefWidth="80"/>
+                <TableColumn fx:id="colStatus" text="%status" prefWidth="140"/>
+                <TableColumn fx:id="colDir" text="%direction" prefWidth="160"/>
+                <TableColumn fx:id="colSous" text="%sousDirection" prefWidth="140"/>
+                <TableColumn fx:id="colTicket" text="%courierLinkedTicket" prefWidth="90"/>
+                <TableColumn fx:id="colCreated" text="%created" prefWidth="120"/>
+            </columns>
+        </TableView>
+        <SplitPane orientation="HORIZONTAL" dividerPositions="0.5" maxWidth="Infinity" maxHeight="Infinity">
+            <ListView fx:id="listJourney" prefHeight="200" minHeight="120"/>
+            <ScrollPane fx:id="scrollParcours" fitToWidth="true" hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED" style="-fx-background:transparent;">
+                <VBox spacing="8" style="-fx-padding:10;" maxWidth="Infinity">
+                    <Label text="%courierJourney" style="-fx-font-weight:bold;"/>
+                    <Label text="%setDirection" fx:id="lblDir"/>
+                    <ComboBox fx:id="cmbTargetDirection" maxWidth="Infinity" prefWidth="300"/>
+                    <Button fx:id="btnSetDirection" text="%apply" onAction="#onSetDirection"/>
+                    <Button fx:id="btnGrantSecret" text="%courierGrantSecret" onAction="#onGrantSecretDelegate" visible="false" managed="false"
+                            styleClass="btn-inst-secondary"/>
+                    <Separator/>
+                    <Label text="%routeSous" fx:id="lblSous"/>
+                    <ComboBox fx:id="cmbTargetSous" maxWidth="Infinity" prefWidth="300"/>
+                    <Button fx:id="btnSetSous" text="%apply" onAction="#onSetSous"/>
+                    <Label fx:id="lblSousHint" wrapText="true" maxWidth="300" style="-fx-text-fill:#b45309; -fx-font-size:12px;" managed="false" visible="false"/>
+                    <Separator/>
+                    <Label text="%assignSousDir" fx:id="lblSdir"/>
+                    <ComboBox fx:id="cmbAssignSousDir" maxWidth="Infinity"/>
+                    <Button fx:id="btnAssSousDir" text="%assign" onAction="#onAssignSousDir"/>
+                    <Label text="%assignInspecteur" fx:id="lblInsp"/>
+                    <ComboBox fx:id="cmbAssignInsp" maxWidth="Infinity"/>
+                    <Button fx:id="btnAssInsp" text="%assign" onAction="#onAssignInsp"/>
+                    <Label text="%assignControleur" fx:id="lblCtrl"/>
+                    <ComboBox fx:id="cmbAssignCtrl" maxWidth="Infinity"/>
+                    <Button fx:id="btnAssCtrl" text="%assign" onAction="#onAssignCtrl"/>
+                    <Label text="%assignVerificateur" fx:id="lblVer"/>
+                    <ComboBox fx:id="cmbAssignVer" maxWidth="Infinity"/>
+                    <Button fx:id="btnAssVer" text="%assign" onAction="#onAssignVer"/>
+                    <Button fx:id="btnEditMyPacket" text="%courierEditMy" onAction="#onEditMyPacket" visible="false" managed="false"
+                            styleClass="btn-inst-muted"/>
+                    <Button fx:id="btnResolve" text="%markResolved" onAction="#onResolve" styleClass="success-btn"/>
+                </VBox>
+            </ScrollPane>
+        </SplitPane>
+    </SplitPane>
+</VBox>

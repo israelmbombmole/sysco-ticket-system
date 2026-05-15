@@ -29,10 +29,11 @@
                 <columns>
                     <TableColumn fx:id="colId" text="%id"/>
                     <TableColumn fx:id="colUsername" text="%username"/>
+                    <TableColumn fx:id="colMatricule" text="%matricule"/>
                     <TableColumn fx:id="colRole" text="%role"/>
                     <TableColumn fx:id="colActive" text="%active"/>
-                    <TableColumn fx:id="colSousDirection" text="%sousDirection"/>
-                    <TableColumn fx:id="colDelete" text="Delete" prefWidth="100"/>
+                    <TableColumn fx:id="colSousDirection" text="%userTableDirectionScope"/>
+                    <TableColumn fx:id="colDelete" text="%delete" prefWidth="100"/>
                 </columns>
 
             </TableView>

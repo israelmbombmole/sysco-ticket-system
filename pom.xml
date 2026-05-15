@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         http://www.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -11,7 +11,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <javafx.version>21</javafx.version>
+        <javafx.version>17.0.18</javafx.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -23,16 +23,16 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
+            <classifier>win</classifier>
         </dependency>
-
 
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
+            <classifier>win</classifier>
         </dependency>
-        
-        
+
         <!-- SQLite -->
         <dependency>
             <groupId>org.xerial</groupId>
@@ -40,21 +40,35 @@
             <version>3.45.1.0</version>
         </dependency>
 
-        <!-- BCrypt -->
+        <!-- Oracle (optional; use when db.vendor=oracle) -->
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>23.5.0.24.07</version>
+        </dependency>
+
+        <!-- MyBatis ScriptRunner for Oracle schema bootstrap -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.5.16</version>
+        </dependency>
+
+        <!-- Security -->
         <dependency>
             <groupId>org.mindrot</groupId>
             <artifactId>jbcrypt</artifactId>
             <version>0.4</version>
         </dependency>
 
-        <!-- Apache POI (Excel support) -->
+        <!-- Excel -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>5.2.5</version>
         </dependency>
 
-        <!-- Log4j2 (Required by Apache POI) -->
+        <!-- Logging -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
@@ -67,43 +81,63 @@
             <version>2.22.1</version>
         </dependency>
 
-        <!-- Optional: Clean SLF4J warning -->
+        <!-- Route SLF4J to Log4j2 (same stack as log4j-api/core; avoids SLF4J1 StaticLoggerBinder warnings) -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>2.0.9</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>2.22.1</version>
+            <scope>runtime</scope>
         </dependency>
-        
-        
+
+        <!-- PDF -->
         <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>itext7-core</artifactId>
+            <artifactId>kernel</artifactId>
             <version>7.2.5</version>
-            <type>pom</type>
         </dependency>
-        
-        
+
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-swing</artifactId>
-            <version>21</version>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>layout</artifactId>
+            <version>7.2.5</version>
         </dependency>
-        
-        
+
+        <!-- Email -->
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>jakarta.mail</artifactId>
             <version>2.0.1</version>
         </dependency>
-        
+
+        <!-- MyShift: JSON (face/location API responses) -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+
+        <!-- MyShift: webcam capture (face sign-in) -->
+        <dependency>
+            <groupId>com.github.sarxos</groupId>
+            <artifactId>webcam-capture</artifactId>
+            <version>0.3.12</version>
+        </dependency>
 
     </dependencies>
 
     <!-- ================= BUILD ================= -->
     <build>
+        <finalName>SYSCO</finalName>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
         <plugins>
 
-            <!-- Force Java 17 -->
+            <!-- Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -111,7 +145,6 @@
                 <configuration>
                     <source>17</source>
                     <target>17</target>
-                    <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
 
@@ -124,41 +157,194 @@
                     <mainClass>com.app.MainApp</mainClass>
                 </configuration>
             </plugin>
+            
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.app.MainApp</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
 
-<plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-shade-plugin</artifactId>
-            <version>3.5.0</version>
-            <executions>
-                <execution>
-                    <phase>package</phase>
-                    <goals>
-                        <goal>shade</goal>
-                    </goals>
-                    <configuration>
-                        <transformers>
-                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                <mainClass>com.app.Main</mainClass>
-                            </transformer>
-                        </transformers>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin>
-
-
-
-
+            <!-- Populate target/lib so SYSCO.jar Class-Path works (java -jar from target/) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.7.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-runtime-libs</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <includeScope>runtime</includeScope>
+                            <prependGroupId>false</prependGroupId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
         </plugins>
+
     </build>
-    
-    
-    
-    
-    
-    
-    
-    
+
+    <profiles>
+        <!-- mvn -Pwindows-jpackage -Djavafx.jmods.dir=C:/javafx/javafx-jmods-17.0.18 clean package -->
+        <profile>
+            <id>windows-jpackage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>require-javafx-jmods</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>javafx.jmods.dir</property>
+                                            <message>Set -Djavafx.jmods.dir to the folder that contains javafx.base.jmod (Windows, version ${javafx.version}). Example: -Djavafx.jmods.dir=C:/javafx/javafx-jmods-${javafx.version}</message>
+                                        </requireProperty>
+                                        <requireFilesExist>
+                                            <files>
+                                                <file>${java.home}/jmods/java.base.jmod</file>
+                                            </files>
+                                            <message>JDK jmods missing at ${java.home}/jmods. Use full JDK 17 for Maven (not a JRE); put jdk/bin on PATH.</message>
+                                        </requireFilesExist>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>resolve-javafx-jmods</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <exportAntProperties>true</exportAntProperties>
+                                    <target>
+                                        <resourcecount property="jmod.cnt">
+                                            <fileset dir="${javafx.jmods.dir}" includes="**/javafx.base.jmod"/>
+                                        </resourcecount>
+                                        <fail message="No javafx.base.jmod under ${javafx.jmods.dir}. Download the Windows *jmods* ZIP from https://openjfx.io/ (version ${javafx.version}), extract it into this folder. You should see a subfolder like openjfx-${javafx.version}_windows-x64_bin-jmods containing many .jmod files. The SDK-only download has lib/*.jar instead; you need the jmods bundle for packaging.">
+                                            <condition>
+                                                <equals arg1="${jmod.cnt}" arg2="0"/>
+                                            </condition>
+                                        </fail>
+                                        <!-- Parent directory of javafx.base.jmod (works for nested Gluon/OpenJFX layouts) -->
+                                        <pathconvert property="javafx.jmods.effective">
+                                            <first count="1">
+                                                <fileset dir="${javafx.jmods.dir}" includes="**/javafx.base.jmod"/>
+                                            </first>
+                                            <mapper type="regexp" from="^(.+)[/\\][^/\\]+$$" to="\1"/>
+                                        </pathconvert>
+                                        <fail message="Could not resolve javafx.jmods.effective from ${javafx.jmods.dir}">
+                                            <condition>
+                                                <not>
+                                                    <isset property="javafx.jmods.effective"/>
+                                                </not>
+                                            </condition>
+                                        </fail>
+                                        <echo message="Using JavaFX jmods: ${javafx.jmods.effective}"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>prepare-jpackage-input</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <delete dir="${project.build.directory}/dist/SYSCO" quiet="true"/>
+                                        <delete dir="${project.build.directory}/jpackage-input" quiet="true"/>
+                                        <mkdir dir="${project.build.directory}/jpackage-input/lib"/>
+                                        <copy todir="${project.build.directory}/jpackage-input/lib" failonerror="true">
+                                            <fileset dir="${project.build.directory}/lib"/>
+                                        </copy>
+                                        <copy file="${project.build.directory}/SYSCO.jar"
+                                              tofile="${project.build.directory}/jpackage-input/SYSCO.jar"
+                                              failonerror="true"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.4.1</version>
+                        <executions>
+                            <execution>
+                                <id>run-jpackage</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- Windows JDK includes jpackage.exe; use jdk/bin/jpackage on Linux/macOS if you extend this profile -->
+                                    <executable>${java.home}/bin/jpackage.exe</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <arguments>
+                                        <argument>--type</argument>
+                                        <argument>app-image</argument>
+                                        <argument>--name</argument>
+                                        <argument>SYSCO</argument>
+                                        <argument>--app-version</argument>
+                                        <argument>${project.version}</argument>
+                                        <argument>--vendor</argument>
+                                        <argument>SYSCO</argument>
+                                        <argument>--dest</argument>
+                                        <argument>${project.build.directory}/dist</argument>
+                                        <argument>--input</argument>
+                                        <argument>${project.build.directory}/jpackage-input</argument>
+                                        <argument>--main-jar</argument>
+                                        <argument>SYSCO.jar</argument>
+                                        <argument>--main-class</argument>
+                                        <argument>com.app.MainApp</argument>
+                                        <!-- Repeat module-path for JDK jmods and JavaFX jmods; jlink merges them (no semicolon in one value). -->
+                                        <argument>--module-path</argument>
+                                        <argument>${java.home}/jmods</argument>
+                                        <argument>--module-path</argument>
+                                        <argument>${javafx.jmods.effective}</argument>
+                                        <argument>--add-modules</argument>
+                                        <!-- No javafx.swing: app uses java.awt.Desktop (java.desktop), not FX/Swing interop -->
+                                        <argument>javafx.controls,javafx.fxml,javafx.graphics,javafx.base,java.sql,java.xml,java.logging,jdk.unsupported,java.naming,java.desktop,java.management,java.security.jgss</argument>
+                                        <argument>--java-options</argument>
+                                        <argument>-Dfile.encoding=UTF-8</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

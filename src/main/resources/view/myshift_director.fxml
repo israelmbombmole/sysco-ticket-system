@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.app.controller.MyShiftDirectorController"
+      styleClass="myshift-teams-page"
+      stylesheets="@../style/myshift-teams.css"
+      maxWidth="Infinity" VBox.vgrow="ALWAYS">
+
+    <VBox styleClass="myshift-teams-hero" spacing="4">
+        <Label styleClass="myshift-teams-hero-kicker" text="%myshiftTeamsKicker"/>
+        <Label styleClass="myshift-teams-hero-title" text="%myshiftDirectorTitle"/>
+        <Label fx:id="lblClock" styleClass="myshift-teams-hero-clock" text="--:--:--"/>
+        <Label fx:id="lblContextDate" styleClass="myshift-teams-hero-sub"/>
+    </VBox>
+
+    <VBox styleClass="myshift-teams-body" spacing="16" VBox.vgrow="ALWAYS">
+        <VBox styleClass="myshift-teams-card" spacing="10" VBox.vgrow="SOMETIMES">
+            <HBox spacing="8" alignment="CENTER_LEFT" styleClass="myshift-teams-toolbar">
+                <Label styleClass="myshift-teams-card-title" text="%myshiftPresentNow"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblOnline" styleClass="myshift-teams-online-badge"/>
+                <Button text="%myshiftPlanMonthOpen" onAction="#onOpenPlanMonth" styleClass="myshift-teams-btn-secondary"/>
+                <Label text="%myshiftScopeDirection"/>
+                <ComboBox fx:id="cmbDirection" prefWidth="220" visible="false" managed="false"/>
+                <Button text="%myshiftRefreshPresent" onAction="#onRefreshPresent" styleClass="myshift-teams-btn-secondary"/>
+            </HBox>
+            <TableView fx:id="tblPresent" prefHeight="200" VBox.vgrow="SOMETIMES">
+                <columns>
+                    <TableColumn fx:id="colPNames" text="%myshiftColNamesGivenNames" prefWidth="180"/>
+                    <TableColumn fx:id="colPMat" text="%matricule" prefWidth="100"/>
+                    <TableColumn fx:id="colPFonction" text="%myshiftColFonctions" prefWidth="140"/>
+                    <TableColumn fx:id="colPIn" text="%myshiftColIn" prefWidth="150"/>
+                    <TableColumn fx:id="colPSignature" text="%myshiftColSignature" prefWidth="120"/>
+                    <TableColumn fx:id="colPOut" text="%myshiftColOut" prefWidth="150"/>
+                    <TableColumn fx:id="colPLoc" text="%myshiftColLocationShort" prefWidth="200"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <VBox styleClass="myshift-teams-card" spacing="10" VBox.vgrow="ALWAYS">
+            <Label styleClass="myshift-teams-card-title" text="%myshiftReportTitle"/>
+            <HBox spacing="8" alignment="CENTER_LEFT" styleClass="myshift-teams-toolbar">
+                <Label text="%myshiftFrom"/>
+                <DatePicker fx:id="dpFrom" prefWidth="130"/>
+                <Label text="%myshiftTo"/>
+                <DatePicker fx:id="dpTo" prefWidth="130"/>
+                <Button text="%myshiftLoadReport" onAction="#onLoadReport" styleClass="myshift-teams-btn-primary"/>
+                <Button text="%myshiftExportCsv" onAction="#onExportCsv" styleClass="myshift-teams-btn-secondary"/>
+            </HBox>
+            <TableView fx:id="tblReport" VBox.vgrow="ALWAYS" prefHeight="300">
+                <columns>
+                    <TableColumn fx:id="colRNames" text="%myshiftColNamesGivenNames" prefWidth="180"/>
+                    <TableColumn fx:id="colRMat" text="%matricule" prefWidth="100"/>
+                    <TableColumn fx:id="colRFonction" text="%myshiftColFonctions" prefWidth="140"/>
+                    <TableColumn fx:id="colRIn" text="%myshiftColIn" prefWidth="150"/>
+                    <TableColumn fx:id="colRSignature" text="%myshiftColSignature" prefWidth="120"/>
+                    <TableColumn fx:id="colROut" text="%myshiftColOut" prefWidth="150"/>
+                    <TableColumn fx:id="colRLoc" text="%myshiftColLocationShort" prefWidth="220"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </VBox>
+</VBox>

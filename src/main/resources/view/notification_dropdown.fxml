@@ -9,12 +9,12 @@
       spacing="10"
       style="-fx-padding:15; -fx-background-color:white; -fx-border-color:#ddd; -fx-border-radius:6; -fx-background-radius:6;">
 
-    <Label text="🔔Notifications"
+    <Label text="%notificationsTitle"
            style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
     <ListView fx:id="notificationList"
           prefHeight="280"
-          prefWidth="330"/>
+          prefWidth="360"/>
 
     <Button text="%ViewAllNotifications"
             fx:id="btnViewAll"/>

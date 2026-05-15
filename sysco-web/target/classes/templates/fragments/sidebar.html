@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside class="app-sidebar" th:fragment="sidebar">
+    <nav>
+        <a th:each="item, tourIter : ${navItems}"
+           th:href="${item.path}"
+           th:id="${'tour-nav-' + tourIter.index}"
+           th:classappend="${currentPath == item.path ? ' active' : ''}"
+           th:text="#{__${item.messageKey}__}">Nav</a>
+    </nav>
+    <div class="sidebar-logout">
+        <button type="submit" form="syscoLogoutForm" class="danger-btn btn-block" th:text="#{logout}">
+            Log out
+        </button>
+    </div>
+</aside>
+</body>
+</html>

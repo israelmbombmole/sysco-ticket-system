@@ -1,14 +1,23 @@
 package com.app.controller;
 
+import com.app.MainApp;
 import com.app.auth.Session;
 import com.app.dao.NotificationDAO;
 import com.app.model.Notification;
 import com.app.model.TicketTask;
+import com.app.service.AutomationSchedulerService;
 import com.app.service.SLAMonitorService;
+import com.app.util.AppUiStyles;
+import com.app.util.DataShareManagementOtpService;
+import com.app.util.DashboardPermissions;
+import com.app.util.I18n;
+import com.app.util.ModuleAccess;
 import com.app.util.LanguageManager;
+import com.app.util.RoleKeyUtil;
 import com.app.util.NotificationPopup;
 import static com.sun.source.util.DocTrees.instance;
 
+import java.text.MessageFormat;
 import java.util.List;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -16,6 +25,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -33,7 +43,6 @@ import javafx.animation.Timeline;
 
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.util.Duration;
@@ -52,6 +61,7 @@ private static MainController instance;
     @FXML private Button btnChat;
 
     @FXML private Button btnUserManagement;
+    @FXML private Button btnLeaveManagement;
     @FXML private Button btnLoginAudit;
     @FXML private Button btnTicketMonitoring;
     @FXML private Button btnTicketManagement; 
@@ -67,6 +77,11 @@ private static MainController instance;
  
     @FXML private Button btnMyActivity;
     @FXML private Button btnCreateTicket;
+    @FXML private Button btnJobScheduler;
+    @FXML private Button btnMissions;
+    @FXML private Button btnCouriers;
+    @FXML private Button btnCourierManagement;
+    @FXML private Button btnMyShift;
     @FXML private Button btnFileShareManagement;
     @FXML private Button btnMyWork;
     @FXML private TableView<TicketTask> tableTasks;
@@ -81,6 +96,7 @@ private static MainController instance;
     private double mouseY;
     private String role;
     private Timeline notificationPolling;
+    private String currentPageFxml;
     
     
     
@@ -99,8 +115,10 @@ public void initialize() throws Exception {
     
 
     SLAMonitorService.checkAllTickets();
+    AutomationSchedulerService.start();
     startNotificationPolling();
     refreshNotifications();
+    updateNotificationBadges();
     startNotificationAutoRefresh();
 
     // Apply automatic translation
@@ -118,17 +136,16 @@ public void initialize() throws Exception {
        
 
         updateTexts(username);
-        loadDashboard();
+        updateNotificationBadges();
+        reloadCurrentCenterPage();
     });
 
-    // Responsive sidebar
+    // Responsive sidebar (same as sysco-ticket-system-preview: ~20% of width, clamped 180–260)
     rootPane.widthProperty().addListener((obs, oldVal, newVal) -> {
-        if (newVal.doubleValue() < 900) {
-            sidebar.setPrefWidth(70);
-        } else {
-            sidebar.setPrefWidth(220);
-        }
+        double targetWidth = Math.max(180, Math.min(260, newVal.doubleValue() * 0.2));
+        sidebar.setPrefWidth(targetWidth);
     });
+    sidebar.setPrefWidth(220);
 
     loadDashboard();
 
@@ -142,10 +159,8 @@ public void initialize() throws Exception {
         btnChat.setScaleY(1);
     });
 
-    if (!normalizeRole(Session.getRole()).equals("DIRECTEUR")) {
-    btnFileShareManagement.setVisible(false);
-    btnFileShareManagement.setManaged(false);
-}
+    // Visibility for File Share Management is driven by FILE_SHARE_MANAGEMENT in applyPermissions().
+    // Do not hide it here — that would override granted permissions for VERIFICATEUR and other roles.
 
     makeDraggable(btnChat);
 }
@@ -153,31 +168,93 @@ public void initialize() throws Exception {
 
 private void applyPermissions() {
 
+    String role = Session.getRole();
     Set<String> perms = Session.getPermissions();
 
-    if (perms == null) {
-        System.out.println("⚠️ No permissions found");
+    // ADMIN is unrestricted even if permission rows are missing/null.
+    if ("ADMIN".equalsIgnoreCase(role)) {
+        showAll();
         return;
     }
 
-    control(btnDashboard, perms.contains("DASHBOARD"));
-    control(btnDataEntry, perms.contains("DATA_ENTRY"));
-    control(btnDataManagement, perms.contains("DATA_MANAGEMENT"));
-    control(btnDataShare, perms.contains("DATASHARE"));
-    control(btnMyActivity, perms.contains("MY_ACTIVITY"));
-    control(btnTicketMonitoring, perms.contains("TICKET_MONITORING"));
-    control(btnTicketManagement, perms.contains("TICKET_MANAGEMENT"));
-    control(btnFileShareManagement, perms.contains("FILE_SHARE_MANAGEMENT"));
-    control(btnUserManagement, perms.contains("USER_MANAGEMENT"));
-    control(btnLoginAudit, perms.contains("LOGIN_AUDIT"));
-    control(btnFileShareAudit, perms.contains("FILE_SHARE_AUDIT"));
-    control(btnCreateTicket, perms.contains("CREATE_TICKET"));
-    control(btnMyWork, true);
-    
-    
-    
-    
+    if (perms == null) {
+        System.out.println("⚠️ No permissions found — treating as empty");
+        perms = java.util.Collections.emptySet();
+    }
+
+    control(btnDashboard, DashboardPermissions.hasDashboardAccess(perms, Session.getRole()));
+    control(btnDataEntry, ModuleAccess.canRead(perms, "DATA_ENTRY"));
+    control(btnDataManagement, ModuleAccess.canRead(perms, "DATA_MANAGEMENT"));
+    control(btnDataShare, ModuleAccess.canRead(perms, "DATASHARE"));
+    control(btnMyActivity, ModuleAccess.canRead(perms, "MY_ACTIVITY"));
+    control(btnTicketMonitoring, ModuleAccess.canRead(perms, "TICKET_MONITORING"));
+    control(btnTicketManagement, ModuleAccess.canRead(perms, "TICKET_MANAGEMENT"));
+    control(btnFileShareManagement, ModuleAccess.canRead(perms, "FILE_SHARE_MANAGEMENT"));
+    control(btnUserManagement, ModuleAccess.canRead(perms, "USER_MANAGEMENT"));
+    control(btnLoginAudit, ModuleAccess.canRead(perms, "LOGIN_AUDIT"));
+    control(btnFileShareAudit, ModuleAccess.canRead(perms, "FILE_SHARE_AUDIT"));
+    control(btnCreateTicket, ModuleAccess.canRead(perms, "CREATE_TICKET"));
+    control(btnJobScheduler, ModuleAccess.canRead(perms, "JOB_SCHEDULER"));
+    control(btnMissions, ModuleAccess.canRead(perms, "MISSIONS"));
+    control(btnLeaveManagement, ModuleAccess.canRead(perms, "LEAVE_MANAGEMENT")
+            || ModuleAccess.canRead(perms, "USER_MANAGEMENT"));
+    control(btnMyWork, ModuleAccess.canRead(perms, "MY_WORK")
+            || ModuleAccess.canRead(perms, "MY_ACTIVITY"));
+    control(btnCouriers, isCourierModuleVisible(role, perms));
+    control(btnCourierManagement, isCourierManagementVisible(role));
+    control(btnMyShift, isMyShiftModuleVisible(role, perms));
 }
+
+    private static boolean isCourierManagementVisible(String role) {
+        if (role == null) {
+            return false;
+        }
+        String r = RoleKeyUtil.normalizeForScope(role);
+        if (r.isEmpty()) {
+            return false;
+        }
+        return switch (r) {
+            case "ADMIN", "DIRECTEUR", "SECRETAIRE", "SOUS-DIRECTEUR", "INSPECTEUR" -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isMyShiftModuleVisible(String role, Set<String> perms) {
+        if (perms != null && ModuleAccess.canRead(perms, "MY_SHIFT")) {
+            return true;
+        }
+        if (role == null) {
+            return false;
+        }
+        String r = RoleKeyUtil.normalizeForScope(role);
+        if (r.isEmpty()) {
+            return false;
+        }
+        return switch (r) {
+            case "ADMIN", "DIRECTEUR", "SOUS-DIRECTEUR" -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isCourierModuleVisible(String role, Set<String> perms) {
+        if (perms != null && ModuleAccess.canRead(perms, "PHYSICAL_COURIER")) {
+            return true;
+        }
+        if (role == null) {
+            return false;
+        }
+        // toUpperCase() alone keeps accents (e.g. "Secrétaire" → "SECRÉTAIRE" ≠ "SECRETAIRE") and
+        // French "Courrier" → "COURRIER" ≠ "COURIER" — use the same NFD normalisation as courrier scoping
+        String r = RoleKeyUtil.normalizeForScope(role);
+        if (r.isEmpty()) {
+            return false;
+        }
+        return switch (r) {
+            case "COURIER", "SECRETAIRE", "DIRECTEUR", "SOUS-DIRECTEUR", "INSPECTEUR", "CONTROLEUR",
+                 "VERIFICATEUR", "VERIFICATEUR-ASSISTANT" -> true;
+            default -> false;
+        };
+    }
 
 
 
@@ -211,6 +288,7 @@ private void applyPermissions() {
 
     btnDataShare.setText(bundle.getString("dataShare"));
     btnMyActivity.setText(bundle.getString("myActivity"));
+    btnMyWork.setText(bundle.getString("myWork"));
 
     btnTicketMonitoring.setText(bundle.getString("ticketMonitoring"));
     btnTicketManagement.setText(bundle.getString("ticketManagement"));
@@ -218,10 +296,28 @@ private void applyPermissions() {
     btnFileShareManagement.setText(bundle.getString("fileShareManagement"));
 
     btnUserManagement.setText(bundle.getString("userManagement"));
+    if (btnLeaveManagement != null) {
+        btnLeaveManagement.setText(bundle.getString("leaveManagement"));
+    }
     btnLoginAudit.setText(bundle.getString("loginAudit"));
     btnFileShareAudit.setText(bundle.getString("fileShareAudit"));
 
     btnCreateTicket.setText(bundle.getString("createTicket"));
+    if (btnJobScheduler != null) {
+        btnJobScheduler.setText(bundle.getString("jobScheduler"));
+    }
+    if (btnMissions != null) {
+        btnMissions.setText(bundle.getString("missions"));
+    }
+    if (btnMyShift != null) {
+        btnMyShift.setText(I18n.t("myshiftModule", "MyShift"));
+    }
+    if (btnCouriers != null) {
+        btnCouriers.setText(bundle.getString("courierModule"));
+    }
+    if (btnCourierManagement != null) {
+        btnCourierManagement.setText(I18n.t("courierManagementModule", "Courier management"));
+    }
 
     btnLogout.setText(bundle.getString("logout"));
     
@@ -233,6 +329,114 @@ private void applyPermissions() {
     @FXML
 private void openCreateTicket() {
     loadPage("ticket_create.fxml");
+}
+
+@FXML
+private void openJobScheduler() {
+    if (!"ADMIN".equalsIgnoreCase(Session.getRole())
+            && (Session.getPermissions() == null
+            || !ModuleAccess.canRead(Session.getPermissions(), "JOB_SCHEDULER"))) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(I18n.t("accessDenied", "Access Denied"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18n.t("err.noPermissionJobScheduler",
+                "You do not have permission to access Job Scheduler."));
+        alert.showAndWait();
+        return;
+    }
+    loadPage("job_scheduler.fxml");
+}
+
+@FXML
+private void openLeaveManagement() {
+    Set<String> p = Session.getPermissions();
+    boolean mayLeave = p != null && (ModuleAccess.canRead(p, "LEAVE_MANAGEMENT")
+            || ModuleAccess.canRead(p, "USER_MANAGEMENT"));
+    if (!"ADMIN".equalsIgnoreCase(Session.getRole())
+            && (p == null || !mayLeave)) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(I18n.t("accessDenied", "Access Denied"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18n.t("err.noPermissionLeaveManagement",
+                "You do not have permission to manage leave and holidays."));
+        alert.showAndWait();
+        return;
+    }
+    loadPage("leave_management.fxml");
+}
+
+@FXML
+private void openMissions() {
+    if (!"ADMIN".equalsIgnoreCase(Session.getRole())
+            && (Session.getPermissions() == null
+            || !ModuleAccess.canRead(Session.getPermissions(), "MISSIONS"))) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(I18n.t("accessDenied", "Access Denied"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18n.t("err.noPermissionMissions",
+                "You do not have permission to access Missions."));
+        alert.showAndWait();
+        return;
+    }
+    loadPage("missions.fxml");
+}
+
+@FXML
+private void openCouriers() {
+    if (!"ADMIN".equalsIgnoreCase(Session.getRole())
+            && !isCourierModuleVisible(Session.getRole(), Session.getPermissions())) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(I18n.t("accessDenied", "Access Denied"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18n.t("err.noPermissionCourier", "You do not have access to the courier module."));
+        alert.showAndWait();
+        return;
+    }
+    loadPage("courier_portal.fxml");
+}
+
+@FXML
+private void openCourierManagement() {
+    if (!"ADMIN".equalsIgnoreCase(Session.getRole())
+            && !isCourierManagementVisible(Session.getRole())) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(I18n.t("accessDenied", "Access Denied"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18n.t(
+                "err.noPermissionCourierManagement",
+                "You do not have access to courier management."));
+        alert.showAndWait();
+        return;
+    }
+    loadPage("courier_management.fxml");
+}
+
+@FXML
+private void openMyShift() {
+    String raw = Session.getRole();
+    if (raw != null && "EXTERNAL".equalsIgnoreCase(raw)) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(I18n.t("accessDenied", "Access Denied"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18n.t("err.noPermissionMyShift", "You do not have access to MyShift."));
+        alert.showAndWait();
+        return;
+    }
+    if (!isMyShiftModuleVisible(raw, Session.getPermissions())) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(I18n.t("accessDenied", "Access Denied"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18n.t("err.noPermissionMyShift", "You do not have access to MyShift."));
+        alert.showAndWait();
+        return;
+    }
+    if ("SOUS-DIRECTEUR".equalsIgnoreCase(raw)) {
+        loadPage("myshift_sous.fxml");
+    } else if ("ADMIN".equalsIgnoreCase(raw) || "DIRECTEUR".equalsIgnoreCase(raw)) {
+        loadPage("myshift_director.fxml");
+    } else {
+        loadPage("myshift_agent.fxml");
+    }
 }
     
 @FXML
@@ -252,12 +456,13 @@ private void openTicketManagement() {
     try {
 
         // 🔥 PERMISSION CHECK ONLY (NO ROLE)
-        if (!Session.getPermissions().contains("TICKET_MANAGEMENT")) {
+        if (!"ADMIN".equalsIgnoreCase(Session.getRole())
+                && !ModuleAccess.canRead(Session.getPermissions(), "TICKET_MANAGEMENT")) {
 
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Access Denied");
+            alert.setTitle(I18n.t("accessDenied", "Access Denied"));
             alert.setHeaderText(null);
-            alert.setContentText("You do not have permission to access Ticket Management.");
+            alert.setContentText(I18n.t("err.noPermissionTicketManagement", "You do not have permission to access Ticket Management."));
             alert.showAndWait();
 
             return;
@@ -269,8 +474,7 @@ private void openTicketManagement() {
         );
 
         Parent view = loader.load();
-
-        rootPane.setCenter(view);
+        setCenterContent(view);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -280,26 +484,102 @@ private void openTicketManagement() {
 
 @FXML
 private void handleDataShareManagement() {
+    String currentRole = Session.getRole();
+    boolean isAdmin = "ADMIN".equalsIgnoreCase(currentRole);
 
-     try {
+    if (!isAdmin && (Session.getPermissions() == null
+            || !ModuleAccess.canRead(Session.getPermissions(), "FILE_SHARE_MANAGEMENT"))) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(I18n.t("accessDenied", "Access Denied"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18n.t("err.noPermissionFileShareManagement",
+                "You do not have permission to access File Share Management."));
+        alert.showAndWait();
+        return;
+    }
 
+    if (isAdmin || DataShareManagementOtpService.hasActiveAccess(Session.getUserId())) {
+        openDataShareManagementPage();
+        return;
+    }
+
+    ButtonType enterOtpBtn = new ButtonType(
+            I18n.t("button.enterOtp", "Enter OTP"),
+            ButtonBar.ButtonData.OK_DONE
+    );
+    ButtonType requestOtpBtn = new ButtonType(
+            I18n.t("button.requestOtpAdmin", "Request OTP from admin"),
+            ButtonBar.ButtonData.OTHER
+    );
+    ButtonType cancelBtn = new ButtonType(
+            I18n.t("cancel", "Cancel"),
+            ButtonBar.ButtonData.CANCEL_CLOSE
+    );
+
+    Alert gate = new Alert(Alert.AlertType.INFORMATION);
+    gate.setTitle(I18n.t("otpPageRestrictedTitle", "OTP Required"));
+    gate.setHeaderText(I18n.t("otpPageRestrictedHeader", "File Share Management is protected"));
+    String sessionHint = MessageFormat.format(
+            I18n.t("otpPageRestrictedSessionHint",
+                    "After a valid OTP, access lasts up to {0} minutes (admin setting, max 20)."),
+            DataShareManagementOtpService.getSessionDurationMinutes());
+    gate.setContentText(I18n.t("otpPageRestrictedMessage",
+            "Only admins can open this page directly. Authorized users must use an admin-issued OTP.")
+            + "\n\n" + sessionHint);
+    gate.getButtonTypes().setAll(enterOtpBtn, requestOtpBtn, cancelBtn);
+
+    Optional<ButtonType> selected = gate.showAndWait();
+    if (selected.isEmpty() || selected.get() == cancelBtn) {
+        return;
+    }
+
+    if (selected.get() == requestOtpBtn) {
+        DataShareManagementOtpService.requestOtpFromAdmin(Session.getUserId(), Session.getUsername());
+        Alert info = new Alert(Alert.AlertType.INFORMATION);
+        info.setHeaderText(null);
+        info.setContentText(I18n.t("otpRequestSentToAdmin",
+                "OTP request sent to admin. Please wait for approval notification."));
+        info.showAndWait();
+        return;
+    }
+
+    TextInputDialog otpDialog = new TextInputDialog();
+    otpDialog.setTitle(I18n.t("otpRequiredTitle", "OTP Required"));
+    otpDialog.setHeaderText(I18n.t("otpPageEnterHeader", "Enter OTP for File Share Management"));
+    otpDialog.setContentText(I18n.t("otpLabel", "OTP") + ":");
+    String entered = otpDialog.showAndWait().orElse("").trim();
+    if (entered.isBlank()) {
+        Alert warn = new Alert(Alert.AlertType.WARNING);
+        warn.setHeaderText(null);
+        warn.setContentText(I18n.t("err.otpRequired", "OTP is required to access this file."));
+        warn.showAndWait();
+        return;
+    }
+
+    boolean ok = DataShareManagementOtpService.verifyOtpAndGrant(Session.getUserId(), entered);
+    if (!ok) {
+        Alert warn = new Alert(Alert.AlertType.WARNING);
+        warn.setHeaderText(null);
+        warn.setContentText(I18n.t("err.invalidOrExpiredOtp", "Invalid or expired OTP."));
+        warn.showAndWait();
+        return;
+    }
+
+    openDataShareManagementPage();
+}
+
+private void openDataShareManagementPage() {
+    try {
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/view/DataShareManagement.fxml"),
                 LanguageManager.getBundle()
         );
-
         Parent view = loader.load();
-
-        // Load the screen into the center of the main layout
-        rootPane.setCenter(view);
-
+        setCenterContent(view);
     } catch (Exception e) {
         e.printStackTrace();
     }
-
-
 }
-
 
 
 @FXML
@@ -335,7 +615,9 @@ public void openChat()  {
 
             Stage stage = new Stage();
             stage.setTitle(LanguageManager.getBundle().getString("chat"));
-            stage.setScene(new Scene(root));
+            Scene chatScene = new Scene(root);
+            AppUiStyles.applyToScene(chatScene);
+            stage.setScene(chatScene);
             stage.setWidth(450);
             stage.setHeight(600);
             stage.centerOnScreen();
@@ -381,7 +663,8 @@ public void openChat()  {
             
 
             Parent root = loader.load();
-            rootPane.setCenter(root);
+            setCenterContent(root);
+            currentPageFxml = fxml;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -397,6 +680,14 @@ public void openChat()  {
 private void loadDashboard() {
 
     String role = normalizeRole(Session.getRole());
+    String rawRole = Session.getRole();
+
+    if (!"ADMIN".equalsIgnoreCase(rawRole)
+            && !"COURIER".equalsIgnoreCase(rawRole)
+            && !"SECRETAIRE".equalsIgnoreCase(rawRole)
+            && !DashboardPermissions.hasDashboardAccess(Session.getPermissions(), Session.getRole())) {
+        return;
+    }
 
     switch (role) {
 
@@ -404,15 +695,31 @@ private void loadDashboard() {
             loadPage("admin_dashboard.fxml");
             break;
 
+        case "COURIER":
+            loadPage("courier_home_dashboard.fxml");
+            break;
+        case "SECRETAIRE":
+            loadPage("secretaire_home_dashboard.fxml");
+            break;
+
         case "SOUS-DIRECTEUR":
-        case "INSPECTEUR":
             loadPage("agent_dashboard.fxml");
             break;
 
+        case "INSPECTEUR":
+            loadPage("external_dashboard.fxml");
+            break;
+
         case "CONTROLEUR":
-        case "VERIFICATEUR":
-        case "VERIFICATEUR-ASSISTANT":
             loadPage("user_dashboard_home.fxml");
+            break;
+
+        case "VERIFICATEUR":
+            loadPage("user_dashboard.fxml");
+            break;
+
+        case "VERIFICATEUR-ASSISTANT":
+            loadPage("assistant_dashboard.fxml");
             break;
 
         default:
@@ -532,6 +839,9 @@ private void loadDashboard() {
 
    
    private void show(Button btn) {
+    if (btn == null) {
+        return;
+    }
     btn.setVisible(true);
     btn.setManaged(true);
 }
@@ -548,6 +858,9 @@ private void loadDashboard() {
 }
 
 private void hide(Button btn) {
+    if (btn == null) {
+        return;
+    }
     btn.setVisible(false);
     btn.setManaged(false);
 }
@@ -559,13 +872,20 @@ private void hideAll() {
     hide(btnDataManagement);
     hide(btnDataShare);
     hide(btnMyActivity);
+    hide(btnMyWork);
     hide(btnTicketMonitoring);
     hide(btnTicketManagement);
     hide(btnFileShareManagement);
     hide(btnUserManagement);
+    hide(btnLeaveManagement);
     hide(btnLoginAudit);
     hide(btnFileShareAudit);
     hide(btnCreateTicket);
+    hide(btnJobScheduler);
+    hide(btnMissions);
+    hide(btnCouriers);
+    hide(btnCourierManagement);
+    hide(btnMyShift);
 }
 
 private void showAll() {
@@ -575,13 +895,20 @@ private void showAll() {
     show(btnDataManagement);
     show(btnDataShare);
     show(btnMyActivity);
+    show(btnMyWork);
     show(btnTicketMonitoring);
     show(btnTicketManagement);
     show(btnFileShareManagement);
     show(btnUserManagement);
+    show(btnLeaveManagement);
     show(btnLoginAudit);
     show(btnFileShareAudit);
     show(btnCreateTicket);
+    show(btnJobScheduler);
+    show(btnMissions);
+    show(btnCouriers);
+    show(btnCourierManagement);
+    show(btnMyShift);
 }
    
    
@@ -592,31 +919,36 @@ private void showAll() {
 private void handleLogout(ActionEvent event) {
 
     Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-    confirm.setTitle("Logout");
-    confirm.setHeaderText("Confirm Logout");
-    confirm.setContentText("Are you sure you want to logout?");
+    confirm.setTitle(I18n.t("logout", "Logout"));
+    confirm.setHeaderText(I18n.t("confirmLogout", "Confirm Logout"));
+    confirm.setContentText(I18n.t("confirmLogoutMessage", "Are you sure you want to logout?"));
 
     Optional<ButtonType> result = confirm.showAndWait();
 
     if (result.isPresent() && result.get() == ButtonType.OK) {
 
         try {
+            // Always return to French when opening login screen.
+            LanguageManager.setLocale(Locale.FRENCH);
 
             // clear session
             Session.clear();
 
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/login.fxml")
+                    getClass().getResource("/view/login.fxml"),
+                    LanguageManager.getBundle()
             );
 
             Parent loginRoot = loader.load();
 
-            Scene loginScene = new Scene(loginRoot, 900, 550);
+            Scene loginScene = new Scene(loginRoot);
+            AppUiStyles.applyToScene(loginScene);
 
             Stage stage = (Stage) btnLogout.getScene().getWindow();
 
             stage.setScene(loginScene);
-            stage.setTitle("Login");
+            stage.setTitle(I18n.t("login", "Login"));
+            MainApp.applyPreviewWindowSize(stage);
             stage.setMaximized(true);
             stage.centerOnScreen();
             stage.show();
@@ -662,8 +994,7 @@ private void openDataShare() {
         );
 
         Parent view = loader.load();
-
-        rootPane.setCenter(view);
+        setCenterContent(view);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -676,11 +1007,12 @@ private void openDataShare() {
 private void updateNotificationBadges() {
 
     int unread = NotificationDAO.getUnreadCount(Session.getUserId());
-
+    ResourceBundle bundle = LanguageManager.getBundle();
+    String dataShareLabel = bundle.getString("dataShare");
     if (unread > 0) {
-        btnDataShare.setText("DataShare  🔔 " + unread);
+        btnDataShare.setText(dataShareLabel + " (" + unread + ")");
     } else {
-        btnDataShare.setText("DataShare");
+        btnDataShare.setText(dataShareLabel);
     }
 }
 
@@ -696,6 +1028,17 @@ private void refreshNotifications() {
     } else {
         badgeNotifications.setVisible(false);
     }
+}
+
+/** Call after notification-creating actions so the bell badge updates without waiting for polling. */
+public static void refreshNotificationBadgesNow() {
+    if (instance == null) {
+        return;
+    }
+    javafx.application.Platform.runLater(() -> {
+        instance.refreshNotifications();
+        instance.updateNotificationBadges();
+    });
 }
 
 private void startNotificationAutoRefresh() {
@@ -730,9 +1073,10 @@ private void openNotifications() {
         Parent root = loader.load();
 
         Stage stage = new Stage();
-        stage.setTitle("Notifications");
+        stage.setTitle(I18n.t("notifications", "Notifications"));
 
         Scene scene = new Scene(root);
+        AppUiStyles.applyToScene(scene);
 
         stage.setScene(scene);
         stage.setWidth(350);
@@ -741,9 +1085,6 @@ private void openNotifications() {
         stage.initOwner(btnNotifications.getScene().getWindow());
 
         stage.show();
-
-        // ⭐ mark notifications as read
-        NotificationDAO.markAllRead(Session.getUserId());
 
         // ⭐ refresh badges
         updateNotificationBadges();
@@ -770,8 +1111,7 @@ private void openMyActivity() {
         );
 
         Parent view = loader.load();
-
-        rootPane.setCenter(view);
+        setCenterContent(view);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -792,9 +1132,7 @@ private void openTaskDetails(TicketTask task, MouseEvent event) {
 
         TaskDetailsController controller = loader.getController();
         controller.setTask(task);
-
-        // ✅ CORRECT NAVIGATION
-        rootPane.setCenter(view);
+        setCenterContent(view);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -871,7 +1209,6 @@ public static void loadPage(String fxml, java.util.function.Consumer<Object> con
         );
 
         Parent view = loader.load();
-
         Object controller = loader.getController();
 
         if (consumer != null && controller != null) {
@@ -884,7 +1221,8 @@ public static void loadPage(String fxml, java.util.function.Consumer<Object> con
         }
 
         javafx.application.Platform.runLater(() -> {
-            instance.rootPane.setCenter(view);
+            instance.setCenterContent(view);
+            instance.currentPageFxml = fxml;
         });
 
     } catch (Exception e) {
@@ -892,8 +1230,46 @@ public static void loadPage(String fxml, java.util.function.Consumer<Object> con
     }
 }
 
+private void reloadCurrentCenterPage() {
+    if (currentPageFxml == null || currentPageFxml.isBlank()) {
+        loadDashboard();
+        return;
+    }
+    loadPage(currentPageFxml);
+}
 
+private void setCenterContent(Parent view) {
+    rootPane.setCenter(adaptViewForViewport(view));
+}
 
+/**
+ * Same behavior as {@code sysco-ticket-system-preview} MainController: center content is scrollable
+ * and tracks viewport width for {@link Region} children.
+ */
+private Parent adaptViewForViewport(Parent view) {
+    if (view instanceof ScrollPane scrollView) {
+        scrollView.setFitToWidth(true);
+        scrollView.setFitToHeight(false);
+        scrollView.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        return scrollView;
+    }
 
+    ScrollPane wrapper = new ScrollPane(view);
+    wrapper.setFitToWidth(true);
+    wrapper.setFitToHeight(true);
+    wrapper.setPannable(true);
+    wrapper.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    wrapper.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    wrapper.setStyle("-fx-background-color:transparent; -fx-background:transparent;");
+
+    if (view instanceof Region region) {
+        region.setMaxWidth(Double.MAX_VALUE);
+        region.setMaxHeight(Double.MAX_VALUE);
+        wrapper.viewportBoundsProperty().addListener((obs, oldBounds, newBounds) ->
+                region.setPrefWidth(newBounds.getWidth()));
+    }
+
+    return wrapper;
+}
 
 }

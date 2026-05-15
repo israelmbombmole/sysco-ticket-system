@@ -32,12 +32,12 @@
 
     <!-- Keyword Search -->
     <TextField fx:id="txtKeyword"
-               promptText="Search details..."
+               promptText="%searchDetails"
                prefWidth="250"/>
 
     <!-- Action Buttons -->
     <Button text="%Apply" onAction="#handleFilter"/>
-    <Button text="Reset" onAction="#handleReset"/>
+    <Button text="%reset" onAction="#handleReset"/>
 
 </HBox>
 

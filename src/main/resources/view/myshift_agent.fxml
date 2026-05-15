@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.image.ImageView?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.app.controller.MyShiftAgentController"
+      styleClass="myshift-teams-page"
+      stylesheets="@../style/myshift-teams.css"
+      maxWidth="Infinity" VBox.vgrow="ALWAYS">
+
+    <VBox styleClass="myshift-teams-hero" spacing="4">
+        <Label styleClass="myshift-teams-hero-kicker" text="%myshiftTeamsKicker"/>
+        <Label styleClass="myshift-teams-hero-title" text="%myshiftAgentTitle"/>
+        <Label fx:id="lblClock" styleClass="myshift-teams-hero-clock" text="--:--:--"/>
+        <Label fx:id="lblContextDate" styleClass="myshift-teams-hero-sub"/>
+    </VBox>
+
+    <ScrollPane fitToWidth="true" hbarPolicy="NEVER" pannable="false"
+                styleClass="myshift-teams-scroll"
+                VBox.vgrow="ALWAYS" minHeight="0" maxWidth="Infinity" maxHeight="Infinity">
+        <VBox styleClass="myshift-teams-body" spacing="16" minWidth="0" maxWidth="Infinity" fillWidth="true">
+            <VBox styleClass="myshift-teams-card" spacing="8" maxWidth="720" minWidth="0" fillWidth="true">
+                <Label styleClass="myshift-teams-card-title" text="%myshiftMyPlanTitle"/>
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="myshift-teams-toolbar">
+                    <Button fx:id="btnCalPrev" onAction="#onCalPrev" text="‹" minWidth="36" styleClass="myshift-teams-btn-secondary"/>
+                    <Label fx:id="lblCalMonth" styleClass="myshift-teams-card-title"/>
+                    <Button fx:id="btnCalNext" onAction="#onCalNext" text="›" minWidth="36" styleClass="myshift-teams-btn-secondary"/>
+                </HBox>
+                <GridPane fx:id="grdPlan" hgap="4" vgap="4" maxWidth="720"/>
+            </VBox>
+            <VBox styleClass="myshift-teams-card" spacing="8" maxWidth="720" minWidth="0" fillWidth="true">
+                <Label styleClass="myshift-teams-card-title" text="%myshiftAgentCardTitle"/>
+                <Label text="%myshiftAgentIntro" styleClass="myshift-teams-muted"/>
+
+                <Label styleClass="myshift-teams-section-label" text="%myshiftSectionPreview"/>
+                <StackPane styleClass="myshift-teams-face-frame" maxWidth="360" minHeight="260" alignment="TOP_LEFT">
+                    <ImageView fx:id="imgPreview" fitWidth="336" fitHeight="252" preserveRatio="true" smooth="true"/>
+                </StackPane>
+                <Label text="%myshiftSectionCapture" styleClass="myshift-teams-section-label"/>
+                <HBox spacing="8" alignment="CENTER_LEFT" styleClass="myshift-teams-toolbar">
+                    <Button fx:id="btnStartWebcam" text="%myshiftStartWebcam" onAction="#onStartWebcam" styleClass="myshift-teams-btn-primary"/>
+                    <Button fx:id="btnStopWebcam" text="%myshiftStopWebcam" onAction="#onStopWebcam" styleClass="myshift-teams-btn-secondary" disable="true"/>
+                    <Button text="%myshiftChoosePhoto" onAction="#onChoosePhoto" styleClass="myshift-teams-btn-secondary"/>
+                </HBox>
+                <Label text="%myshiftSectionClock" styleClass="myshift-teams-section-label"/>
+                <HBox spacing="8" alignment="CENTER_LEFT" styleClass="myshift-teams-toolbar">
+                    <Button text="%myshiftSignIn" onAction="#onSignIn" defaultButton="true" styleClass="myshift-teams-btn-primary"/>
+                    <Button text="%myshiftSignOut" onAction="#onSignOut" styleClass="myshift-teams-btn-secondary"/>
+                </HBox>
+                <Label fx:id="lblStatus" styleClass="myshift-teams-status-line" wrapText="true"/>
+                <Label fx:id="lblDev" styleClass="myshift-teams-dev-hint" wrapText="true"/>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+</VBox>

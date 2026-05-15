@@ -11,47 +11,50 @@
     <center>
 
         <VBox spacing="20"
+              minWidth="0"
+              maxWidth="Infinity"
               alignment="TOP_CENTER"
               style="-fx-padding:30;">
 
-            <Label text="Edit Internal Ticket"
+            <Label text="%editInternalTicket"
                    style="-fx-font-size:22px; -fx-font-weight:bold;"/>
 
             <VBox spacing="15"
-                  maxWidth="500"
+                  minWidth="280"
+                  maxWidth="Infinity"
                   style="-fx-background-color:white;
                          -fx-padding:25;
                          -fx-background-radius:10;
                          -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.1),10,0,0,4);">
 
                 <VBox spacing="5">
-                    <Label text="Title"/>
+                    <Label text="%title"/>
                     <TextField fx:id="txtTitle"/>
                 </VBox>
 
                 <VBox spacing="5">
-                    <Label text="Description"/>
+                    <Label text="%description"/>
                     <TextArea fx:id="txtDescription"
                               prefRowCount="4"/>
                 </VBox>
 
                 <VBox spacing="5">
-                    <Label text="Priority"/>
+                    <Label text="%priority"/>
                     <ComboBox fx:id="cmbPriority"/>
                 </VBox>
 
                 <VBox spacing="5">
-                    <Label text="Department"/>
+                    <Label text="%department"/>
                     <ComboBox fx:id="cmbDepartment"/>
                 </VBox>
 
                 <HBox spacing="10" alignment="CENTER_RIGHT">
 
-                    <Button text="Cancel"
+                    <Button text="%cancel"
                             onAction="#handleCancel"
                             style="-fx-background-color:#e5e7eb;"/>
 
-                    <Button text="Update Ticket"
+                    <Button text="%updateTicket"
                             onAction="#handleUpdate"
                             style="-fx-background-color:#2f80ed;
                                    -fx-text-fill:white;"/>

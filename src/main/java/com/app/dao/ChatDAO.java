@@ -37,7 +37,10 @@ public class ChatDAO {
                 receiverId,
                 "New Message",
                 Session.getUsername()+ " sent you a message",
-                "CHAT_MESSAGE"
+                "CHAT_MESSAGE",
+                "CHAT_USER",
+                Session.getUserId(),
+                null
         );
             
             

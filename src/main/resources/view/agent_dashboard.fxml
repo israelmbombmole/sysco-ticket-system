@@ -13,66 +13,45 @@
             fitToWidth="true"
             hbarPolicy="NEVER"
             vbarPolicy="AS_NEEDED"
-            style="-fx-background-color:#f4f6f9;">
+            styleClass="gov-work-page"
+            style="-fx-background:transparent;"
+            stylesheets="@../style/app.css">
 
     <content>
 
-        <HBox alignment="CENTER_RIGHT" spacing="10">
+        <VBox spacing="15" style="-fx-padding:20;" minWidth="0" maxWidth="Infinity">
 
-    <Label text="%agent_dashboard"
-           style="-fx-font-size:20px; -fx-font-weight:bold;" />
-
-    <Region HBox.hgrow="ALWAYS"/>
-
-    <!-- 🔔 NOTIFICATION BUTTON -->
-    <Button text="🔔"
-            onAction="#openNotifications"
-            style="-fx-font-size:16px;"/>
-
-    <!-- 🔴 BADGE -->
-    <Label fx:id="lblNotifCount"
-           style="-fx-background-color:red;
-                  -fx-text-fill:white;
-                  -fx-padding:2 6;
-                  -fx-background-radius:10;"/>
-
-</HBox>
-        
-        
-        <VBox spacing="15" style="-fx-padding:20;">
-
-            <!-- ================= TITLE ================= -->
             <Label text="%agent_dashboard"
                    style="-fx-font-size:20px; -fx-font-weight:bold;" />
 
             <!-- ================= STAT CARDS ================= -->
-            <FlowPane hgap="20" vgap="20">
+            <FlowPane hgap="20" vgap="20" minWidth="0" maxWidth="Infinity" prefWrapLength="1200">
 
-                <VBox styleClass="card" minWidth="180">
+                <VBox fx:id="cardAgentTotal" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="180">
                     <Label text="%total"/>
                     <Label fx:id="lblTotal"
                            style="-fx-font-size:20px; -fx-font-weight:bold;"/>
                 </VBox>
 
-                <VBox styleClass="card" minWidth="180">
+                <VBox fx:id="cardAgentOpen" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="180">
                     <Label text="%open"/>
                     <Label fx:id="lblOpen"
                            style="-fx-font-size:20px; -fx-font-weight:bold;"/>
                 </VBox>
 
-                <VBox styleClass="card" minWidth="180">
+                <VBox fx:id="cardAgentInProgress" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="180">
                     <Label text="%inProgress"/>
                     <Label fx:id="lblInProgress"
                            style="-fx-font-size:20px; -fx-font-weight:bold;"/>
                 </VBox>
 
-                <VBox styleClass="card" minWidth="180">
+                <VBox fx:id="cardAgentMerged" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="180">
                     <Label text="%MergeTicket"/>
                     <Label fx:id="lblMerged"
                            style="-fx-font-size:20px; -fx-font-weight:bold;"/>
                 </VBox>
 
-                <VBox styleClass="card" minWidth="180">
+                <VBox fx:id="cardAgentClosed" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="180">
                     <Label text="%closed"/>
                     <Label fx:id="lblClosed"
                            style="-fx-font-size:20px; -fx-font-weight:bold;"/>
@@ -82,12 +61,14 @@
 
 
             <!-- ================= PIE CHART ================= -->
-            <VBox styleClass="card">
+            <VBox styleClass="card" managed="false" visible="false">
 
                 <Label text="%ticketDistribution"
                        style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
                 <PieChart fx:id="pieChart"
+                          minWidth="0"
+                          maxWidth="Infinity"
                           minHeight="280"/>
 
             </VBox>
@@ -99,21 +80,21 @@
                 <Label text="%SLAOverview"
                        style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
-                <FlowPane hgap="20" vgap="15">
+                <FlowPane hgap="20" vgap="15" minWidth="0" maxWidth="Infinity" prefWrapLength="800">
 
-                    <VBox minWidth="180">
+                    <VBox fx:id="cardAgentSlaBreaches" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="180">
                         <Label text="%SLABreaches"/>
                         <Label fx:id="lblSlaBreaches"
                                style="-fx-font-size:20px; -fx-font-weight:bold;"/>
                     </VBox>
 
-                    <VBox minWidth="180">
+                    <VBox fx:id="cardAgentEscalations" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="180">
                         <Label text="%escalations"/>
                         <Label fx:id="lblEscalations"
                                style="-fx-font-size:20px; -fx-font-weight:bold;"/>
                     </VBox>
 
-                    <VBox minWidth="180">
+                    <VBox fx:id="cardAgentSlaCompliance" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="180">
                         <Label text="%slaCompliance"/>
                         <Label fx:id="lblSlaCompliance"
                                style="-fx-font-size:20px; -fx-font-weight:bold;"/>
@@ -123,6 +104,28 @@
 
             </VBox>
 
+            <!-- Courrier (sous-direction) -->
+            <VBox spacing="12" minWidth="0" maxWidth="Infinity" styleClass="card" style="-fx-padding:12;">
+                <Label text="%courierBlockSousTitle" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+                <FlowPane hgap="12" vgap="10" minWidth="0" maxWidth="Infinity" prefWrapLength="900">
+                    <VBox fx:id="cardAgentCourierTotal" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="160">
+                        <Label text="%courierDashSousTotal" styleClass="muted-text"/>
+                        <Label fx:id="lblCourierSTotal" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+                    </VBox>
+                    <VBox fx:id="cardAgentCourierOpen" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="160">
+                        <Label text="%courierDashSousOpen" styleClass="muted-text"/>
+                        <Label fx:id="lblCourierSOpen" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+                    </VBox>
+                    <VBox fx:id="cardAgentCourierPipe" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="160">
+                        <Label text="%courierDashSousPipeline" styleClass="muted-text"/>
+                        <Label fx:id="lblCourierSPipe" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+                    </VBox>
+                    <VBox fx:id="cardAgentCourierResolved" styleClass="clickable-stat-card dashboard-stat-sq" minWidth="160">
+                        <Label text="%resolved" styleClass="muted-text"/>
+                        <Label fx:id="lblCourierSResolved" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+                    </VBox>
+                </FlowPane>
+            </VBox>
 
             <!-- ================= PERFORMANCE CHART ================= -->
             <VBox styleClass="card">
@@ -131,7 +134,8 @@
                        style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
                 <LineChart fx:id="performanceChart"
-                           title="Tickets Closed Per Day"
+                           minWidth="0"
+                           maxWidth="Infinity"
                            minHeight="300">
 
                     <xAxis>
@@ -145,60 +149,6 @@
                 </LineChart>
 
             </VBox>
-
-
-            <!-- ================= TABLE ================= -->
-            <VBox styleClass="card">
-
-                <Label text="%myAssignedTickets"
-                       style="-fx-font-size:16px; -fx-font-weight:bold;"/>
-
-                <HBox alignment="CENTER_RIGHT" spacing="10">
-
-                    <TextField fx:id="txtSearch"
-                               promptText="🔍 %searchTickets"
-                               prefWidth="260"
-                               style="-fx-background-radius:6;
-                                      -fx-border-radius:6;
-                                      -fx-border-color:#d1d5db;" />
-
-                </HBox>
-
-                <TableView fx:id="tableTickets">
-
-                    <columns>
-
-                        <TableColumn fx:id="colTicketId" text="%id"/>
-                        <TableColumn fx:id="colTitle" text="%title"/>
-                        <TableColumn fx:id="colStatus" text="%status"/>
-                        <TableColumn fx:id="colType" text="%Type"/>
-                        <TableColumn fx:id="colStarted" text="%started"/>
-                        <TableColumn fx:id="colClosed" text="%closed"/>
-                        <TableColumn fx:id="colResolution" text="%resolution"/>
-
-                    </columns>
-
-                </TableView>
-
-            </VBox>
-
-
-            <!-- ================= ACTION BUTTONS ================= -->
-            <FlowPane hgap="15" vgap="10">
-
-                <Button text="%startWork"
-                        onAction="#handleStart"/>
-
-                <Button text="%closeTicket"
-                        onAction="#handleClose"/>
-
-                <Button text="%viewDetails"
-                        onAction="#handleViewDetails"/>
-
-                <Button text="%MergeTicket"
-                        onAction="#handleMerge"/>
-
-            </FlowPane>
 
         </VBox>
 

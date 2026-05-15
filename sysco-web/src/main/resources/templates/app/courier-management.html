@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Courrier management</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page courier-mgmt-page">
+    <div class="card page-hero">
+        <h1 class="title-large" th:text="#{${pageTitleKey}}">Courrier management</h1>
+        <p class="subtitle" th:text="#{courierMgmt.subtitle}">
+            Direction-level administration — edit, redirect, extra directions, delete.
+        </p>
+    </div>
+
+    <div class="page-alerts">
+        <p class="success-banner" th:if="${flashSuccess != null}" th:text="#{__${flashSuccess}__}">OK</p>
+        <p class="login-error" th:if="${flashError != null}" th:text="#{__${flashError}__}">Err</p>
+    </div>
+
+    <form method="get" th:action="@{/app/courier-management}" class="card page-panel courier-filter-bar">
+        <div class="courier-filter-grid">
+            <div>
+                <label class="form-label" for="fq2" th:text="#{courierMgmt.filterSearch}">Search</label>
+                <input class="form-input" id="fq2" type="text" name="q" autocomplete="off"
+                       th:value="${page.filterQuery()}"/>
+            </div>
+            <div>
+                <label class="form-label" for="fdir2" th:text="#{courier.filterDirection}">Direction</label>
+                <select class="form-input" id="fdir2" name="dir">
+                    <option value="" th:selected="${filterDir == null}" th:text="#{courier.filterAllDirections}">All</option>
+                    <option th:each="opt : ${page.directionFilters()}"
+                            th:if="${opt.id() != null}"
+                            th:value="${opt.id()}"
+                            th:selected="${filterDir != null && filterDir == opt.id()}"
+                            th:text="${opt.label()}">Dir</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label" for="fst2" th:text="#{courier.filterStatus}">Status</label>
+                <select class="form-input" id="fst2" name="status">
+                    <option value="ALL" th:selected="${filterStatus == 'ALL'}" th:text="#{courier.status.all}">ALL</option>
+                    <option value="OPEN" th:selected="${filterStatus == 'OPEN'}" th:text="#{courier.status.open}">OPEN</option>
+                    <option value="RESOLVED" th:selected="${filterStatus == 'RESOLVED'}"
+                            th:text="#{courier.status.resolved}">RESOLVED</option>
+                </select>
+            </div>
+            <div class="courier-filter-actions">
+                <button type="submit" class="primary-btn" th:text="#{courier.refresh}">Refresh</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="courier-split courier-mgmt-split">
+        <div class="courier-table-wrap card">
+            <table class="sysco-table courier-table">
+                <thead>
+                <tr>
+                    <th th:text="#{courier.col.ref}">Ref</th>
+                    <th th:text="#{courier.col.title}">Title</th>
+                    <th th:text="#{courier.col.sender}">Sender</th>
+                    <th th:text="#{courier.col.priority}">Pri</th>
+                    <th th:text="#{courier.col.status}">Status</th>
+                    <th th:text="#{courier.col.direction}">Dir</th>
+                    <th th:text="#{courierMgmt.col.extraDirs}">Extra</th>
+                    <th th:text="#{courier.col.sous}">Sous</th>
+                    <th th:text="#{courier.col.ticket}">Ticket</th>
+                    <th th:text="#{courier.col.created}">Created</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${page.rows()}"
+                    th:classappend="${page.selectedId != null && page.selectedId == row.id()} ? ' courier-row-selected' : ''">
+                    <td>
+                        <a class="courier-ref-link"
+                           th:href="@{|/app/courier-management?${filterQs}selected=${row.id()}|}"
+                           th:text="${row.refCode()}">CP</a>
+                    </td>
+                    <td th:text="${row.title()}">—</td>
+                    <td th:text="${row.sender()}">—</td>
+                    <td th:text="${#strings.isEmpty(row.priority()) ? '—' : @uiLabels.ticketPriority(row.priority(), #locale)}">—</td>
+                    <td th:text="${@uiLabels.courierPacketStatus(row.status(), #locale)}">—</td>
+                    <td th:text="${row.directionName()}">—</td>
+                    <td class="muted" th:text="${row.extraDirections()}">—</td>
+                    <td th:text="${row.sousName()}">—</td>
+                    <td>
+                        <a th:if="${row.linkedTicketId() != null}"
+                           class="courier-ref-link"
+                           th:href="@{/app/ticket-management/{id}(id=${row.linkedTicketId()})}"
+                           th:text="${#strings.isEmpty(row.linkedTicketRef()) ? ('#' + row.linkedTicketId()) : row.linkedTicketRef()}">TCK</a>
+                        <span class="muted" th:if="${row.linkedTicketId() == null}">—</span>
+                    </td>
+                    <td th:text="${row.createdAt()}">—</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(page.rows())}">
+                    <td colspan="10" class="muted" th:text="#{courierMgmt.emptyTable}">No rows.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card courier-side" th:if="${page.detail() != null}">
+            <h2 class="dash-heading" th:text="#{courierMgmt.panelTitle}">Administration</h2>
+            <p class="muted" th:unless="${page.canEdit()}">Seul l’auteur de ce courrier peut modifier sa gestion.</p>
+
+            <div class="courier-mgmt-tracking">
+                <h3 class="courier-subheading">Parcours du courrier</h3>
+                <ul class="courier-mgmt-timeline">
+                    <li th:each="step : ${page.journeySteps()}" th:classappend="| tone-${step.tone()}|">
+                        <span class="timeline-time" th:text="${step.at()}">28/04/2026 19:55</span>
+                        <span class="timeline-label" th:text="${step.label()}">Création du courrier</span>
+                    </li>
+                    <li class="muted" th:if="${#lists.isEmpty(page.journeySteps())}">Aucun parcours disponible.</li>
+                </ul>
+            </div>
+
+            <div th:if="${page.canEdit()}">
+                <h3 class="courier-subheading" th:text="#{courierMgmt.editTitle}">Edit</h3>
+                <form th:action="@{/app/courier-management/update}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="packetId" th:value="${page.detail().id()}"/>
+                    <input type="hidden" name="dir" th:value="${filterDir}" th:if="${filterDir != null}"/>
+                    <input type="hidden" name="status" th:value="${filterStatus}"/>
+                    <input type="hidden" name="q" th:value="${page.filterQuery()}" th:if="${!#strings.isEmpty(page.filterQuery())}"/>
+                    <label class="form-label" for="title" th:text="#{courier.col.title}">Title</label>
+                    <input class="form-input" id="title" name="title" required th:value="${page.detail().title()}"/>
+                    <label class="form-label" for="description" th:text="#{courier.description}">Desc</label>
+                    <textarea class="form-textarea" id="description" name="description" rows="3"
+                              th:text="${page.detail().description()}"> </textarea>
+                    <label class="form-label" for="sender" th:text="#{courier.fieldSender}">Sender</label>
+                    <input class="form-input" id="sender" name="sender" th:value="${page.detail().sender()}"/>
+                    <label class="form-label" for="priority2" th:text="#{courier.priority}">Priority</label>
+                    <select class="form-input" id="priority2" name="priority">
+                        <option th:each="pr : ${courierPriorities}" th:value="${pr}"
+                                th:text="${@uiLabels.ticketPriority(pr, #locale)}"
+                                th:selected="${pr == page.detail().priority()}">MEDIUM</option>
+                    </select>
+                    <label class="form-label" for="regd" th:text="#{courier.fieldRegDate}">Reg date</label>
+                    <input class="form-input" id="regd" name="registrationDate" th:value="${page.detail().registrationDate()}"/>
+                    <label class="form-label" for="attach" th:text="#{courierMgmt.attachmentPath}">Attachment path</label>
+                    <input class="form-input" id="attach" name="attachmentPath" th:value="${page.detail().attachmentPath()}"/>
+                    <div class="form-actions">
+                        <button type="submit" class="primary-btn" th:text="#{courier.save}">Save</button>
+                    </div>
+                </form>
+            </div>
+
+            <div th:if="${page.canRedirect()}">
+                <h3 class="courier-subheading" th:text="#{courierMgmt.redirectTitle}">Redirect primary</h3>
+                <form th:action="@{/app/courier-management/redirect-primary}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="packetId" th:value="${page.detail().id()}"/>
+                    <input type="hidden" name="dir" th:value="${filterDir}" th:if="${filterDir != null}"/>
+                    <input type="hidden" name="status" th:value="${filterStatus}"/>
+                    <input type="hidden" name="q" th:value="${page.filterQuery()}" th:if="${!#strings.isEmpty(page.filterQuery())}"/>
+                    <select class="form-input" name="directionId" required>
+                        <option value="" disabled selected th:text="#{courier.pickDirection}">Pick…</option>
+                        <option th:each="d : ${page.allDirections()}" th:value="${d.id()}"
+                                th:text="${d.label()}">Dir</option>
+                    </select>
+                    <label class="form-hint" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+                        <input type="checkbox" name="reopenWorkflow" value="true"/>
+                        <span th:text="#{courierMgmt.redirectReopen}">Reopen</span>
+                    </label>
+                    <div class="form-actions">
+                        <button type="submit" class="success-btn"
+                                th:text="#{courier.apply}">Apply</button>
+                    </div>
+                </form>
+            </div>
+
+            <div th:if="${page.canExtra()}">
+                <h3 class="courier-subheading" th:text="#{courierMgmt.extraTitle}">Extra directions</h3>
+                <p class="muted form-hint" th:text="#{courierMgmt.extraHint}"/>
+                <ul class="courier-journey" th:if="${!#lists.isEmpty(page.extraRows())}">
+                    <li th:each="ex : ${page.extraRows()}">
+                        <span th:text="${ex.label()}">X</span>
+                        <form style="display:inline;" th:action="@{/app/courier-management/extra/remove}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="packetId" th:value="${page.detail().id()}"/>
+                            <input type="hidden" name="directionId" th:value="${ex.id()}"/>
+                            <input type="hidden" name="dir" th:value="${filterDir}" th:if="${filterDir != null}"/>
+                            <input type="hidden" name="status" th:value="${filterStatus}"/>
+                            <input type="hidden" name="q" th:value="${page.filterQuery()}" th:if="${!#strings.isEmpty(page.filterQuery())}"/>
+                            <button type="submit" class="danger-btn btn-sm"
+                                    th:text="#{remove}">Remove</button>
+                        </form>
+                    </li>
+                </ul>
+                <form th:action="@{/app/courier-management/extra/add}" method="post" class="courier-extra-add">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="packetId" th:value="${page.detail().id()}"/>
+                    <input type="hidden" name="dir" th:value="${filterDir}" th:if="${filterDir != null}"/>
+                    <input type="hidden" name="status" th:value="${filterStatus}"/>
+                    <input type="hidden" name="q" th:value="${page.filterQuery()}" th:if="${!#strings.isEmpty(page.filterQuery())}"/>
+                    <select class="form-input" name="directionId" required>
+                        <option value="" disabled selected th:text="#{courierMgmt.pickExtraDir}">Pick…</option>
+                        <option th:each="d : ${page.extraAddCandidates()}" th:value="${d.id()}"
+                                th:text="${d.label()}">Dir</option>
+                    </select>
+                    <button type="submit" class="primary-btn btn-top" th:text="#{courierMgmt.addExtra}">
+                        Add
+                    </button>
+                </form>
+            </div>
+
+            <div th:if="${page.canDelete()}">
+                <h3 class="courier-subheading" th:text="#{courierMgmt.deleteTitle}">Delete</h3>
+                <form th:action="@{/app/courier-management/delete}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="packetId" th:value="${page.detail().id()}"/>
+                    <input type="hidden" name="dir" th:value="${filterDir}" th:if="${filterDir != null}"/>
+                    <input type="hidden" name="status" th:value="${filterStatus}"/>
+                    <input type="hidden" name="q" th:value="${page.filterQuery()}" th:if="${!#strings.isEmpty(page.filterQuery())}"/>
+                    <span id="courierMgmtConfirmMsg" style="display:none;" th:text="#{courierMgmt.confirmDelete}">Sure?</span>
+                    <button type="submit" class="danger-btn"
+                            onclick="return confirm(document.getElementById('courierMgmtConfirmMsg').textContent);"
+                            th:text="#{delete}">Delete</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card courier-side courier-side-placeholder muted" th:if="${page.detail() == null}">
+            <p th:text="#{courierMgmt.pickRow}">Select</p>
+        </div>
+    </div>
+</section>
+</body>
+</html>

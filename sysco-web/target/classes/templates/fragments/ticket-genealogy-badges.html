@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="eventBadge (stage)">
+    <th:block th:switch="${stage}">
+        <span th:case="'Created'" th:text="#{ticketMgmt.genealogy.event.created}">Created</span>
+        <span th:case="'Assigned'" th:text="#{ticketMgmt.genealogy.event.assigned}">Assigned</span>
+        <span th:case="'Escalated'" th:text="#{ticketMgmt.genealogy.event.escalated}">Escalated</span>
+        <span th:case="'Closed'" th:text="#{ticketMgmt.genealogy.event.closed}">Closed</span>
+        <span th:case="'Updated'" th:text="#{ticketMgmt.genealogy.event.updated}">Updated</span>
+        <span th:case="'Commented'" th:text="#{ticketMgmt.genealogy.event.commented}">Commented</span>
+        <span th:case="'Task created'" th:text="#{ticketMgmt.genealogy.event.taskCreated}">Task created</span>
+        <span th:case="'Merged'" th:text="#{ticketMgmt.genealogy.event.merged}">Merged</span>
+        <span th:case="'PDF exported'" th:text="#{ticketMgmt.genealogy.event.pdfExported}">PDF exported</span>
+        <span th:case="'Reopened'" th:text="#{ticketMgmt.genealogy.event.reopened}">Reopened</span>
+        <span th:case="'Event'" th:text="#{ticketMgmt.genealogy.event.generic}">Event</span>
+        <span th:case="*" th:text="${stage}">—</span>
+    </th:block>
+</th:block>
+</body>
+</html>

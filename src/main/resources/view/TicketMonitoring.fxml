@@ -7,13 +7,14 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.app.controller.TicketMonitoringController"
-            style="-fx-background-color:#f8fafc;">
+            styleClass="gov-page-bg">
 
     <center>
 
         <ScrollPane fitToWidth="true"
                     vbarPolicy="AS_NEEDED"
-                    hbarPolicy="NEVER">
+                    hbarPolicy="NEVER"
+                    styleClass="gov-scroll-surface">
 
             <VBox spacing="20" style="-fx-padding:20;">
 
@@ -36,14 +37,19 @@
 
                     <HBox spacing="10">
 
-                        <!-- ✅ FIXED MULTI-SELECT LIST -->
-                        <ListView fx:id="listAgents"
-                                  prefHeight="100"
-                                  prefWidth="200"/>
+                        <VBox spacing="6">
+                            <TextField fx:id="txtAgentSearch"
+                                       promptText="Search user to assign..."
+                                       prefWidth="200"/>
+                            <!-- ✅ FIXED MULTI-SELECT LIST -->
+                            <ListView fx:id="listAgents"
+                                      prefHeight="100"
+                                      prefWidth="200"/>
+                        </VBox>
 
                         <Button text="%assign"
                                 onAction="#handleAssign"
-                                style="-fx-background-color:#2563eb; -fx-text-fill:white;"/>
+                                styleClass="primary-btn"/>
 
                     </HBox>
 
@@ -78,6 +84,23 @@
 
                     </TableView>
 
+                </VBox>
+
+                <!-- ================= EXTERNAL ESCALATIONS ================= -->
+                <VBox fx:id="externalEscalationsSection" spacing="10" managed="false" visible="false">
+                    <Label text="%externalEscalations"
+                           style="-fx-font-size:18px; -fx-font-weight:bold;"/>
+                    <TableView fx:id="tableExternalEscalations" prefHeight="180">
+                        <columns>
+                            <TableColumn fx:id="colExtTicket" text="%ticket"/>
+                            <TableColumn fx:id="colExtFromDirection" text="%fromDirection"/>
+                            <TableColumn fx:id="colExtToDirection" text="%toDirection"/>
+                            <TableColumn fx:id="colExtSousDirection" text="%sousDirection"/>
+                            <TableColumn fx:id="colExtStatus" text="%status"/>
+                            <TableColumn fx:id="colExtAssignedTo" text="%assignedTo"/>
+                            <TableColumn fx:id="colExtAction" text="%action"/>
+                        </columns>
+                    </TableView>
                 </VBox>
 
 

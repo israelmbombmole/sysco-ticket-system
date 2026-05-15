@@ -9,11 +9,16 @@ public class User {
     private boolean active;
     private int ticketCount;
     private Integer sousDirectionId;   // FK (nullable)
-    private String sousDirectionName;  // Display name (SDMA, SDRM...)
+    private String sousDirectionName;  // Full sous-direction label
     private String email;
+    private String matricule;
+    /** Registry / MyShift attendance signature code (assigned per user). */
+    private String attendanceSignature;
     private Integer directionId;
     private boolean hidden;
     private boolean mustChangePassword;
+    /** Set when the user just authenticated with a one-time password (for audit messaging). */
+    private boolean passwordResetOtpUsed;
 
     // =====================================================
     // EMPTY CONSTRUCTOR (REQUIRED FOR DAO)
@@ -171,6 +176,18 @@ public String getEmail() { return email; }
 
 public void setEmail(String email) { this.email = email; }
 
+public String getMatricule() { return matricule; }
+
+public void setMatricule(String matricule) { this.matricule = matricule; }
+
+public String getAttendanceSignature() {
+    return attendanceSignature;
+}
+
+public void setAttendanceSignature(String attendanceSignature) {
+    this.attendanceSignature = attendanceSignature;
+}
+
 public Integer getDirectionId() {
     return directionId;
 }
@@ -194,8 +211,12 @@ public void setMustChangePassword(boolean mustChangePassword) {
     this.mustChangePassword = mustChangePassword;
 }
 
+    public boolean isPasswordResetOtpUsed() {
+        return passwordResetOtpUsed;
+    }
 
-
-
+    public void setPasswordResetOtpUsed(boolean passwordResetOtpUsed) {
+        this.passwordResetOtpUsed = passwordResetOtpUsed;
+    }
 
 }

@@ -18,16 +18,19 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseButton;
 import javafx.stage.Stage;
 import com.app.controller.InternalTicketEditController;
 import com.app.controller.ExternalTicketManagementController;
+import com.app.util.AppUiStyles;
+import com.app.util.I18n;
 import com.app.util.LanguageManager;
 import com.app.util.SecurityUtil;
 import com.app.util.TicketEditorRouter;
-import java.util.ResourceBundle;
 import java.util.Set;
 
 public class TicketManagementController {
+    private static final String ALL_FILTER = "__ALL__";
 
     @FXML private TableView<Ticket> tableTickets;
 
@@ -107,10 +110,22 @@ SortedList<Ticket> sorted = new SortedList<>(filteredTickets);
 sorted.comparatorProperty().bind(tableTickets.comparatorProperty());
 
 tableTickets.setItems(sorted);
-        
-        
-        
+
+        // Unconstrained columns + ScrollPane in FXML so the table can scroll horizontally on small screens
+        tableTickets.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+
         tableTickets.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        tableTickets.setRowFactory(tv -> {
+            TableRow<Ticket> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getButton() == MouseButton.PRIMARY
+                        && event.getClickCount() == 2
+                        && !row.isEmpty()) {
+                    openTicket(row.getItem());
+                }
+            });
+            return row;
+        });
 
         colTicketId.setCellValueFactory(cell ->
                 new SimpleStringProperty(
@@ -132,24 +147,24 @@ tableTickets.setItems(sorted);
             return;
         }
 
-        setText(status);
+        setText(I18n.status(status));
 
         switch (status) {
 
             case "ASSIGNED":
-                setStyle("-fx-background-color:#3498db; -fx-text-fill:white;");
+                setStyle(AppUiStyles.Gov.STATUS_ASSIGNED);
                 break;
 
             case "IN_PROGRESS":
-                setStyle("-fx-background-color:#f39c12; -fx-text-fill:white;");
+                setStyle(AppUiStyles.Gov.STATUS_IN_PROGRESS);
                 break;
 
             case "ESCALATED":
-                setStyle("-fx-background-color:#e74c3c; -fx-text-fill:white;");
+                setStyle(AppUiStyles.Gov.STATUS_ESCALATED);
                 break;
 
             case "CLOSED":
-                setStyle("-fx-background-color:#2ecc71; -fx-text-fill:white;");
+                setStyle(AppUiStyles.Gov.STATUS_CLOSED);
                 break;
 
             default:
@@ -196,7 +211,7 @@ tableTickets.setItems(sorted);
         
         colEscalate.setCellFactory(param -> new TableCell<>() {
 
-    private final Button btn = new Button("Escalate");
+    private final Button btn = new Button(I18n.t("button.escalate", "Escalate"));
 
     {
         btn.getStyleClass().add("btn-escalate");
@@ -341,7 +356,7 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
         
         colView.setCellFactory(param -> new TableCell<>() {
 
-    private final Button btn = new Button("View");
+    private final Button btn = new Button(I18n.t("button.view", "View"));
 
     {
         btn.getStyleClass().add("btn-view");
@@ -373,7 +388,7 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
         
      colEdit.setCellFactory(param -> new TableCell<>() {
 
-    private final Button btn = new Button("Edit");
+    private final Button btn = new Button(I18n.t("button.edit", "Edit"));
 
     {
         btn.getStyleClass().add("btn-edit");
@@ -416,7 +431,7 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
         
         colClose.setCellFactory(param -> new TableCell<>() {
 
-    private final Button btn = new Button("Close");
+    private final Button btn = new Button(I18n.t("button.close", "Close"));
 
     {
         btn.getStyleClass().add("btn-close");
@@ -476,7 +491,7 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
         
         colDelete.setCellFactory(param -> new TableCell<>() {
 
-    private final Button btn = new Button("Delete");
+    private final Button btn = new Button(I18n.t("button.delete", "Delete"));
 
     {
         btn.getStyleClass().add("btn-delete");
@@ -529,17 +544,10 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
     
     private void loadFilters() {
 
-    cmbStatus.getItems().add("All");
-    cmbStatus.getItems().add("OPEN");
-    cmbStatus.getItems().add("ASSIGNED");
-    cmbStatus.getItems().add("ESCALATED");
-    cmbStatus.getItems().add("IN_PROGRESS");
-    cmbStatus.getItems().add("MERGED");
-    cmbStatus.getItems().add("CLOSED");
-
+    setupLocalizedStatusFilterItems();
     cmbStatus.getSelectionModel().selectFirst();
 
-    cmbAgent.getItems().add("All");
+    cmbAgent.getItems().add(I18n.t("all", "All"));
     cmbAgent.getItems().addAll(TicketDAO.getDistinctAgents());
 
     cmbAgent.getSelectionModel().selectFirst();
@@ -557,7 +565,7 @@ if (ticket.getAssignedTo() != null && ticket.getAssignedTo() == agentId) {
 
         FXMLLoader loader = new FXMLLoader(
         getClass().getResource("/view/TicketDetails.fxml"),
-        ResourceBundle.getBundle("lang.messages")
+        LanguageManager.getBundle()
 );
 
 Parent root = loader.load();
@@ -569,6 +577,7 @@ Parent root = loader.load();
         stage.setTitle("Ticket Details - TCK-" + ticket.getId());
 
         Scene scene = new Scene(root);
+        AppUiStyles.applyToScene(scene);
         stage.setScene(scene);
 
         // same behavior as agent dashboard
@@ -652,11 +661,11 @@ private void handleFilter() {
         boolean matchesStatus = true;
         boolean matchesAgent = true;
 
-        if (status != null && !"All".equals(status)) {
+        if (status != null && !isAll(status)) {
             matchesStatus = status.equalsIgnoreCase(ticket.getStatus());
         }
 
-        if (agent != null && !"All".equals(agent)) {
+        if (agent != null && !I18n.t("all", "All").equals(agent)) {
             matchesAgent = agent.equalsIgnoreCase(ticket.getAssignedToName());
         }
 
@@ -682,7 +691,7 @@ private void handleEdit() {
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/view/ticket_create.fxml"),
-                ResourceBundle.getBundle("lang.messages")
+                LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
@@ -694,7 +703,9 @@ private void handleEdit() {
 
         Stage stage = new Stage();
         stage.setTitle("Edit External Ticket");
-        stage.setScene(new Scene(root));
+        Scene editExtScene = new Scene(root);
+        AppUiStyles.applyToScene(editExtScene);
+        stage.setScene(editExtScene);
         stage.show();
 
     } catch (Exception e) {
@@ -933,7 +944,9 @@ else {
 
         Stage stage = new Stage();
         stage.setTitle("Edit Ticket - " + TicketUtil.formatTicketRef(fullTicket.getId()));
-        stage.setScene(new Scene(root));
+        Scene editTicketScene = new Scene(root);
+        AppUiStyles.applyToScene(editTicketScene);
+        stage.setScene(editTicketScene);
         stage.setMaximized(true);
         stage.show();
 
@@ -965,6 +978,19 @@ else {
     // 🔥 COLUMN MAPPING
     // ===============================
     colType.setCellValueFactory(new PropertyValueFactory<>("ticketType"));
+    colType.setCellFactory(col -> new TableCell<>() {
+        @Override
+        protected void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setStyle("");
+            } else {
+                String raw = item.trim().toUpperCase();
+                setText(I18n.t("type." + raw, item));
+            }
+        }
+    });
     colPriority.setCellValueFactory(new PropertyValueFactory<>("priority"));
     colAgent.setCellValueFactory(new PropertyValueFactory<>("assignedToName"));
     colCreated.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
@@ -981,12 +1007,13 @@ else {
                 setText(null);
                 setStyle("");
             } else {
-                setText(item);
+                String raw = item.trim().toUpperCase();
+                setText(I18n.t("priority." + raw, item));
 
-                switch (item.toUpperCase()) {
-                    case "HIGH" -> setStyle("-fx-background-color:#ef4444; -fx-text-fill:white;");
-                    case "MEDIUM" -> setStyle("-fx-background-color:#f59e0b; -fx-text-fill:white;");
-                    case "LOW" -> setStyle("-fx-background-color:#22c55e; -fx-text-fill:white;");
+                switch (raw) {
+                    case "HIGH" -> setStyle(AppUiStyles.Gov.STATUS_ESCALATED);
+                    case "MEDIUM" -> setStyle(AppUiStyles.Gov.STATUS_IN_PROGRESS);
+                    case "LOW" -> setStyle(AppUiStyles.Gov.PRIORITY_LOW);
                     default -> setStyle("");
                 }
             }
@@ -999,22 +1026,13 @@ else {
     // ===============================
     // STATUS FILTER
     // ===============================
-    cmbStatus.getItems().addAll(
-            "All",
-            "OPEN",
-            "ASSIGNED",
-            "IN_PROGRESS",
-            "WAITING_ON_TASKS",
-            "ESCALATED",
-            "MERGED",
-            "CLOSED"
-    );
-    cmbStatus.setValue("All");
+    setupLocalizedStatusFilterItems();
+    cmbStatus.setValue(I18n.t("all", "All"));
 
     // ===============================
     // AGENT FILTER
     // ===============================
-    cmbAgent.getItems().add("All");
+    cmbAgent.getItems().add(I18n.t("all", "All"));
 
     Set<String> agents = masterTickets.stream()
             .map(Ticket::getAssignedToName)
@@ -1023,7 +1041,7 @@ else {
 
     cmbAgent.getItems().addAll(agents);
 
-    cmbAgent.setValue("All");
+    cmbAgent.setValue(I18n.t("all", "All"));
 
     // ===============================
     // 🔥 LIVE FILTER (NO BUTTON)
@@ -1048,11 +1066,11 @@ else {
         boolean matchesStatus = true;
         boolean matchesAgent = true;
 
-        if (status != null && !"All".equals(status)) {
+        if (status != null && !isAll(status)) {
             matchesStatus = status.equalsIgnoreCase(ticket.getStatus());
         }
 
-        if (agent != null && !"All".equals(agent)) {
+        if (agent != null && !I18n.t("all", "All").equals(agent)) {
             matchesAgent = agent.equalsIgnoreCase(ticket.getAssignedToName());
         }
 
@@ -1079,6 +1097,50 @@ else {
                 || (ticket.getAssignedToName() != null && ticket.getAssignedToName().toLowerCase().contains(lower));
     });
 }
+
+  private void setupLocalizedStatusFilterItems() {
+    cmbStatus.getItems().clear();
+    cmbStatus.getItems().add(I18n.t("all", "All"));
+    cmbStatus.getItems().addAll(
+            "OPEN",
+            "ASSIGNED",
+            "IN_PROGRESS",
+            "WAITING_ON_TASKS",
+            "ESCALATED",
+            "MERGED",
+            "CLOSED"
+    );
+    cmbStatus.setCellFactory(cb -> new ListCell<>() {
+      @Override
+      protected void updateItem(String item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText(null);
+        } else if (isAll(item)) {
+          setText(I18n.t("all", "All"));
+        } else {
+          setText(I18n.status(item));
+        }
+      }
+    });
+    cmbStatus.setButtonCell(new ListCell<>() {
+      @Override
+      protected void updateItem(String item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText(null);
+        } else if (isAll(item)) {
+          setText(I18n.t("all", "All"));
+        } else {
+          setText(I18n.status(item));
+        }
+      }
+    });
+  }
+
+  private boolean isAll(String value) {
+    return value != null && (ALL_FILTER.equals(value) || I18n.t("all", "All").equalsIgnoreCase(value) || "All".equalsIgnoreCase(value));
+  }
    
     
     

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">File share audit</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page file-share-audit-page">
+    <div class="card page-panel file-share-audit-shell">
+        <h1 class="title-large" th:text="#{fileShareAudit.title}">Audit du partage de fichiers</h1>
+
+        <p class="muted login-audit-scope-hint" th:if="${fileShareAuditNoDirection}"
+           th:text="#{fileShareAudit.scopeNoDirection}">No direction.</p>
+        <p class="muted login-audit-scope-hint"
+           th:if="${!fileShareAuditNoDirection && !page.viewingAllDirections}"
+           th:text="#{fileShareAudit.scopeDirectionOnly}">Direction scope.</p>
+
+        <form class="file-share-audit-filter-row" method="get" th:action="@{/app/file-share-audit}">
+            <input id="fsaUser" class="form-input" type="text"
+                   name="q" th:value="${page.q}"
+                   th:placeholder="#{fileShareAudit.searchPlaceholder}" autocomplete="off"/>
+            <button type="submit" class="secondary-btn" th:text="#{fileShareMgmt.refresh}">Actualiser</button>
+            <a class="secondary-btn" th:href="@{/app/file-share-audit/export.csv(q=${page.q})}" th:text="#{loginAudit.exportCsv}">Exporter CSV</a>
+        </form>
+
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{fileShareAudit.col.file}">Fichier</th>
+                <th th:text="#{fileShareAudit.col.sharedBy}">Partagé par</th>
+                <th th:text="#{fileShareAudit.col.recipient}">Destinataire</th>
+                <th th:text="#{fileShareAudit.col.action}">Action</th>
+                <th th:text="#{fileShareAudit.col.date}">Date</th>
+                <th th:text="#{fileShareAudit.col.time}">Heure</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${page.rows}">
+                <td th:text="${r.fileName}">Invoice-S3DLJRT-0002.pdf</td>
+                <td th:text="${r.sharedBy}">israel</td>
+                <td th:text="${r.recipient}">jordan-paul</td>
+                <td th:text="${r.action}">Partagé</td>
+                <td th:text="${r.date()}">2026-04-27</td>
+                <td th:text="${r.time()}">14:12:19</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.rows)}">
+                <td colspan="6" class="muted" th:text="#{fileShareAudit.emptyTable}">No content in table</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+</body>
+</html>
+

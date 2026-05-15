@@ -21,9 +21,15 @@
                 <Label text="%Search"/>
 
                 <TextField fx:id="txtSearch"
-                           promptText="Search files..."
+                           promptText="%searchFiles"
                            prefWidth="250"/>
 
+            </HBox>
+
+            <HBox fx:id="adminSessionSettingsBox" spacing="10" alignment="CENTER_LEFT">
+                <Label text="%fileShareMgmtOtpSession"/>
+                <ComboBox fx:id="cmbSessionMinutes" prefWidth="90"/>
+                <Button text="%fileShareMgmtOtpSessionSave" onAction="#handleSaveSessionMinutes"/>
             </HBox>
 
         </VBox>
@@ -33,6 +39,21 @@
     <!-- ================= TABLE ================= -->
     <center>
         <VBox spacing="10" style="-fx-padding:15;">
+
+            <VBox fx:id="otpRequestsPanel" spacing="8" visible="false" managed="false">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="%fileShareMgmtOtpRequestsTitle"
+                           style="-fx-font-size:14px; -fx-font-weight:bold;"/>
+                    <Button text="%refresh" onAction="#handleRefreshOtpRequests"/>
+                </HBox>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="%Search"/>
+                    <TextField fx:id="txtSearchOtpRequests"
+                               promptText="%fileShareMgmtOtpSearchPrompt"
+                               prefWidth="280"/>
+                </HBox>
+                <TableView fx:id="tableOtpRequests" prefHeight="150" minHeight="100" maxHeight="240"/>
+            </VBox>
 
             <TableView fx:id="tableFiles"
                        VBox.vgrow="ALWAYS">

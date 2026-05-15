@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">User management</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page user-management-page">
+    <div class="card page-panel user-mgmt-shell">
+        <h1 class="title-large" th:text="#{${pageTitleKey}}">Gestion des utilisateurs</h1>
+        <div class="page-alerts" th:if="${successKey != null or errorKey != null}">
+            <p class="success-banner" th:if="${successKey != null}" th:text="#{${successKey}}">Succès</p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Erreur</p>
+        </div>
+
+        <div class="user-mgmt-live-search-wrap">
+            <label class="sr-only" for="umQuery" th:text="#{userMgmt.searchLabel}">Search users</label>
+            <input id="umQuery" class="form-input user-mgmt-search" type="search" autocomplete="off"
+                   th:placeholder="#{userMgmt.searchPlaceholder}"/>
+        </div>
+
+        <div class="user-mgmt-table-scroll">
+            <table id="um-table-users" class="sysco-table user-mgmt-users-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom d'utilisateur</th>
+                    <th>Matricule</th>
+                    <th>Rôle</th>
+                    <th>Actif</th>
+                    <th>Direction / Sous-direction</th>
+                    <th>Supprimer</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="u : ${page.rows}" class="um-live-filter-data"
+                    th:attr="data-id=${u.id},data-username=${u.username},data-matricule=${u.matricule},
+                      data-role=${u.role},data-active=${u.active},data-direction=${u.directionName},data-sous=${u.sousDirectionName},
+                      data-email=${u.email},data-signature=${u.signatureCode},data-permissions=${#strings.listJoin(u.permissions, ',')}">
+                    <td th:text="${u.id}">1</td>
+                    <td>
+                        <label class="user-row-pick">
+                            <input type="radio" name="selectedUserId" th:value="${u.id}">
+                            <span th:text="${u.username}">admin</span>
+                        </label>
+                    </td>
+                    <td th:text="${u.matricule}"></td>
+                    <td th:text="${u.role}">ADMIN</td>
+                    <td th:text="${u.active}">true</td>
+                    <td>
+                        <span th:text="${u.directionName}"></span>
+                        <span th:if="${u.sousDirectionName != null and !#strings.isEmpty(u.sousDirectionName)}"> — </span>
+                        <span th:text="${u.sousDirectionName}"></span>
+                    </td>
+                    <td>
+                        <form method="post" th:action="@{/app/user-management/{id}/delete(id=${u.id})}">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="my-work-pill my-work-pill-esca user-pill-btn"
+                                    onclick="return confirm('Supprimer cet utilisateur ?');">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(page.rows)}" class="um-live-filter-empty muted">
+                    <td colspan="7" th:text="#{userMgmt.emptyTable}">No users.</td>
+                </tr>
+                <tr class="um-live-filter-no-match muted" hidden>
+                    <td colspan="7" th:text="#{userMgmt.liveSearchNoMatches}">No matches</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="courier-subheading user-mgmt-blocked-heading" th:text="#{userMgmt.blocked.sectionTitle}">Login lockouts</h2>
+        <p class="muted user-mgmt-blocked-intro" th:text="#{userMgmt.blocked.intro}">Scope explanation.</p>
+        <div class="user-mgmt-table-scroll">
+            <table id="um-table-blocked" class="sysco-table user-mgmt-users-table">
+                <thead>
+                <tr>
+                    <th th:text="#{userMgmt.blocked.col.id}">ID</th>
+                    <th th:text="#{userMgmt.blocked.col.username}">User</th>
+                    <th th:text="#{userMgmt.blocked.col.matricule}">Matricule</th>
+                    <th th:text="#{userMgmt.blocked.col.role}">Role</th>
+                    <th th:text="#{userMgmt.blocked.col.org}">Direction</th>
+                    <th th:text="#{userMgmt.blocked.col.attempts}">Failures</th>
+                    <th th:text="#{userMgmt.blocked.col.tier}">Tier</th>
+                    <th th:text="#{userMgmt.blocked.col.lockUntil}">Locked until</th>
+                    <th th:text="#{userMgmt.blocked.col.status}">Status</th>
+                    <th th:text="#{userMgmt.blocked.col.unlock}">Unlock</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="b : ${page.blockedLoginRows}">
+                    <td th:text="${b.id}">1</td>
+                    <td th:text="${b.username}">user</td>
+                    <td th:text="${b.matricule}">—</td>
+                    <td th:text="${b.role}">ROLE</td>
+                    <td>
+                        <span th:text="${b.directionName}"></span>
+                        <span th:if="${b.sousDirectionName != null and !#strings.isEmpty(b.sousDirectionName)}"> — </span>
+                        <span th:text="${b.sousDirectionName}"></span>
+                    </td>
+                    <td th:text="${b.failedAttempts}">0</td>
+                    <td th:text="${b.lockTier}">0</td>
+                    <td th:text="${#strings.isEmpty(b.lockUntilDisplay) ? '—' : b.lockUntilDisplay}">—</td>
+                    <td>
+                        <th:block th:switch="${b.statusMessageKey}">
+                            <span th:case="'userMgmt.blocked.status.activeLock'" th:text="#{userMgmt.blocked.status.activeLock}">Locked</span>
+                            <span th:case="'userMgmt.blocked.status.riskAttempts'" th:text="#{userMgmt.blocked.status.riskAttempts}">Risk</span>
+                            <span th:case="'userMgmt.blocked.status.priorTier'" th:text="#{userMgmt.blocked.status.priorTier}">Tier</span>
+                            <span th:case="*" th:text="${b.statusMessageKey}">—</span>
+                        </th:block>
+                    </td>
+                    <td>
+                        <form th:if="${b.viewerMayUnlock}" method="post"
+                              th:action="@{/app/user-management/{id}/unlock-login(id=${b.id})}">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="my-work-pill my-work-pill-close user-pill-btn"
+                                    th:text="#{userMgmt.blocked.unlockBtn}">Unlock</button>
+                        </form>
+                        <span class="muted" th:if="${!b.viewerMayUnlock}" th:text="#{userMgmt.blocked.unlockDeniedMarker}">—</span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(page.blockedLoginRows)}" class="muted">
+                    <td colspan="10" th:text="#{userMgmt.blocked.emptyTable}">None.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="user-mgmt-actions">
+            <button type="button" id="createUserBtn" class="my-work-pill my-work-pill-close user-pill-btn">Créer utilisateur</button>
+            <button type="button" id="editUserBtn" class="my-work-pill my-work-pill-view user-pill-btn">Modifier</button>
+            <form id="toggleForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="my-work-pill my-work-pill-alloc user-pill-btn">Activer / Désactiver</button>
+            </form>
+            <form id="changeRoleForm" method="post" class="user-role-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            </form>
+            <button type="button" id="toggleRoleDropdown" class="my-work-pill my-work-pill-gray user-pill-btn"
+                    th:text="#{userMgmt.changeRoleBtn}">Changer rôle</button>
+            <form id="resetPwdForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="my-work-pill my-work-pill-gray user-pill-btn">Réinitialiser mot de passe</button>
+            </form>
+            <form id="unlockLoginForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="my-work-pill my-work-pill-close user-pill-btn">Déverrouiller connexion</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="roleChangeModal" class="user-modal user-role-change-modal" hidden>
+        <div class="user-modal-backdrop" data-close-role-modal="1"></div>
+        <div class="card page-panel user-modal-card user-role-change-card" role="dialog" aria-modal="true"
+             aria-labelledby="roleChangeModalTitle">
+            <button type="button" class="user-modal-close" data-close-role-modal="1"
+                    th:aria-label="#{userMgmt.roleModalClose}">×</button>
+            <h2 id="roleChangeModalTitle" class="title-large user-role-change-heading"
+                th:text="#{userMgmt.changeRoleModalTitle}">Changer le rôle</h2>
+            <p id="roleChangeUserLine" class="muted user-role-change-user-line"></p>
+            <div class="user-role-change-body">
+                <label class="user-role-dropdown-label" for="quickRoleSelect" th:text="#{userMgmt.roleSelectLabel}">Rôle</label>
+                <select id="quickRoleSelect" class="form-input user-role-dropdown-select">
+                    <option th:each="r : ${page.roleOptions}" th:value="${r}" th:text="${r}">ADMIN</option>
+                </select>
+                <div class="user-role-change-actions">
+                    <button type="button" class="secondary-btn btn-sm" data-close-role-modal="1"
+                            th:text="#{userMgmt.roleModalCancel}">Annuler</button>
+                    <button type="submit" form="changeRoleForm" class="primary-btn btn-sm user-role-change-apply"
+                            th:text="#{userMgmt.applyRoleBtn}">Appliquer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="userModal" class="user-modal" hidden>
+        <div class="user-modal-backdrop" data-close-modal="1"></div>
+        <div class="card page-panel user-mgmt-form-shell user-modal-card user-mgmt-form-pro">
+        <button type="button" class="user-modal-close" data-close-modal="1">x</button>
+        <h2 class="title-large user-mgmt-form-title">Formulaire utilisateur</h2>
+        <p class="subtitle user-mgmt-form-subtitle">Création et mise à jour d’un compte SYSCO avec permissions détaillées.</p>
+        <form id="userForm" method="post" th:action="@{/app/user-management/create}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <div class="user-mgmt-sections">
+            <div class="user-mgmt-section-card">
+                <h3 class="courier-subheading">Identité</h3>
+                <div class="form-grid-single user-mgmt-form-grid">
+                    <label class="form-label">Nom d'utilisateur</label><input name="username" id="userUsername" class="form-input" placeholder="Saisir le nom d'utilisateur" required/>
+                    <label class="form-label">Matricule</label><input name="matricule" id="userMatricule" class="form-input" placeholder="Saisir le matricule"/>
+                    <label class="form-label" th:text="#{userMgmt.emailLabel}">Email</label><input name="email" id="userEmail" type="email" class="form-input"
+                           autocomplete="email"
+                           th:placeholder="#{userMgmt.emailPlaceholder}"/>
+                    <p class="muted user-mgmt-email-hint" th:if="${!#strings.isEmpty(page.ticketNotifyFallbackHint)}"
+                       th:text="#{userMgmt.emailFallbackHint(${page.ticketNotifyFallbackHint})}">Fallback hint.</p>
+                    <label class="form-label">Actif</label><label class="user-mgmt-switch"><input id="userActive" name="active" type="checkbox" checked/><span>Compte actif</span></label>
+                </div>
+            </div>
+            <div class="user-mgmt-section-card">
+                <h3 class="courier-subheading">Sécurité & Rôle</h3>
+                <div class="form-grid-single user-mgmt-form-grid">
+                    <label class="form-label">Code signature (pointage...)</label><input name="signatureCode" id="userSignature" class="form-input" placeholder="Facultatif. Si vide, un code est généré"/>
+                    <label class="form-label">Mot de passe</label><input name="password" id="userPassword" class="form-input" placeholder="Saisir le mot de passe"/>
+                    <label class="form-label">Rôle</label>
+                    <select name="role" id="userRole" class="form-input">
+                        <option th:each="r : ${page.roleOptions}" th:value="${r}" th:text="${r}">ADMIN</option>
+                    </select>
+                    <label class="form-label">Direction</label>
+                    <select name="directionName" id="userDirection" class="form-input"></select>
+                    <label class="form-label">Sous-direction</label>
+                    <select name="sousDirectionName" id="userSousDirection" class="form-input"></select>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="courier-subheading">Permissions</h3>
+        <button id="selectAllPerms" type="button" class="primary-btn">Tout sélectionner</button>
+        <table class="sysco-table user-mgmt-perm-table">
+            <thead>
+            <tr>
+                <th> </th>
+                <th>Lecture</th>
+                <th>Écriture</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${page.modules}">
+                <td th:text="${m.label}">Gestion des utilisateurs</td>
+                <td><input type="checkbox" class="perm-read" th:attr="value=${m.key + '_READ'}" name="permissions"/></td>
+                <td><input type="checkbox" class="perm-write" th:attr="value=${m.key + '_WRITE'}" name="permissions"/></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="user-mgmt-form-actions">
+            <button id="cancelUserModal" type="button" class="danger-btn">Annuler</button>
+            <button type="submit" class="success-btn">Enregistrer</button>
+        </div>
+        </form>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const directionCatalog = /*[[${page.directionCatalog}]]*/ {};
+        const roleOptions = /*[[${page.roleOptions}]]*/ [];
+        const defaultPermissionsByRole = /*[[${page.defaultPermissionsByRole}]]*/ {};
+        const changeRoleUserFmt = /*[[#{userMgmt.changeRoleForUser}]]*/ "User: {0}";
+
+        const modal = document.getElementById("userModal");
+        const createBtn = document.getElementById("createUserBtn");
+        const editBtn = document.getElementById("editUserBtn");
+        const cancelModalBtn = document.getElementById("cancelUserModal");
+        const userForm = document.getElementById("userForm");
+        const roleSelect = document.getElementById("userRole");
+        const directionSelect = document.getElementById("userDirection");
+        const sousDirectionSelect = document.getElementById("userSousDirection");
+        const toggleForm = document.getElementById("toggleForm");
+        const changeRoleForm = document.getElementById("changeRoleForm");
+        const resetPwdForm = document.getElementById("resetPwdForm");
+        const unlockLoginForm = document.getElementById("unlockLoginForm");
+        const toggleRoleDropdown = document.getElementById("toggleRoleDropdown");
+        const roleChangeModal = document.getElementById("roleChangeModal");
+        const roleChangeUserLine = document.getElementById("roleChangeUserLine");
+        const quickRoleSelect = document.getElementById("quickRoleSelect");
+
+        function selectedRow() {
+            const selectedRadio = document.querySelector("input[name='selectedUserId']:checked");
+            if (!selectedRadio) return null;
+            const tr = selectedRadio.closest("tr");
+            if (!tr || tr.hidden) return null;
+            return tr;
+        }
+
+        function openModal() {
+            closeRoleModal();
+            modal.hidden = false;
+        }
+
+        function closeModal() {
+            modal.hidden = true;
+        }
+
+        function fillDirections(directionValue, sousValue) {
+            directionSelect.innerHTML = "";
+            Object.keys(directionCatalog).forEach((directionName) => {
+                const opt = document.createElement("option");
+                opt.value = directionName;
+                opt.textContent = directionName;
+                if (directionName === directionValue) opt.selected = true;
+                directionSelect.appendChild(opt);
+            });
+            fillSousDirections(sousValue);
+        }
+
+        function fillSousDirections(selectedSous) {
+            const chosenDirection = directionSelect.value;
+            const list = directionCatalog[chosenDirection] || [];
+            sousDirectionSelect.innerHTML = "";
+            const empty = document.createElement("option");
+            empty.value = "";
+            empty.textContent = list.length ? "Choisir..." : "Aucune sous-direction";
+            sousDirectionSelect.appendChild(empty);
+            list.forEach((s) => {
+                const opt = document.createElement("option");
+                opt.value = s;
+                opt.textContent = s;
+                if (s === selectedSous) opt.selected = true;
+                sousDirectionSelect.appendChild(opt);
+            });
+            toggleSousDirectionState();
+        }
+
+        function toggleSousDirectionState() {
+            const role = (roleSelect.value || "").toUpperCase();
+            const disableSous = role === "DIRECTEUR" || role === "SECRETAIRE";
+            sousDirectionSelect.disabled = disableSous;
+            if (disableSous) {
+                sousDirectionSelect.value = "";
+            }
+        }
+
+        function clearPermissions() {
+            document.querySelectorAll(".perm-read,.perm-write").forEach((cb) => cb.checked = false);
+        }
+
+        function normalizeRole(role) {
+            const r = (role || "").toUpperCase().trim();
+            if (r === "SOUS_DIRECTEUR") return "SOUS-DIRECTEUR";
+            if (r === "VERIFICATEUR_ASSISTANT") return "VERIFICATEUR-ASSISTANT";
+            if (r === "COURRIER") return "COURIER";
+            return r;
+        }
+
+        function closeRoleModal() {
+            if (roleChangeModal) roleChangeModal.hidden = true;
+        }
+
+        function syncQuickRoleFromRow(row) {
+            if (!quickRoleSelect || !row) return;
+            const raw = (row.getAttribute("data-role") || "").trim();
+            const normalized = normalizeRole(raw);
+            let matched = false;
+            for (let i = 0; i < quickRoleSelect.options.length; i++) {
+                const v = quickRoleSelect.options[i].value;
+                if (v === raw || v === normalized || normalizeRole(v) === normalized) {
+                    quickRoleSelect.selectedIndex = i;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched && quickRoleSelect.options.length) quickRoleSelect.selectedIndex = 0;
+        }
+
+        function openRoleModal() {
+            const row = selectedRow();
+            if (!row) {
+                alert("Sélectionnez un utilisateur.");
+                return;
+            }
+            if (modal && !modal.hidden) closeModal();
+            syncQuickRoleFromRow(row);
+            if (roleChangeUserLine) {
+                const uname = row.getAttribute("data-username") || "";
+                roleChangeUserLine.textContent = changeRoleUserFmt.replace(/\{0\}/g, uname);
+            }
+            if (roleChangeModal) roleChangeModal.hidden = false;
+        }
+
+        function applyPermissionList(permissionList) {
+            clearPermissions();
+            const selected = new Set(permissionList || []);
+            document.querySelectorAll(".perm-read,.perm-write").forEach((cb) => {
+                if (selected.has(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+        }
+
+        function applyRolePreset(role) {
+            const normalized = normalizeRole(role);
+            applyPermissionList(defaultPermissionsByRole[normalized] || []);
+        }
+
+        function setupFormForCreate() {
+            userForm.action = "/app/user-management/create";
+            userForm.reset();
+            document.getElementById("userActive").checked = true;
+            if (roleOptions.length) roleSelect.value = roleOptions[0];
+            fillDirections("", "");
+            applyRolePreset(roleSelect.value);
+            toggleSousDirectionState();
+        }
+
+        function setupFormForEdit(row) {
+            const id = row.getAttribute("data-id");
+            userForm.action = "/app/user-management/" + id + "/update";
+            document.getElementById("userUsername").value = row.getAttribute("data-username") || "";
+            document.getElementById("userMatricule").value = row.getAttribute("data-matricule") || "";
+            document.getElementById("userSignature").value = row.getAttribute("data-signature") || "";
+            document.getElementById("userPassword").value = "";
+            document.getElementById("userEmail").value = row.getAttribute("data-email") || "";
+            document.getElementById("userActive").checked = row.getAttribute("data-active") === "true";
+            roleSelect.value = row.getAttribute("data-role") || "ADMIN";
+            fillDirections(row.getAttribute("data-direction") || "", row.getAttribute("data-sous") || "");
+            const userPerms = (row.getAttribute("data-permissions") || "")
+                .split(",")
+                .map((p) => p.trim())
+                .filter((p) => p.length > 0);
+            if (userPerms.length > 0) {
+                applyPermissionList(userPerms);
+            } else {
+                applyRolePreset(roleSelect.value);
+            }
+            toggleSousDirectionState();
+        }
+
+        createBtn.addEventListener("click", () => {
+            closeRoleModal();
+            setupFormForCreate();
+            openModal();
+        });
+
+        editBtn.addEventListener("click", () => {
+            closeRoleModal();
+            const row = selectedRow();
+            if (!row) {
+                alert("Sélectionnez un utilisateur.");
+                return;
+            }
+            setupFormForEdit(row);
+            openModal();
+        });
+
+        roleSelect.addEventListener("change", () => { applyRolePreset(roleSelect.value); toggleSousDirectionState(); });
+        directionSelect.addEventListener("change", () => fillSousDirections(""));
+        document.getElementById("selectAllPerms").addEventListener("click", () => {
+            document.querySelectorAll(".perm-read,.perm-write").forEach((cb) => cb.checked = true);
+        });
+        cancelModalBtn.addEventListener("click", closeModal);
+        modal.querySelectorAll("[data-close-modal='1']").forEach((e) => e.addEventListener("click", closeModal));
+
+        if (toggleRoleDropdown && roleChangeModal && quickRoleSelect) {
+            toggleRoleDropdown.addEventListener("click", () => openRoleModal());
+
+            roleChangeModal.querySelectorAll("[data-close-role-modal='1']").forEach((el) => {
+                el.addEventListener("click", () => closeRoleModal());
+            });
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && roleChangeModal && !roleChangeModal.hidden) {
+                    closeRoleModal();
+                }
+            });
+
+            const umUsersTable = document.getElementById("um-table-users");
+            if (umUsersTable) {
+                umUsersTable.addEventListener("change", (e) => {
+                    if (!e.target.matches("input[name='selectedUserId']")) return;
+                    if (!roleChangeModal.hidden) {
+                        const row = selectedRow();
+                        if (row) {
+                            syncQuickRoleFromRow(row);
+                            if (roleChangeUserLine) {
+                                const uname = row.getAttribute("data-username") || "";
+                                roleChangeUserLine.textContent = changeRoleUserFmt.replace(/\{0\}/g, uname);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        toggleForm.addEventListener("submit", (e) => {
+            const row = selectedRow();
+            if (!row) { e.preventDefault(); alert("Sélectionnez un utilisateur."); return; }
+            toggleForm.action = "/app/user-management/" + row.getAttribute("data-id") + "/toggle";
+        });
+        resetPwdForm.addEventListener("submit", (e) => {
+            const row = selectedRow();
+            if (!row) { e.preventDefault(); alert("Sélectionnez un utilisateur."); return; }
+            resetPwdForm.action = "/app/user-management/" + row.getAttribute("data-id") + "/reset-password";
+        });
+        if (unlockLoginForm) {
+            unlockLoginForm.addEventListener("submit", (e) => {
+                const row = selectedRow();
+                if (!row) {
+                    e.preventDefault();
+                    alert("Sélectionnez un utilisateur.");
+                    return;
+                }
+                unlockLoginForm.action = "/app/user-management/" + row.getAttribute("data-id") + "/unlock-login";
+            });
+        }
+        changeRoleForm.addEventListener("submit", (e) => {
+            const row = selectedRow();
+            if (!row) { e.preventDefault(); alert("Sélectionnez un utilisateur."); return; }
+            changeRoleForm.action = "/app/user-management/" + row.getAttribute("data-id") + "/role";
+            const hidden = document.createElement("input");
+            hidden.type = "hidden";
+            hidden.name = "role";
+            hidden.value = quickRoleSelect.value;
+            changeRoleForm.querySelectorAll("input[name='role']").forEach((x) => x.remove());
+            changeRoleForm.appendChild(hidden);
+            closeRoleModal();
+        });
+    </script>
+    <script>
+        (function () {
+            var input = document.getElementById('umQuery');
+            var table = document.getElementById('um-table-users');
+            if (!input || !table) return;
+
+            function norm(s) {
+                return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            }
+
+            function apply() {
+                var tbody = table.querySelector('tbody');
+                if (!tbody) return;
+                var dataRows = tbody.querySelectorAll('tr.um-live-filter-data');
+                var placeholder = tbody.querySelector('tr.um-live-filter-empty');
+                var noMatch = tbody.querySelector('tr.um-live-filter-no-match');
+                var q = norm(input.value);
+
+                if (dataRows.length === 0) {
+                    if (placeholder) placeholder.hidden = false;
+                    if (noMatch) noMatch.hidden = true;
+                    return;
+                }
+                if (placeholder) placeholder.hidden = true;
+
+                var visible = 0;
+                for (var i = 0; i < dataRows.length; i++) {
+                    var tr = dataRows[i];
+                    var ok = !q || norm(tr.innerText).indexOf(q) !== -1;
+                    tr.hidden = !ok;
+                    if (!ok) {
+                        var rad = tr.querySelector("input[name='selectedUserId']");
+                        if (rad && rad.checked) rad.checked = false;
+                    } else {
+                        visible++;
+                    }
+                }
+                if (noMatch) noMatch.hidden = !(visible === 0);
+            }
+
+            input.addEventListener('input', apply);
+            input.addEventListener('search', apply);
+            apply();
+        })();
+    </script>
+</section>
+</body>
+</html>
+

@@ -5,6 +5,7 @@ import com.app.dao.TicketDAO;
 import com.app.dao.UserDAO;
 import com.app.model.Ticket;
 import com.app.model.User;
+import com.app.util.BusinessRuleException;
 import javafx.collections.FXCollections;
 
 import javafx.fxml.FXML;
@@ -78,8 +79,12 @@ private void handleAssign() {
         return;
     }
 
-    TicketDAO.assignTicket(selected.getId(), agent.getId());
-    loadTickets();
+    try {
+        TicketDAO.assignTicket(selected.getId(), agent.getId());
+        loadTickets();
+    } catch (BusinessRuleException e) {
+        showAlert(e.getMessage());
+    }
 }
 
 @FXML

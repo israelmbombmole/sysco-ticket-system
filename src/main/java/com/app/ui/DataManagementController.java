@@ -1,5 +1,6 @@
 package com.app.ui;
 
+import com.app.util.AppUiStyles;
 import com.app.dao.UserActionDAO;
 import com.app.model.DataEntry;
 import com.app.service.ExcelService;
@@ -146,15 +147,19 @@ private void handleDelete() {
 private void handleExit() {
 
     try {
+        com.app.util.LanguageManager.setLocale(java.util.Locale.FRENCH);
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/login.fxml")
+                getClass().getResource("/view/login.fxml"),
+                com.app.util.LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
 
         Stage stage = (Stage) tableData.getScene().getWindow();
-        stage.setScene(new Scene(root));
-        stage.setTitle("Login");
+        Scene loginScene = new Scene(root);
+        AppUiStyles.applyToScene(loginScene);
+        stage.setScene(loginScene);
+        stage.setTitle(com.app.util.LanguageManager.getBundle().getString("login"));
         stage.centerOnScreen();
 
     } catch (Exception e) {
@@ -186,7 +191,9 @@ private void handleEdit() {
 
         Stage stage = new Stage();
         stage.setTitle("Edit Entry");
-        stage.setScene(new Scene(root));
+        Scene editScene = new Scene(root);
+        AppUiStyles.applyToScene(editScene);
+        stage.setScene(editScene);
         stage.show();
 
     } catch (Exception e) {

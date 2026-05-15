@@ -1,0 +1,2 @@
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS attachment_path VARCHAR(2000);
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP;

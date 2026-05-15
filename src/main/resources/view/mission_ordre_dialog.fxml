@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" minWidth="480" prefWidth="520" minHeight="400" prefHeight="520"
+            fx:controller="com.app.util.MissionOrdreDialogController"
+            style="-fx-background-color:#f5f7fb;">
+    <content>
+        <VBox spacing="12" style="-fx-padding:16;">
+            <Label text="%missionOrderTitle" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+            <Label text="%missionOrderHint" wrapText="true" maxWidth="480" style="-fx-text-fill:#666;"/>
+            <GridPane hgap="10" vgap="8">
+                <columnConstraints>
+                    <ColumnConstraints minWidth="110" prefWidth="140" hgrow="NEVER"/>
+                    <ColumnConstraints hgrow="ALWAYS" minWidth="260"/>
+                </columnConstraints>
+                <Label text="%missionOrderReference" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <TextField fx:id="txtOrderReference" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                <Label text="%missionOrderIssueDate" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <DatePicker fx:id="dpOrderIssueDate" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                <Label text="%missionOrderIssuedBy" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                <TextField fx:id="txtOrderIssuedBy" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+            </GridPane>
+            <Label text="%missionOrderBody" style="-fx-font-weight:bold;"/>
+            <TextArea fx:id="txtOrderBody" prefRowCount="12" wrapText="true"/>
+            <Separator/>
+            <Label text="%mission.orderAttachments" style="-fx-font-weight:bold;"/>
+            <HBox spacing="8">
+                <StackPane prefHeight="120" HBox.hgrow="ALWAYS">
+                    <ListView fx:id="listPendingOrderFiles" prefHeight="120"/>
+                    <ListView fx:id="listDbOrderAttachments" prefHeight="120"/>
+                </StackPane>
+                <VBox spacing="6">
+                    <Button fx:id="btnAddOrderAttachment" text="%add" onAction="#handleAddOrderAttachment"/>
+                    <Button fx:id="btnOpenOrderAttachment" text="%open" onAction="#handleOpenOrderAttachment"/>
+                    <Button fx:id="btnRemoveOrderAttachment" text="%remove" onAction="#handleRemoveOrderAttachment"/>
+                </VBox>
+            </HBox>
+            <HBox spacing="10" alignment="CENTER_RIGHT">
+                <Button fx:id="btnCancel" text="%cancel" onAction="#handleCancel" styleClass="btn-inst-secondary"/>
+                <Button fx:id="btnOk" text="%missionOrdreConfirm" onAction="#handleOk" style="-fx-font-weight:bold;" styleClass="primary-btn"/>
+            </HBox>
+        </VBox>
+    </content>
+</ScrollPane>

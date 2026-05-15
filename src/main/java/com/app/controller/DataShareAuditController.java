@@ -2,6 +2,7 @@ package com.app.controller;
 
 import com.app.dao.DataShareAuditDAO;
 import com.app.model.DataShareAudit;
+import com.app.util.I18n;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -33,9 +34,8 @@ public class DataShareAuditController {
 
     
 
-
-    
-    private List<DataShareAudit> auditList = new ArrayList<>();
+    private final ObservableList<DataShareAudit> masterData = FXCollections.observableArrayList();
+    private final FilteredList<DataShareAudit> filteredData = new FilteredList<>(masterData, p -> true);
 
 
   @FXML
@@ -53,7 +53,7 @@ public void initialize() {
             new SimpleStringProperty(data.getValue().getRecipient()));
 
     colAction.setCellValueFactory(data ->
-            new SimpleStringProperty(data.getValue().getAction()));
+            new SimpleStringProperty(localizeAction(data.getValue().getAction())));
 
     colDate.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().getDate()));
@@ -61,18 +61,9 @@ public void initialize() {
     colTime.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().getTime()));
 
-    // LOAD DATA
-    loadAudit();
-
     // ======================================
     // LIVE SEARCH
     // ======================================
-
-    ObservableList<DataShareAudit> masterData =
-            FXCollections.observableArrayList(auditList);
-
-    FilteredList<DataShareAudit> filteredData =
-            new FilteredList<>(masterData, p -> true);
 
     txtSearch.textProperty().addListener((obs, oldVal, newVal) -> {
 
@@ -87,7 +78,8 @@ public void initialize() {
             return audit.getFileName().toLowerCase().contains(search)
                     || audit.getSharedBy().toLowerCase().contains(search)
                     || audit.getRecipient().toLowerCase().contains(search)
-                    || audit.getAction().toLowerCase().contains(search);
+                    || audit.getAction().toLowerCase().contains(search)
+                    || localizeAction(audit.getAction()).toLowerCase().contains(search);
         });
     });
 
@@ -97,6 +89,7 @@ public void initialize() {
     sortedData.comparatorProperty().bind(tableAudit.comparatorProperty());
 
     tableAudit.setItems(sortedData);
+    loadAudit();
 }
 
     // ============================
@@ -106,8 +99,13 @@ public void initialize() {
    
 
 private void loadAudit() {
+    List<DataShareAudit> loaded = DataShareAuditDAO.getAll();
+    masterData.setAll(loaded);
+}
 
-    auditList = DataShareAuditDAO.getAll();
+private String localizeAction(String action) {
+    if (action == null || action.isBlank()) return "-";
+    return I18n.t("datashare.action." + action.toUpperCase(), action);
 }
     
     

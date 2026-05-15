@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{myActivity.merge.pageTitle}">Merge ticket</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page my-work-page">
+    <div class="card page-panel my-work-shell">
+        <h1 class="title-large" th:text="#{myActivity.merge.pageTitle}">Fusionner un ticket</h1>
+        <p class="muted" th:text="#{myWork.merge.intro}">Select survivor.</p>
+
+        <div class="ticket-merge-context muted">
+            <p><span th:text="#{myWork.merge.absorbedLabel}">Ticket absorbé</span>:
+                <strong th:text="${mergePick.absorbedTicketNumber}">TCK-1</strong>
+                — <span th:text="${mergePick.absorbedTitle}">Title</span></p>
+        </div>
+
+        <form th:if="${!#lists.isEmpty(mergePick.survivors)}" method="post"
+              th:action="@{/app/my-activity/ticket/{id}/merge(id=${mergePick.absorbedTicketId})}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <table class="sysco-table">
+                <thead>
+                <tr>
+                    <th th:text="#{myWork.merge.keepColumn}">Ticket à conserver</th>
+                    <th>Réf.</th>
+                    <th th:text="#{myWork.merge.titleColumn}">Titre</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${mergePick.survivors}">
+                    <td>
+                        <label class="ticket-merge-radio">
+                            <input type="radio" name="survivorTicketId" th:value="${s.id}" required/>
+                        </label>
+                    </td>
+                    <td th:text="${s.ticketNumber}">TCK-2</td>
+                    <td th:text="${s.title}">Other</td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="my-work-merge-actions">
+                <button type="submit" class="primary-btn" th:text="#{myWork.merge.submit}">Confirmer</button>
+                <a class="secondary-btn" th:href="@{/app/my-activity}" th:text="#{myWork.merge.cancel}">Annuler</a>
+            </p>
+        </form>
+
+        <p class="login-error" th:if="${#lists.isEmpty(mergePick.survivors)}"
+           th:text="#{myWork.merge.noCandidates}">Aucun ticket éligible.</p>
+        <p th:if="${#lists.isEmpty(mergePick.survivors)}">
+            <a class="secondary-btn" th:href="@{/app/my-activity}" th:text="#{myWork.merge.cancel}">Retour</a>
+        </p>
+    </div>
+</section>
+</body>
+</html>

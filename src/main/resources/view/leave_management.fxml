@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.app.controller.LeaveManagementController"
+      spacing="14"
+      style="-fx-padding:16; -fx-background-color:#f5f7fb;">
+
+    <HBox spacing="12" alignment="CENTER_LEFT">
+        <Label text="%leaveManagementTitle" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Label text="%search"/>
+        <TextField fx:id="txtLeaveSearch" promptText="%leaveSearchPrompt" prefWidth="260" HBox.hgrow="SOMETIMES"/>
+        <Button text="%leaveRefresh" onAction="#handleRefresh"/>
+    </HBox>
+
+    <HBox spacing="16" alignment="CENTER_LEFT">
+        <Label text="%leaveAsOfDate"/>
+        <DatePicker fx:id="dpAsOf" prefWidth="140"/>
+        <Label fx:id="lblSummary" style="-fx-text-fill:#374151;"/>
+    </HBox>
+
+    <SplitPane dividerPositions="0.5" VBox.vgrow="ALWAYS" maxHeight="Infinity">
+        <VBox spacing="8" style="-fx-padding:8;">
+            <Label text="%leaveAvailable" style="-fx-font-weight:bold;"/>
+            <TableView fx:id="tblAvailable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colAvailUser" text="%username" prefWidth="160"/>
+                    <TableColumn fx:id="colAvailRole" text="%role" prefWidth="140"/>
+                </columns>
+            </TableView>
+        </VBox>
+        <VBox spacing="8" style="-fx-padding:8;">
+            <Label text="%leaveOnLeaveNow" style="-fx-font-weight:bold;"/>
+            <TableView fx:id="tblOnLeave" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colOffUser" text="%username" prefWidth="140"/>
+                    <TableColumn fx:id="colOffType" text="%leaveType" prefWidth="100"/>
+                    <TableColumn fx:id="colOffFrom" text="%leaveDateFrom" prefWidth="100"/>
+                    <TableColumn fx:id="colOffTo" text="%leaveDateTo" prefWidth="100"/>
+                    <TableColumn fx:id="colOffNotes" text="%leaveNotes" prefWidth="180"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </SplitPane>
+
+    <VBox spacing="10" style="-fx-background-color:white; -fx-padding:12; -fx-background-radius:8;">
+        <Label text="%leaveRegisterLeaveHoliday" style="-fx-font-weight:bold;"/>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="%username"/>
+            <ComboBox fx:id="cmbUser" prefWidth="200"/>
+            <Label text="%leaveType"/>
+            <ComboBox fx:id="cmbType" prefWidth="140"/>
+            <Label text="%leaveDateFrom"/>
+            <DatePicker fx:id="dpStart" prefWidth="130"/>
+            <Label text="%leaveDateTo"/>
+            <DatePicker fx:id="dpEnd" prefWidth="130"/>
+        </HBox>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="%leaveNotesMandatory"/>
+            <TextField fx:id="txtNotes" prefWidth="400" HBox.hgrow="ALWAYS" promptText="%leaveNotesPrompt"/>
+            <Button text="%leaveAdd" onAction="#handleAdd" style="-fx-font-weight:bold;"/>
+        </HBox>
+        <Label text="%leaveMissionRecords" style="-fx-font-weight:bold;"/>
+        <TableView fx:id="tblRecords" prefHeight="220" minHeight="120" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colRecUser" text="%username" prefWidth="140"/>
+                <TableColumn fx:id="colRecType" text="%leaveType" prefWidth="100"/>
+                <TableColumn fx:id="colRecFrom" text="%leaveDateFrom" prefWidth="100"/>
+                <TableColumn fx:id="colRecTo" text="%leaveDateTo" prefWidth="100"/>
+                <TableColumn fx:id="colRecNotes" text="%leaveNotes" prefWidth="200"/>
+            </columns>
+        </TableView>
+        <Button text="%leaveDeleteSelected" onAction="#handleDeleteSelected" styleClass="danger-btn"/>
+    </VBox>
+</VBox>

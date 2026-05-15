@@ -4,6 +4,7 @@ import com.app.auth.Session;
 import com.app.model.Message;
 import com.app.util.CryptoUtil;
 import com.app.util.DB;
+import com.app.util.SqlDialect;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ public class MessageDAO {
     public static void sendMessage(Message msg) {
 
         String sql = """
-            INSERT INTO messages(sender_id, receiver_id, message)
+            INSERT INTO messages(sender_id, receiver_id, "message")
             VALUES(?,?,?)
         """;
 
@@ -34,7 +35,10 @@ public class MessageDAO {
         msg.getReceiverId(),
         "New Message",
         "New message from "+Session.getUsername(),
-        "MESSAGE"
+        "MESSAGE",
+        "CHAT_USER",
+        msg.getSenderId(),
+        null
 );
         
         
@@ -45,8 +49,18 @@ public class MessageDAO {
 
         List<Message> messages = new ArrayList<>();
 
-        String sql = """
-            SELECT * FROM messages
+        String sql = SqlDialect.isOracle()
+                ? """
+            SELECT id, sender_id, receiver_id, "message" AS msg_text, created_at, is_read
+            FROM messages
+            WHERE (sender_id = ? AND receiver_id = ?)
+               OR (sender_id = ? AND receiver_id = ?)
+            ORDER BY id ASC
+            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """
+                : """
+            SELECT id, sender_id, receiver_id, "message" AS msg_text, created_at, is_read
+            FROM messages
             WHERE (sender_id = ? AND receiver_id = ?)
                OR (sender_id = ? AND receiver_id = ?)
             ORDER BY id ASC
@@ -60,8 +74,13 @@ public class MessageDAO {
             stmt.setInt(2, user2);
             stmt.setInt(3, user2);
             stmt.setInt(4, user1);
-            stmt.setInt(5, limit);
-            stmt.setInt(6, offset);
+            if (SqlDialect.isOracle()) {
+                stmt.setInt(5, offset);
+                stmt.setInt(6, limit);
+            } else {
+                stmt.setInt(5, limit);
+                stmt.setInt(6, offset);
+            }
 
             ResultSet rs = stmt.executeQuery();
 
@@ -110,7 +129,8 @@ public class MessageDAO {
         List<Message> messages = new ArrayList<>();
 
         String sql = """
-            SELECT * FROM messages
+            SELECT id, sender_id, receiver_id, "message" AS msg_text, created_at, is_read
+            FROM messages
             WHERE (
                 (sender_id = ? AND receiver_id = ?)
                 OR
@@ -195,7 +215,7 @@ public class MessageDAO {
                 rs.getInt("id"),
                 rs.getInt("sender_id"),
                 rs.getInt("receiver_id"),
-                CryptoUtil.decrypt(rs.getString("message")),
+                CryptoUtil.decrypt(rs.getString("msg_text")),
                 rs.getString("created_at"),
                 rs.getInt("is_read")
         );

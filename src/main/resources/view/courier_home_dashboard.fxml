@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.controller.CourierHomeDashboardController"
+            fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" style="-fx-background:#eef2f7;">
+    <content>
+        <VBox spacing="20" style="-fx-padding:24" minWidth="0" maxWidth="Infinity">
+            <Label text="%courierHomeTitle" style="-fx-font-size:22px; -fx-font-weight:bold;"/>
+            <FlowPane hgap="16" vgap="16" prefWrapLength="900" minWidth="0" maxWidth="Infinity">
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%courierDashMyTotal" styleClass="muted-text"/>
+                    <Label fx:id="lblTotal" styleClass="stat-number"/>
+                </VBox>
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%courierDashOpen" styleClass="muted-text"/>
+                    <Label fx:id="lblOpen" styleClass="stat-number"/>
+                </VBox>
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%courierDashPipeline" styleClass="muted-text"/>
+                    <Label fx:id="lblPipeline" styleClass="stat-number"/>
+                </VBox>
+                <VBox styleClass="card" minWidth="180">
+                    <Label text="%resolved" styleClass="muted-text"/>
+                    <Label fx:id="lblResolved" styleClass="stat-number"/>
+                </VBox>
+            </FlowPane>
+            <Label text="%recentCourierPackets" style="-fx-font-size:16px; -fx-font-weight:bold;"/>
+            <TableView fx:id="table" prefHeight="220" minWidth="0" maxWidth="Infinity">
+                <columns>
+                    <TableColumn fx:id="colRef" text="%ref" prefWidth="100"/>
+                    <TableColumn fx:id="colTitle" text="%title" prefWidth="200"/>
+                    <TableColumn fx:id="colSt" text="%status" prefWidth="120"/>
+                    <TableColumn fx:id="colDir" text="%direction" prefWidth="150"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </content>
+</ScrollPane>

@@ -6,6 +6,8 @@
 <?import javafx.geometry.*?>
 
 <VBox spacing="25"
+      minWidth="0"
+      maxWidth="Infinity"
       alignment="CENTER"
       xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
@@ -20,19 +22,24 @@
            style="-fx-font-size:22px; -fx-font-weight:bold;"/>
 
     <!-- STATISTICS -->
-    <HBox spacing="40" alignment="CENTER">
+    <HBox minWidth="0" maxWidth="Infinity" spacing="40" alignment="CENTER">
 
         <VBox alignment="CENTER">
-            <Label text="TicketsLogged"/>
+            <Label text="%ticketsLogged"/>
             <Label fx:id="lblTickets"
                    text="0"
                    style="-fx-font-size:28px; -fx-font-weight:bold;"/>
         </VBox>
 
-        
+        <VBox alignment="CENTER">
+            <Label text="%files"/>
+            <Label fx:id="lblFiles"
+                   text="0"
+                   style="-fx-font-size:28px; -fx-font-weight:bold;"/>
+        </VBox>
 
         <VBox alignment="CENTER">
-            <Label text="Messages"/>
+            <Label text="%messages"/>
             <Label fx:id="lblMessages"
                    text="0"
                    style="-fx-font-size:28px; -fx-font-weight:bold;"/>
@@ -43,6 +50,9 @@
     <!-- GRAPH -->
     <PieChart fx:id="ticketChart"
               title="%MyTicketsStatus"
+              minWidth="0"
+              maxWidth="Infinity"
+              minHeight="200"
               prefWidth="400"
               prefHeight="300"/>
 

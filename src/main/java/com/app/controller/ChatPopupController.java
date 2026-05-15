@@ -310,4 +310,19 @@ private void handleSend() {
             autoRefresh.stop();
         }
     }
+
+    public void openConversationWithUserId(int userId) {
+        if (userId <= 0) return;
+        for (User user : userList.getItems()) {
+            if (user.getId() == userId) {
+                userList.getSelectionModel().select(user);
+                userList.scrollTo(user);
+                selectedUserId = userId;
+                MessageDAO.markAsRead(selectedUserId, loggedUserId);
+                loadConversation();
+                userList.refresh();
+                return;
+            }
+        }
+    }
 }

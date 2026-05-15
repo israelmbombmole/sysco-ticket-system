@@ -2,6 +2,7 @@ package com.app.ui;
 
 import com.app.dao.AuditLogDAO;
 import com.app.model.AuditLog;
+import com.app.util.I18n;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -42,15 +43,15 @@ tableAudit.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
                 new SimpleStringProperty(d.getValue().getUsername()));
 
         colAction.setCellValueFactory(d ->
-                new SimpleStringProperty(d.getValue().getAction()));
+                new SimpleStringProperty(I18n.t("audit.action." + d.getValue().getAction(), d.getValue().getAction())));
 
         colEntity.setCellValueFactory(d ->
-                new SimpleStringProperty(d.getValue().getEntity()));
+                new SimpleStringProperty(I18n.t("audit.entity." + d.getValue().getEntity(), d.getValue().getEntity())));
 
        
 
         colDetails.setCellValueFactory(d ->
-                new SimpleStringProperty(d.getValue().getDetails()));
+                new SimpleStringProperty(translateAuditDetails(d.getValue().getDetails())));
 
         colTime.setCellValueFactory(d ->
                 new SimpleStringProperty(
@@ -71,7 +72,7 @@ tableAudit.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     cmbUser.getItems().clear();
 
     // Add default option
-    cmbUser.getItems().add("All");
+    cmbUser.getItems().add(I18n.t("all", "All"));
 
     // Load distinct users from DB
     cmbUser.getItems().addAll(AuditLogDAO.getDistinctUsers());
@@ -87,6 +88,10 @@ private void handleFilter() {
     LocalDate from = dpFrom.getValue();
     LocalDate to = dpTo.getValue();
     String keyword = txtKeyword.getText();
+
+    if (I18n.t("all", "All").equals(user)) {
+        user = null;
+    }
 
     tableAudit.setItems(
             AuditLogDAO.advancedSearch(
@@ -135,7 +140,7 @@ private void handleFilter() {
                         log.getAction(),
                         log.getEntity(),
                         log.getEntityId(),
-                        log.getDetails().replace("\"","'"),
+                        translateAuditDetails(log.getDetails()).replace("\"","'"),
                         log.getCreatedAt());
             }
 
@@ -147,5 +152,15 @@ private void handleFilter() {
     @FXML
     private void handleClose() {
         ((Stage) tableAudit.getScene().getWindow()).close();
+    }
+
+    private String translateAuditDetails(String details) {
+        if (details == null || details.isBlank()) {
+            return "";
+        }
+        if ("User logged in".equalsIgnoreCase(details.trim())) {
+            return I18n.t("audit.userLoggedIn", "User logged in");
+        }
+        return details;
     }
 }

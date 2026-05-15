@@ -13,7 +13,7 @@ public class FileDAO {
         String sql = """
             SELECT COUNT(*)
             FROM datashare_recipients
-            WHERE user_id = ?
+            WHERE recipient_id = ?
         """;
 
         try(Connection conn = DB.getConnection();

@@ -53,7 +53,7 @@
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="%Search"/>
                 <TextField fx:id="txtSearchRecipients"
-                           promptText="Search recipients..."
+                           promptText="%searchRecipients"
                            prefWidth="250"/>
             </HBox>
 

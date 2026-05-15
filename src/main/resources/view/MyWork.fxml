@@ -3,52 +3,126 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox spacing="20" style="-fx-padding:20; -fx-background-color:#f5f7fb;"
-      xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.app.controller.MyWorkController">
+<ScrollPane fitToWidth="true"
+            vbarPolicy="AS_NEEDED"
+            hbarPolicy="AS_NEEDED"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.app.controller.MyWorkController">
+
+<content>
+<VBox spacing="12" styleClass="gov-work-page" style="-fx-padding:20;"
+      maxWidth="Infinity"
+      >
 
     <!-- TITLE -->
-    <Label text="My Work"
+    <Label text="%myWork"
            style="-fx-font-size:22px; -fx-font-weight:bold;" />
 
     <!-- ================= TICKETS ================= -->
-    <VBox spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;">
-        <Label text="My Tickets" style="-fx-font-size:16px; -fx-font-weight:bold;" />
+    <VBox spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;" maxWidth="Infinity">
+        <Label text="%myTickets" style="-fx-font-size:16px; -fx-font-weight:bold;" />
 
-        <TableView fx:id="tableTickets" prefHeight="250">
+        <ScrollPane fitToWidth="false" fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
+                    maxWidth="Infinity" minHeight="-1" prefHeight="200" styleClass="my-work-table-scroll">
+            <TableView fx:id="tableTickets" prefHeight="185" minWidth="1020" maxWidth="Infinity">
 
             <columns>
-                <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
-                <TableColumn fx:id="colTitle" text="Title" prefWidth="200"/>
-                <TableColumn fx:id="colStatus" text="Status" prefWidth="120"/>
-                <TableColumn fx:id="colPriority" text="Priority" prefWidth="100"/>
-                <TableColumn fx:id="colStart" text="Start" prefWidth="150"/>
-                <TableColumn fx:id="colClose" text="Close" prefWidth="150"/>
-                <TableColumn fx:id="colResolution" text="Duration" prefWidth="120"/>
-                <TableColumn fx:id="colAction" text="Action" prefWidth="120"/>
+                <TableColumn fx:id="colId" text="%id" prefWidth="60"/>
+                <TableColumn fx:id="colTitle" text="%title" prefWidth="200"/>
+                <TableColumn fx:id="colStatus" text="%status" prefWidth="120"/>
+                <TableColumn fx:id="colPriority" text="%priority" prefWidth="100"/>
+                <TableColumn fx:id="colStart" text="%start" prefWidth="150"/>
+                <TableColumn fx:id="colClose" text="%close" prefWidth="150"/>
+                <TableColumn fx:id="colResolution" text="%duration" prefWidth="120"/>
+                <TableColumn fx:id="colAction" text="%action" prefWidth="120"/>
             </columns>
 
-        </TableView>
+            </TableView>
+        </ScrollPane>
+    </VBox>
+
+    <!-- ================= MISSIONS ================= -->
+    <VBox spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;" maxWidth="Infinity">
+        <Label text="%myWorkMissions" style="-fx-font-size:16px; -fx-font-weight:bold;" />
+
+        <ScrollPane fitToWidth="false" fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
+                    maxWidth="Infinity" minHeight="-1" prefHeight="216" styleClass="my-work-table-scroll">
+            <TableView fx:id="tableMyMissions" prefHeight="200" minWidth="1226" maxWidth="Infinity">
+            <columns>
+                <TableColumn fx:id="colMissionCode" text="%missionCode" prefWidth="95"/>
+                <TableColumn fx:id="colMissionTitle" text="%title" prefWidth="160"/>
+                <TableColumn fx:id="colMissionSite" text="%missionSite" prefWidth="100"/>
+                <TableColumn fx:id="colMissionLead" text="%missionLead" prefWidth="100"/>
+                <TableColumn fx:id="colMissionStart" text="%missionStart" prefWidth="88"/>
+                <TableColumn fx:id="colMissionEnd" text="%missionEnd" prefWidth="88"/>
+                <TableColumn fx:id="colMissionStatus" text="%status" prefWidth="110"/>
+                <TableColumn fx:id="colMissionMyRole" text="%myWorkMissionMyRole" prefWidth="125"/>
+                <TableColumn fx:id="colMissionParticipants" text="%myWorkMissionParticipants" prefWidth="200"/>
+                <TableColumn fx:id="colMissionAction" text="%action" prefWidth="110"/>
+            </columns>
+            </TableView>
+        </ScrollPane>
     </VBox>
 
     <!-- ================= TASKS ================= -->
-    <VBox spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;">
-        <Label text="My Tasks" style="-fx-font-size:16px; -fx-font-weight:bold;" />
+    <VBox spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;" maxWidth="Infinity">
+        <Label text="%myTasks" style="-fx-font-size:16px; -fx-font-weight:bold;" />
 
-        <TableView fx:id="tableTasks" prefHeight="300">
+        <ScrollPane fitToWidth="false" fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
+                    maxWidth="Infinity" minHeight="-1" prefHeight="200" styleClass="my-work-table-scroll">
+            <TableView fx:id="tableTasks" prefHeight="185" minWidth="1020" maxWidth="Infinity">
 
             <columns>
-                <TableColumn fx:id="colTaskId" text="ID" prefWidth="60"/>
-                <TableColumn fx:id="colTaskTitle" text="Title" prefWidth="220"/>
-                <TableColumn fx:id="colTaskStatus" text="Status" prefWidth="120"/>
-                <TableColumn fx:id="colTaskStart" text="Start" prefWidth="150"/>
-                <TableColumn fx:id="colTaskClose" text="Close" prefWidth="150"/>
-                <TableColumn fx:id="colTaskResolution" text="Duration" prefWidth="120"/>
-                <TableColumn fx:id="colTaskAction" text="Action" prefWidth="200"/>
+                <TableColumn fx:id="colTaskId" text="%id" prefWidth="60"/>
+                <TableColumn fx:id="colTaskTitle" text="%title" prefWidth="220"/>
+                <TableColumn fx:id="colTaskStatus" text="%status" prefWidth="120"/>
+                <TableColumn fx:id="colTaskStart" text="%start" prefWidth="150"/>
+                <TableColumn fx:id="colTaskClose" text="%close" prefWidth="150"/>
+                <TableColumn fx:id="colTaskResolution" text="%duration" prefWidth="120"/>
+                <TableColumn fx:id="colTaskAction" text="%action" prefWidth="200"/>
             </columns>
 
-        </TableView>
+            </TableView>
+        </ScrollPane>
+    </VBox>
+
+    <VBox fx:id="closeRequestsSection" spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;" maxWidth="Infinity">
+        <Label text="%closeRequests" style="-fx-font-size:16px; -fx-font-weight:bold;" />
+
+        <ScrollPane fitToWidth="false" fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
+                    maxWidth="Infinity" minHeight="-1" prefHeight="180" styleClass="my-work-table-scroll">
+            <TableView fx:id="tableCloseRequests" prefHeight="165" minWidth="950" maxWidth="Infinity">
+            <columns>
+                <TableColumn fx:id="colReqTicket" text="%ticket" prefWidth="120"/>
+                <TableColumn fx:id="colReqBy" text="%requestedBy" prefWidth="160"/>
+                <TableColumn fx:id="colReqReason" text="%reason" prefWidth="280"/>
+                <TableColumn fx:id="colReqTime" text="%requestedAt" prefWidth="170"/>
+                <TableColumn fx:id="colReqAction" text="%action" prefWidth="220"/>
+            </columns>
+            </TableView>
+        </ScrollPane>
+    </VBox>
+
+    <VBox fx:id="externalEscalationsSection" spacing="10" style="-fx-background:white; -fx-padding:15; -fx-background-radius:10;" maxWidth="Infinity" managed="false" visible="false">
+        <Label text="%externalEscalations" style="-fx-font-size:16px; -fx-font-weight:bold;" />
+
+        <ScrollPane fitToWidth="false" fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
+                    maxWidth="Infinity" minHeight="-1" prefHeight="186" styleClass="my-work-table-scroll">
+            <TableView fx:id="tableExternalEscalations" prefHeight="170" minWidth="1070" maxWidth="Infinity">
+            <columns>
+                <TableColumn fx:id="colExtTicket" text="%ticket" prefWidth="110"/>
+                <TableColumn fx:id="colExtFromDirection" text="%fromDirection" prefWidth="170"/>
+                <TableColumn fx:id="colExtToDirection" text="%toDirection" prefWidth="170"/>
+                <TableColumn fx:id="colExtSousDirection" text="%sousDirection" prefWidth="150"/>
+                <TableColumn fx:id="colExtRequestedApprover" text="%approver" prefWidth="160"/>
+                <TableColumn fx:id="colExtStatus" text="%status" prefWidth="130"/>
+                <TableColumn fx:id="colExtAction" text="%action" prefWidth="180"/>
+            </columns>
+            </TableView>
+        </ScrollPane>
     </VBox>
 
 </VBox>
+</content>
+</ScrollPane>

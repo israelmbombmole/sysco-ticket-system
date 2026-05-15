@@ -30,10 +30,13 @@ public class EmailService {
 
         try {
 
-            List<String> admins = UserDAO.getAdminEmails();
+            List<String> admins = UserDAO.getTicketNotificationEmails();
 
             if (admins == null || admins.isEmpty()) {
-                System.out.println("No admin emails found.");
+                System.out.println(
+                        "No notification emails found for new ticket. "
+                                + "At least one active user with role DIRECTEUR, SOUS-DIRECTEUR, INSPECTEUR (or ADMIN) "
+                                + "must have a non-blank email in User Management; hidden users are skipped.");
                 return;
             }
 
@@ -130,6 +133,38 @@ public class EmailService {
                 System.out.println("E-mail envoyé à: " + adminEmail);
             }
 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void sendSimpleNotificationEmail(String toEmail, String subject, String bodyText) {
+        if (toEmail == null || toEmail.isBlank()) return;
+        try {
+            Properties props = new Properties();
+            props.put("mail.smtp.auth", "true");
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.host", SMTP_HOST);
+            props.put("mail.smtp.port", SMTP_PORT);
+
+            Session session = Session.getInstance(
+                    props,
+                    new Authenticator() {
+                        protected PasswordAuthentication getPasswordAuthentication() {
+                            return new PasswordAuthentication(EMAIL, PASSWORD);
+                        }
+                    }
+            );
+
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(EMAIL));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
+            message.setSubject(subject);
+            String html = "<html><body style='font-family:Arial,sans-serif;'>" +
+                    "<p>" + (bodyText == null ? "" : bodyText.replace("\n", "<br/>")) + "</p>" +
+                    "</body></html>";
+            message.setContent(html, "text/html; charset=utf-8");
+            Transport.send(message);
         } catch (Exception e) {
             e.printStackTrace();
         }

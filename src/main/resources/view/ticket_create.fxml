@@ -11,6 +11,8 @@
     <center>
 
         <VBox spacing="20"
+              minWidth="0"
+              maxWidth="Infinity"
               alignment="TOP_CENTER"
               style="-fx-padding:30;">
 
@@ -21,7 +23,8 @@
 
             <!-- Card Container -->
             <VBox spacing="15"
-                  maxWidth="520"
+                  minWidth="280"
+                  maxWidth="Infinity"
                   style="-fx-background-color:white;
                          -fx-padding:25;
                          -fx-background-radius:10;
@@ -31,14 +34,14 @@
                 <VBox spacing="5">
                     <Label text="%Title"/>
                     <TextField fx:id="txtTitle"
-                               promptText="Enter ticket title"/>
+                               promptText="%enterTicketTitle"/>
                 </VBox>
 
                 <!-- Description -->
                 <VBox spacing="5">
                     <Label text="%Description"/>
                     <TextArea fx:id="txtDescription"
-                              promptText="Describe the issue..."
+                              promptText="%enterTicketDescription"
                               prefRowCount="4"/>
                 </VBox>
 
@@ -46,14 +49,14 @@
                 <VBox spacing="5">
                     <Label text="%Priority"/>
                     <ComboBox fx:id="cmbPriority"
-                              promptText="Select priority"/>
+                              promptText="%selectPriority"/>
                 </VBox>
 
                 <!-- Department -->
                 <VBox spacing="5">
                     <Label text="%Department"/>
                     <ComboBox fx:id="cmbDepartment"
-                              promptText="Select department"/>
+                              promptText="%selectDepartment"/>
                 </VBox>
 
                
@@ -61,7 +64,7 @@
                 <!-- Attachments -->
                 <VBox spacing="5">
 
-                    <Label text="Attachments"/>
+                    <Label text="%attachments"/>
 
                     <HBox spacing="10">
 
@@ -71,13 +74,13 @@
 
                         <VBox spacing="5">
 
-                            <Button text="Add Files"
+                            <Button text="%addFiles"
                                     onAction="#handleBrowseFiles"
                                     style="-fx-background-color:#2f80ed;
                                            -fx-text-fill:white;
                                            -fx-font-weight:bold;"/>
 
-                            <Button text="Remove"
+                            <Button text="%remove"
                                     onAction="#handleRemoveFile"
                                     style="-fx-background-color:#ef4444;
                                            -fx-text-fill:white;

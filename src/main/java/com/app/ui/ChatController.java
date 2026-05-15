@@ -57,6 +57,21 @@ public class ChatController {
         chatListView.getItems().setAll(messages);
     }
 
+    public void openConversationWithUserId(int userId) {
+        if (selectedUser != null && selectedUser.getId() == userId) {
+            loadConversation();
+            return;
+        }
+        List<User> users = UserDAO.getAllUsers();
+        for (User u : users) {
+            if (u.getId() == userId) {
+                selectedUser = u;
+                loadConversation();
+                return;
+            }
+        }
+    }
+
     @FXML
     private void handleSend() {
 

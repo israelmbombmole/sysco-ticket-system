@@ -5,6 +5,11 @@
   <artifactId>javafx-audit-system</artifactId>
   <version>1.0</version>
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -12,7 +17,6 @@
         <configuration>
           <source>17</source>
           <target>17</target>
-          <encoding>UTF-8</encoding>
         </configuration>
       </plugin>
       <plugin>
@@ -33,9 +37,19 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
               <transformers>
                 <transformer>
-                  <mainClass>com.app.Main</mainClass>
+                  <mainClass>com.app.MainApp</mainClass>
                 </transformer>
               </transformers>
             </configuration>
@@ -44,18 +58,9 @@
       </plugin>
     </plugins>
   </build>
-  <dependencies>
-    <dependency>
-      <groupId>com.itextpdf</groupId>
-      <artifactId>itext7-core</artifactId>
-      <version>7.2.5</version>
-      <type>pom</type>
-      <scope>compile</scope>
-    </dependency>
-  </dependencies>
   <properties>
     <java.version>17</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <javafx.version>21</javafx.version>
+    <javafx.version>17.0.10</javafx.version>
   </properties>
 </project>

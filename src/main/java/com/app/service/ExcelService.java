@@ -1,23 +1,35 @@
 package com.app.service;
 
-
 import com.app.model.DataEntry;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
+/**
+ * Apache POI persistence for the user data Excel workbook. Logic matches {@code sysco-ticket-system-preview}
+ * (yearly sheets, same columns) with path resolution, safe cell reading, and directory creation on write.
+ */
 public class ExcelService {
 
-    private static final String FILE_PATH =
-        "C:/sqlite/javafx-audit-system/data/user_records.xlsx";
-    
+    /** Set {@code -Dsysco.excel.data=/path/user_records.xlsx} or env {@code SYSCO_EXCEL_DATA} to override. */
+    private static File dataFile() {
+        String p = System.getProperty("sysco.excel.data");
+        if (p == null || p.isBlank()) {
+            p = System.getenv("SYSCO_EXCEL_DATA");
+        }
+        if (p != null && !p.isBlank()) {
+            return new File(p.trim());
+        }
+        return new File(System.getProperty("user.dir", "."), "data" + File.separator + "user_records.xlsx");
+    }
 
     private static final String[] HEADERS = {
         "Date enregistrement",
@@ -28,22 +40,24 @@ public class ExcelService {
         "Sous-Direction"
     };
 
-    // =========================
-    // GET OR CREATE WORKBOOK
-    // =========================
-    private static Workbook getWorkbook() throws Exception {
-        File file = new File(FILE_PATH);
+    private static final DataFormatter DATA_FORMATTER = new DataFormatter();
 
+    private static Workbook getWorkbook() throws Exception {
+        File file = dataFile();
         if (!file.exists()) {
             return new XSSFWorkbook();
         }
-
         return new XSSFWorkbook(new FileInputStream(file));
     }
 
-    // =========================
-    // GET OR CREATE YEAR SHEET
-    // =========================
+    private static void ensureParentDir() throws java.io.IOException {
+        File f = dataFile();
+        File parent = f.getParentFile();
+        if (parent != null) {
+            Files.createDirectories(parent.toPath());
+        }
+    }
+
     private static Sheet getOrCreateYearSheet(Workbook wb, int year) {
 
         String sheetName = "Donnees-" + year;
@@ -52,7 +66,6 @@ public class ExcelService {
         if (sheet == null) {
             sheet = wb.createSheet(sheetName);
 
-            // 🔹 Header row
             Row header = sheet.createRow(0);
 
             CellStyle style = wb.createCellStyle();
@@ -71,9 +84,6 @@ public class ExcelService {
         return sheet;
     }
 
-    // =========================
-    // APPEND DATA
-    // =========================
     public static void append(
             String dateEnreg,
             String expediteur,
@@ -85,8 +95,7 @@ public class ExcelService {
 
         try (Workbook wb = getWorkbook()) {
 
-            // 🔹 Determine year from dateEnreg
-            int year = LocalDate.parse(dateEnreg).getYear();
+            int year = yearFromEnregistrement(dateEnreg);
 
             Sheet sheet = getOrCreateYearSheet(wb, year);
 
@@ -100,7 +109,8 @@ public class ExcelService {
             row.createCell(4).setCellValue(dateCotation);
             row.createCell(5).setCellValue(sousDirection);
 
-            try (FileOutputStream out = new FileOutputStream(FILE_PATH)) {
+            ensureParentDir();
+            try (FileOutputStream out = new FileOutputStream(dataFile())) {
                 wb.write(out);
             }
 
@@ -108,149 +118,176 @@ public class ExcelService {
             e.printStackTrace();
         }
     }
-    
+
+    private static int yearFromEnregistrement(String dateEnreg) {
+        if (dateEnreg == null || dateEnreg.isBlank() || "N/A".equalsIgnoreCase(dateEnreg.trim())) {
+            return LocalDate.now().getYear();
+        }
+        try {
+            return LocalDate.parse(dateEnreg.trim()).getYear();
+        } catch (DateTimeParseException e) {
+            return LocalDate.now().getYear();
+        }
+    }
+
     public static ObservableList<DataEntry> readAll() {
 
-    ObservableList<DataEntry> list = FXCollections.observableArrayList();
+        ObservableList<DataEntry> list = FXCollections.observableArrayList();
 
-    try (Workbook wb = getWorkbook()) {
+        try (Workbook wb = getWorkbook()) {
 
-        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
 
-            Sheet sheet = wb.getSheetAt(i);
+                Sheet sheet = wb.getSheetAt(i);
 
-            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
 
-                Row row = sheet.getRow(rowIndex);
-                if (row == null) continue;
-
-                list.add(new DataEntry(
-                        getCellValue(row.getCell(0)),
-                        getCellValue(row.getCell(1)),
-                        getCellValue(row.getCell(2)),
-                        getCellValue(row.getCell(3)),
-                        getCellValue(row.getCell(4)),
-                        getCellValue(row.getCell(5))
-                ));
-            }
-        }
-
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-
-    return list;
-}
-
-private static String getCellValue(Cell cell) {
-    if (cell == null) return "";
-    cell.setCellType(CellType.STRING);
-    return cell.getStringCellValue();
-}
-    
- public static void update(
-        DataEntry original,
-        String newDateEnreg,
-        String newExp,
-        String newObj,
-        String newCot,
-        String newDateCot,
-        String newSousDir
-) {
-    try (Workbook wb = getWorkbook()) {
-
-        for (Sheet sheet : wb) {
-
-            for (Row row : sheet) {
-
-                if (row.getRowNum() == 0) continue;
-
-                String date = row.getCell(0).getStringCellValue();
-                String exp = row.getCell(1).getStringCellValue();
-                String obj = row.getCell(2).getStringCellValue();
-
-                if (date.equals(original.getDateEnregistrement())
-                        && exp.equals(original.getExpediteur())
-                        && obj.equals(original.getObjet())) {
-
-                    row.getCell(0).setCellValue(newDateEnreg);
-                    row.getCell(1).setCellValue(newExp);
-                    row.getCell(2).setCellValue(newObj);
-                    row.getCell(3).setCellValue(newCot);
-                    row.getCell(4).setCellValue(newDateCot);
-                    row.getCell(5).setCellValue(newSousDir);
-                }
-            }
-        }
-
-        try (FileOutputStream out = new FileOutputStream(FILE_PATH)) {
-            wb.write(out);
-        }
-
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-
- 
- // =========================
-// DELETE FROM EXCEL
-// =========================
-public static void delete(DataEntry entry) {
-
-    try (Workbook wb = getWorkbook()) {
-
-        boolean deleted = false;
-
-        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-
-            Sheet sheet = wb.getSheetAt(i);
-
-            for (int r = 1; r <= sheet.getLastRowNum(); r++) {
-
-                Row row = sheet.getRow(r);
-                if (row == null) continue;
-
-                String dateEnreg = row.getCell(0).getStringCellValue();
-                String expediteur = row.getCell(1).getStringCellValue();
-                String objet = row.getCell(2).getStringCellValue();
-                String cotation = row.getCell(3).getStringCellValue();
-                String dateCotation = row.getCell(4).getStringCellValue();
-                String sousDirection = row.getCell(5).getStringCellValue();
-
-                if (dateEnreg.equals(entry.getDateEnregistrement()) &&
-                    expediteur.equals(entry.getExpediteur()) &&
-                    objet.equals(entry.getObjet()) &&
-                    cotation.equals(entry.getCotation()) &&
-                    dateCotation.equals(entry.getDateCotation()) &&
-                    sousDirection.equals(entry.getSousDirection())) {
-
-                    sheet.removeRow(row);
-
-                    if (r < sheet.getLastRowNum()) {
-                        sheet.shiftRows(r + 1, sheet.getLastRowNum(), -1);
+                    Row row = sheet.getRow(rowIndex);
+                    if (row == null) {
+                        continue;
                     }
 
-                    deleted = true;
+                    String a = getCellValue(row.getCell(0));
+                    String b = getCellValue(row.getCell(1));
+                    String c2 = getCellValue(row.getCell(2));
+                    if (a.isEmpty() && b.isEmpty() && c2.isEmpty()) {
+                        continue;
+                    }
+
+                    list.add(new DataEntry(
+                            a,
+                            getCellValue(row.getCell(1)),
+                            getCellValue(row.getCell(2)),
+                            getCellValue(row.getCell(3)),
+                            getCellValue(row.getCell(4)),
+                            getCellValue(row.getCell(5))
+                    ));
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    private static String getCellValue(Cell cell) {
+        if (cell == null) {
+            return "";
+        }
+        return DATA_FORMATTER.formatCellValue(cell);
+    }
+
+    public static void update(
+            DataEntry original,
+            String newDateEnreg,
+            String newExp,
+            String newObj,
+            String newCot,
+            String newDateCot,
+            String newSousDir
+    ) {
+        try (Workbook wb = getWorkbook()) {
+
+            for (Sheet sheet : wb) {
+
+                for (Row row : sheet) {
+
+                    if (row.getRowNum() == 0) {
+                        continue;
+                    }
+
+                    String date = getCellValue(row.getCell(0));
+                    String exp = getCellValue(row.getCell(1));
+                    String obj = getCellValue(row.getCell(2));
+
+                    if (date.equals(original.getDateEnregistrement())
+                            && exp.equals(original.getExpediteur())
+                            && obj.equals(original.getObjet())) {
+
+                        ensureCell(row, 0).setCellValue(newDateEnreg);
+                        ensureCell(row, 1).setCellValue(newExp);
+                        ensureCell(row, 2).setCellValue(newObj);
+                        ensureCell(row, 3).setCellValue(newCot);
+                        ensureCell(row, 4).setCellValue(newDateCot);
+                        ensureCell(row, 5).setCellValue(newSousDir);
+                    }
+                }
+            }
+
+            ensureParentDir();
+            try (FileOutputStream out = new FileOutputStream(dataFile())) {
+                wb.write(out);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static Cell ensureCell(Row row, int idx) {
+        Cell c = row.getCell(idx);
+        if (c == null) {
+            c = row.createCell(idx);
+        }
+        return c;
+    }
+
+    public static void delete(DataEntry entry) {
+
+        try (Workbook wb = getWorkbook()) {
+
+            boolean deleted = false;
+
+            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+
+                Sheet sheet = wb.getSheetAt(i);
+
+                for (int r = 1; r <= sheet.getLastRowNum(); r++) {
+
+                    Row row = sheet.getRow(r);
+                    if (row == null) {
+                        continue;
+                    }
+
+                    String dateEnreg = getCellValue(row.getCell(0));
+                    String expediteur = getCellValue(row.getCell(1));
+                    String objet = getCellValue(row.getCell(2));
+                    String cotation = getCellValue(row.getCell(3));
+                    String dateCotation = getCellValue(row.getCell(4));
+                    String sousDirection = getCellValue(row.getCell(5));
+
+                    if (dateEnreg.equals(entry.getDateEnregistrement())
+                            && expediteur.equals(entry.getExpediteur())
+                            && objet.equals(entry.getObjet())
+                            && cotation.equals(entry.getCotation())
+                            && dateCotation.equals(entry.getDateCotation())
+                            && sousDirection.equals(entry.getSousDirection())) {
+
+                        sheet.removeRow(row);
+
+                        if (r < sheet.getLastRowNum()) {
+                            sheet.shiftRows(r + 1, sheet.getLastRowNum(), -1);
+                        }
+
+                        deleted = true;
+                        break;
+                    }
+                }
+
+                if (deleted) {
                     break;
                 }
             }
 
-            if (deleted) break;
+            ensureParentDir();
+            try (FileOutputStream out = new FileOutputStream(dataFile())) {
+                wb.write(out);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        try (FileOutputStream out = new FileOutputStream(FILE_PATH)) {
-            wb.write(out);
-        }
-
-        System.out.println("Deleted from Excel successfully");
-
-    } catch (Exception e) {
-        e.printStackTrace();
     }
-}
-
-    
-    
-    
 }

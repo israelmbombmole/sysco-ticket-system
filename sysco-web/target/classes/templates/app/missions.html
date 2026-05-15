@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org"
+
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+
+<head>
+
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Missions</title>
+
+</head>
+
+<body>
+
+<section th:fragment="section" class="gov-work-page missions-page missions-page-v2">
+
+    <div class="card page-panel missions-shell missions-shell-v2">
+
+        <header class="missions-hero">
+
+            <div class="missions-hero-text">
+
+                <p class="missions-kicker" th:text="#{missions.workspace.kicker}">Mission workspace</p>
+
+                <h1 class="title-large missions-hero-title" th:text="#{missions.hero.title}">Missions</h1>
+
+                <p class="muted missions-intro" th:text="#{missions.hero.subtitle}">Subtitle</p>
+
+            </div>
+
+            <div class="missions-hero-aside">
+
+                <div class="missions-stat-card" aria-live="polite">
+
+                    <span class="missions-stat-value" th:text="${#lists.size(page.rows)}">0</span>
+
+                    <span class="missions-stat-label" th:text="#{missions.section.list}">Missions</span>
+
+                    <span class="muted missions-stat-sub" th:text="#{missions.list.toggleHint}">Hint</span>
+
+                </div>
+
+                <div class="missions-head-actions missions-hero-actions">
+
+                    <a class="secondary-btn btn-sm" th:href="@{/app/missions(status=${page.status},q=${page.q},from=${page.from},to=${page.to})}"
+
+                       th:text="#{missions.btn.refresh}">Refresh</a>
+
+                    <a class="primary-btn btn-sm" th:href="@{/app/missions(tab='mission')}"
+
+                       th:text="#{missions.btn.new}">New mission</a>
+
+                    <button type="button" id="missionsToggleListBtn" class="secondary-btn btn-sm missions-toggle-list-btn"
+
+                            th:data-label-show="#{missions.btn.showList}"
+
+                            th:data-label-hide="#{missions.btn.hideList}"
+
+                            aria-expanded="false"
+
+                            aria-controls="missionsListPanel">
+
+                        <span class="missions-toggle-list-label" th:text="#{missions.btn.showList}">Show list</span>
+
+                        <span class="missions-toggle-list-meta muted"
+
+                              th:text="${' · ' + #messages.msg('missions.list.summary', #lists.size(page.rows))}">·</span>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <div class="page-alerts" th:if="${successKey != null or errorKey != null}">
+
+            <p class="success-banner" th:if="${successKey != null}" th:text="#{${successKey}}">Enregistré.</p>
+
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Erreur.</p>
+
+        </div>
+
+
+
+        <details class="missions-filter-details">
+
+            <summary class="missions-filter-summary">
+
+                <span class="missions-filter-summary-title" th:text="#{missions.section.filters}">Filtres</span>
+
+            </summary>
+
+            <form class="missions-filter-row" method="get" th:action="@{/app/missions}">
+
+                <label class="form-label" th:text="#{missions.filter.status}">Status</label>
+
+                <select class="form-input" name="status">
+
+                    <option value="" th:text="#{missions.filter.allStatuses}">Tous</option>
+
+                    <option th:each="s : ${statusOptions}" th:value="${s}"
+
+                            th:selected="${s == page.status}"
+
+                            th:text="${@uiLabels.missionStatus(s, #locale)}">PLANNED</option>
+
+                </select>
+
+                <label class="form-label" th:text="#{missions.filter.search}">Rechercher</label>
+
+                <input class="form-input" name="q" th:value="${page.q}" th:placeholder="#{missions.ph.search}" />
+
+                <label class="form-label" th:text="#{missions.filter.periodFrom}">Du</label>
+
+                <input class="form-input" type="date" name="from" th:value="${page.from}" />
+
+                <label class="form-label" th:text="#{missions.filter.periodTo}">Au</label>
+
+                <input class="form-input" type="date" name="to" th:value="${page.to}" />
+
+                <button type="submit" class="secondary-btn btn-sm" th:text="#{missions.btn.apply}">Appliquer</button>
+
+            </form>
+
+        </details>
+
+
+
+        <div class="card page-panel myshift-panel missions-attendance-card" th:if="${page.attendanceVision != null}">
+
+            <div class="myshift-row-head">
+
+                <h3 class="courier-subheading" th:text="#{missions.attendance.title}">Vision présence</h3>
+
+                <a class="secondary-btn btn-sm"
+
+                   th:if="${page.attendanceVision.canExport}"
+
+                   th:href="@{/app/missions/attendance.xlsx(from=${page.attendanceVision.from},to=${page.attendanceVision.to})}"
+
+                   th:text="#{missions.attendance.exportExcel}">Exporter Excel</a>
+
+            </div>
+
+            <p class="muted" th:text="#{missions.attendance.subtitle}">Présence</p>
+
+            <div class="myshift-stats-grid">
+
+                <div class="myshift-stat-card myshift-stat-card--present">
+
+                    <p class="myshift-stat-value" th:text="${page.attendanceVision.presentNowCount}">0</p>
+
+                    <p class="myshift-stat-label" th:text="#{missions.attendance.presentNow}">Présents</p>
+
+                </div>
+
+                <div class="myshift-stat-card myshift-stat-card--done">
+
+                    <p class="myshift-stat-value" th:text="${page.attendanceVision.withLogoutCount}">0</p>
+
+                    <p class="myshift-stat-label" th:text="#{missions.attendance.withLogout}">Sessions</p>
+
+                </div>
+
+                <div class="myshift-stat-card myshift-stat-card--open">
+
+                    <p class="myshift-stat-value" th:text="${page.attendanceVision.withoutLogoutCount}">0</p>
+
+                    <p class="myshift-stat-label" th:text="#{missions.attendance.withoutLogout}">Sans logout</p>
+
+                </div>
+
+            </div>
+
+
+
+            <h4 class="courier-subheading" th:text="#{missions.attendance.aiTitle}">Assistant IA</h4>
+
+            <ul class="muted">
+
+                <li th:each="insight : ${page.attendanceVision.aiInsights}" th:text="${insight}">Insight</li>
+
+            </ul>
+
+
+
+            <table class="sysco-table">
+
+                <thead>
+
+                <tr>
+
+                    <th th:text="#{missions.attendance.col.agent}">Agent</th>
+
+                    <th th:text="#{missions.attendance.col.role}">Rôle</th>
+
+                    <th th:text="#{missions.attendance.col.direction}">Direction</th>
+
+                    <th th:text="#{missions.attendance.col.login}">Login</th>
+
+                    <th th:text="#{missions.attendance.col.logout}">Logout</th>
+
+                    <th th:text="#{missions.attendance.col.state}">État</th>
+
+                </tr>
+
+                </thead>
+
+                <tbody>
+
+                <tr th:each="r : ${page.attendanceVision.rows}">
+
+                    <td th:text="${r.username}">agent</td>
+
+                    <td th:text="${r.role}">role</td>
+
+                    <td th:text="${r.directionName}">direction</td>
+
+                    <td th:text="${r.loginAt}">login</td>
+
+                    <td th:text="${r.logoutAt == null ? '—' : r.logoutAt}">logout</td>
+
+                    <td th:text="${r.presentNow ? 'PRESENT' : 'OUT'}">state</td>
+
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(page.attendanceVision.rows)}">
+
+                    <td colspan="6" class="muted" th:text="#{missions.attendance.empty}">Aucune donnée.</td>
+
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+
+        <div id="missionsListPanel" class="missions-list-panel" hidden>
+
+            <div class="missions-list-panel-head">
+
+                <h3 class="courier-subheading missions-list-title" th:text="#{missions.section.list}">Missions</h3>
+
+                <p class="muted missions-list-caption" th:text="#{missions.list.toggleHint}">Hint</p>
+
+            </div>
+
+            <div class="missions-table-scroll" th:with="missionsListReturnTo=@{'/app/missions'(selected=${page.selected != null ? page.selected.code : null},tab=${page.activeTab},status=${page.status},q=${page.q},from=${page.from},to=${page.to})}">
+
+                <table class="sysco-table missions-table-rounded">
+
+                    <thead>
+
+                    <tr>
+
+                        <th th:text="#{missions.col.code}">Code</th>
+
+                        <th th:text="#{missions.col.title}">Titre</th>
+
+                        <th th:text="#{missions.col.site}">Lieu</th>
+
+                        <th th:text="#{missions.col.start}">Début</th>
+
+                        <th th:text="#{missions.col.end}">Fin</th>
+
+                        <th th:text="#{missions.col.status}">Statut</th>
+
+                        <th th:text="#{missions.col.lead}">Responsable</th>
+
+                        <th th:text="#{missions.col.view}">Voir</th>
+
+                    </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    <tr th:each="m : ${page.rows}" th:classappend="${page.selected != null and page.selected.code == m.code} ? 'courier-row-selected' : ''">
+
+                        <td>
+
+                            <a class="courier-ref-link"
+
+                               th:href="@{/app/missions(selected=${m.code},tab=${page.activeTab},status=${page.status},q=${page.q},from=${page.from},to=${page.to})}"
+
+                               th:text="${m.code}">M-2026-0002</a>
+
+                        </td>
+
+                        <td th:text="${m.title}">xx</td>
+
+                        <td th:text="${m.site}">xx</td>
+
+                        <td th:text="${m.startDate}">2026-04-27</td>
+
+                        <td th:text="${m.endDate}">2026-05-04</td>
+
+                        <td th:text="${@uiLabels.missionStatus(m.status, #locale)}">PLANNED</td>
+
+                        <td th:text="${m.responsible}">admin</td>
+
+                        <td>
+
+                            <a class="my-work-pill my-work-pill-view"
+
+                               th:href="@{/app/missions/{c}(c=${m.code},returnTo=${missionsListReturnTo})}"
+
+                               th:text="#{missions.col.view}">Voir</a>
+
+                        </td>
+
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(page.rows)}">
+
+                        <td colspan="8" class="muted" th:text="#{missions.empty.list}">Aucune mission.</td>
+
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="missions-workspace">
+
+            <div class="missions-tabs missions-tabs-pill">
+
+                <a class="missions-tab" th:classappend="${page.activeTab == 'mission'} ? ' active' : ''"
+
+                   th:href="@{/app/missions(selected=${page.selected != null ? page.selected.code : null},tab='mission',status=${page.status},q=${page.q},from=${page.from},to=${page.to})}"
+
+                   th:text="#{missions.tab.mission}">Mission</a>
+
+                <a class="missions-tab" th:classappend="${page.activeTab == 'report'} ? ' active' : ''"
+
+                   th:href="@{/app/missions(selected=${page.selected != null ? page.selected.code : null},tab='report',status=${page.status},q=${page.q},from=${page.from},to=${page.to})}"
+
+                   th:text="#{missions.tab.report}">Compte rendu</a>
+
+            </div>
+
+
+
+            <div class="missions-workspace-body">
+
+                <div th:if="${page.activeTab == 'mission'}">
+
+                    <form method="post" th:action="@{/app/missions/save}" class="missions-mission-form">
+
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                        <input type="hidden" name="code" th:value="${page.selected != null ? page.selected.code : ''}" />
+
+
+
+                        <div id="missionsWizard" class="missions-wizard" data-total-steps="5">
+
+                            <ol class="missions-stepper-list" role="list" th:attr="aria-label=#{missions.wizard.stepsAria}">
+
+                                <li class="missions-stepper-item is-active" aria-current="step">
+
+                                    <span class="missions-stepper-node"><span class="missions-stepper-dot"></span></span>
+
+                                    <span class="missions-stepper-title" th:text="#{missions.wizard.step1.title}">Étape 1</span>
+
+                                    <span class="missions-stepper-sub" th:text="#{missions.wizard.step1.subtitle}">—</span>
+
+                                </li>
+
+                                <li class="missions-stepper-item">
+
+                                    <span class="missions-stepper-node"><span class="missions-stepper-dot"></span></span>
+
+                                    <span class="missions-stepper-title" th:text="#{missions.wizard.step2.title}">Étape 2</span>
+
+                                    <span class="missions-stepper-sub" th:text="#{missions.wizard.step2.subtitle}">—</span>
+
+                                </li>
+
+                                <li class="missions-stepper-item">
+
+                                    <span class="missions-stepper-node"><span class="missions-stepper-dot"></span></span>
+
+                                    <span class="missions-stepper-title" th:text="#{missions.wizard.step3.title}">Étape 3</span>
+
+                                    <span class="missions-stepper-sub" th:text="#{missions.wizard.step3.subtitle}">—</span>
+
+                                </li>
+
+                                <li class="missions-stepper-item">
+
+                                    <span class="missions-stepper-node"><span class="missions-stepper-dot"></span></span>
+
+                                    <span class="missions-stepper-title" th:text="#{missions.wizard.step4.title}">Étape 4</span>
+
+                                    <span class="missions-stepper-sub" th:text="#{missions.wizard.step4.subtitle}">—</span>
+
+                                </li>
+
+                                <li class="missions-stepper-item">
+
+                                    <span class="missions-stepper-node"><span class="missions-stepper-dot"></span></span>
+
+                                    <span class="missions-stepper-title" th:text="#{missions.wizard.step5.title}">Étape 5</span>
+
+                                    <span class="missions-stepper-sub" th:text="#{missions.wizard.step5.subtitle}">—</span>
+
+                                </li>
+
+                            </ol>
+
+
+
+                            <div class="missions-wizard-divider" role="presentation"></div>
+
+
+
+                            <div class="missions-wizard-panels">
+
+                                <section class="missions-wizard-panel is-active" data-step="1" aria-hidden="false">
+
+                                    <p class="muted missions-wizard-hint" th:text="#{missions.form.quickHint}">Hint</p>
+
+                                    <div class="missions-form-grid">
+
+                                        <label class="form-label" th:text="#{missions.field.code}">Code</label>
+
+                                        <input class="form-input" type="text" readonly tabindex="-1"
+
+                                               th:value="${page.selected != null ? page.selected.code : ''}"
+
+                                               th:placeholder="#{missions.ph.newCode}" />
+
+                                        <label class="form-label" th:text="#{missions.field.title}">Titre</label>
+
+                                        <input class="form-input" name="title" required
+
+                                               th:value="${page.selected != null ? page.selected.title : ''}"
+
+                                               th:placeholder="#{missions.ph.title}" />
+
+                                        <label class="form-label" th:text="#{missions.field.site}">Lieu</label>
+
+                                        <input class="form-input" name="site" required
+
+                                               th:value="${page.selected != null ? page.selected.site : ''}"
+
+                                               th:placeholder="#{missions.ph.siteOrdre}" />
+
+                                        <label class="form-label" th:text="#{missions.field.start}">Début</label>
+
+                                        <input class="form-input" type="date" name="startDate" required
+
+                                               th:value="${page.selected != null ? page.selected.startDate : defaultMissionStart}" />
+
+                                        <label class="form-label" th:text="#{missions.field.end}">Fin</label>
+
+                                        <input class="form-input" type="date" name="endDate" required
+
+                                               th:value="${page.selected != null ? page.selected.endDate : defaultMissionEnd}" />
+
+                                        <label class="form-label" th:text="#{missions.filter.status}">Statut</label>
+
+                                        <select class="form-input" name="status" required>
+
+                                            <option th:each="s : ${statusOptions}" th:value="${s}"
+
+                                                    th:selected="${page.selected != null ? page.selected.status == s : s == 'PLANNED'}"
+
+                                                    th:text="${@uiLabels.missionStatus(s, #locale)}">PLANNED</option>
+
+                                        </select>
+
+                                        <label class="form-label" th:text="#{missions.field.lead}">Responsable</label>
+
+                                        <select class="form-input" name="leadUserId">
+
+                                            <option value="" th:text="#{missions.lead.none}">—</option>
+
+                                            <option th:each="u : ${participantChoices}"
+
+                                                    th:value="${u.id}"
+
+                                                    th:selected="${page.selected != null and page.selected.leadUserId != null and page.selected.leadUserId == u.id}"
+
+                                                    th:text="${u.label}">user</option>
+
+                                        </select>
+
+                                        <label class="form-label" th:text="#{missions.field.objectOrdre}">Objet</label>
+
+                                        <textarea class="form-textarea missions-area" name="objectives" rows="3" required
+
+                                                  th:placeholder="#{missions.ph.objectOrdre}"
+
+                                                  th:text="${page.selected != null ? page.selected.objectives : ''}"></textarea>
+
+                                    </div>
+
+                                </section>
+
+
+
+                                <section class="missions-wizard-panel" data-step="2" hidden aria-hidden="true">
+
+                                    <h4 class="courier-subheading missions-logistics-heading" th:text="#{missions.section.logistics}">Logistique</h4>
+
+                                    <p class="muted missions-logistics-hint" th:text="#{missions.logistics.hint}">Hint</p>
+
+                                    <div class="missions-form-grid missions-logistics-grid">
+
+                                        <label class="form-label" th:text="#{missions.field.durationNote}">Durée</label>
+
+                                        <input class="form-input" name="durationNote"
+
+                                               th:value="${page.selected != null ? page.selected.durationNote : ''}"
+
+                                               th:placeholder="#{missions.ph.durationNote}"/>
+
+                                        <label class="form-label" th:text="#{missions.field.departureNote}">Départ</label>
+
+                                        <input class="form-input" name="departureNote"
+
+                                               th:value="${page.selected != null ? page.selected.departureNote : ''}"
+
+                                               th:placeholder="#{missions.ph.departureNote}"/>
+
+                                        <label class="form-label" th:text="#{missions.field.returnNote}">Retour</label>
+
+                                        <input class="form-input" name="returnNote"
+
+                                               th:value="${page.selected != null ? page.selected.returnNote : ''}"
+
+                                               th:placeholder="#{missions.ph.returnNote}"/>
+
+                                        <label class="form-label missions-logistics-transport-label" th:text="#{missions.field.transportDetail}">Transport</label>
+
+                                        <textarea class="form-textarea missions-area missions-logistics-transport" name="transportDetail" rows="4"
+
+                                                  th:placeholder="#{missions.ph.transportDetail}"
+
+                                                  th:text="${page.selected != null ? page.selected.transportDetail : ''}"></textarea>
+
+                                        <label class="form-label" th:text="#{missions.field.expensesNote}">Indemnités</label>
+
+                                        <input class="form-input" name="expensesNote"
+
+                                               th:value="${page.selected != null ? page.selected.expensesNote : ''}"
+
+                                               th:placeholder="#{missions.ph.expensesNoteDefault}"/>
+
+                                    </div>
+
+                                </section>
+
+
+
+                                <section class="missions-wizard-panel" data-step="3" hidden aria-hidden="true">
+
+                                    <h4 class="courier-subheading missions-order-heading" th:text="#{missions.section.participantsOfficial}">Agents</h4>
+
+                                    <p class="muted missions-logistics-hint" th:text="#{missions.participants.splitHint}">Hint</p>
+
+                                    <div class="missions-participant-split">
+
+                                        <div>
+
+                                            <label class="form-label" th:text="#{missions.participants.men}">Messieurs</label>
+
+                                            <select class="form-input missions-participants" name="participantMenIds" multiple size="7">
+
+                                                <option th:each="u : ${participantChoices}"
+
+                                                        th:value="${u.id}"
+
+                                                        th:selected="${page.selected != null and page.selected.participantMenIds != null and page.selected.participantMenIds.contains(u.id)}"
+
+                                                        th:text="${u.label}">user</option>
+
+                                            </select>
+
+                                        </div>
+
+                                        <div>
+
+                                            <label class="form-label" th:text="#{missions.participants.women}">Mesdames</label>
+
+                                            <select class="form-input missions-participants" name="participantWomenIds" multiple size="7">
+
+                                                <option th:each="u : ${participantChoices}"
+
+                                                        th:value="${u.id}"
+
+                                                        th:selected="${page.selected != null and page.selected.participantWomenIds != null and page.selected.participantWomenIds.contains(u.id)}"
+
+                                                        th:text="${u.label}">user</option>
+
+                                            </select>
+
+                                        </div>
+
+                                    </div>
+
+                                </section>
+
+
+
+                                <section class="missions-wizard-panel" data-step="4" hidden aria-hidden="true">
+
+                                    <h4 class="courier-subheading missions-order-heading" th:text="#{missions.wizard.step4.title}">Notes</h4>
+
+                                    <p class="muted missions-wizard-hint" th:text="#{missions.wizard.step4.subtitle}">(facultatif)</p>
+
+                                    <div class="missions-form-grid">
+
+                                        <label class="form-label" th:text="#{missions.field.description}">Description</label>
+
+                                        <textarea class="form-textarea missions-area" name="description" rows="4"
+
+                                                  th:text="${page.selected != null ? page.selected.description : ''}"></textarea>
+
+                                        <label class="form-label" th:text="#{missions.field.observationsNote}">Observations</label>
+
+                                        <textarea class="form-textarea missions-area" name="observationsNote" rows="3"
+
+                                                  th:placeholder="#{missions.ph.observationsNote}"
+
+                                                  th:text="${page.selected != null ? page.selected.observationsNote : ''}"></textarea>
+
+                                    </div>
+
+                                </section>
+
+
+
+                                <section class="missions-wizard-panel" data-step="5" hidden aria-hidden="true">
+
+                                    <h4 class="courier-subheading missions-order-heading" th:text="#{missions.wizard.step5.title}">Ordre</h4>
+
+                                    <p class="muted missions-wizard-hint" th:text="#{missions.wizard.step5.subtitle}">Réglages avancés</p>
+
+                                    <div class="missions-form-grid">
+
+                                        <label class="form-label" th:text="#{missions.field.orderRef}">Référence</label>
+
+                                        <input class="form-input" name="orderReference"
+
+                                               th:value="${page.selected != null ? page.selected.orderReference : ''}"
+
+                                               th:placeholder="#{missions.ph.orderRef}" />
+
+                                        <label class="form-label" th:text="#{missions.field.orderDate}">Date</label>
+
+                                        <input class="form-input" type="date" name="orderIssueDate"
+
+                                               th:value="${page.selected != null ? page.selected.orderIssueDate : ''}" />
+
+                                        <label class="form-label" th:text="#{missions.field.orderBy}">Signataire</label>
+
+                                        <input class="form-input" name="orderIssuedBy"
+
+                                               th:value="${page.selected != null ? page.selected.orderIssuedBy : ''}"
+
+                                               th:placeholder="#{missions.ph.orderBy}" />
+
+                                        <label class="form-label" th:text="#{missions.field.orderBody}">Texte libre</label>
+
+                                        <textarea class="form-textarea missions-area" name="orderBody" rows="4"
+
+                                                  th:text="${page.selected != null ? page.selected.orderBody : ''}"></textarea>
+
+                                    </div>
+
+                                    <h4 class="courier-subheading missions-order-heading" th:text="#{missions.section.orderPreview}">Aperçu</h4>
+
+                                    <pre class="missions-order-preview" th:text="${page.selected != null ? page.selected.orderDocument : '—'}">—</pre>
+
+                                </section>
+
+                            </div>
+
+
+
+                            <div class="missions-wizard-footer">
+
+                                <button type="button" class="secondary-btn missions-wizard-prev" th:text="#{missions.wizard.prev}">Précédent</button>
+
+                                <span class="missions-wizard-meta muted"
+
+                                      th:attr="data-template=#{missions.wizard.stepOf}">—</span>
+
+                                <div class="missions-wizard-footer-actions">
+
+                                    <button type="button" class="primary-btn missions-wizard-next" th:text="#{missions.wizard.next}">Suivant</button>
+
+                                    <button type="submit" class="primary-btn missions-wizard-save" hidden
+
+                                            th:text="#{missions.btn.save}">Enregistrer</button>
+
+                                    <button th:if="${page.selected != null}" type="submit" class="danger-btn missions-wizard-delete" hidden
+
+                                            th:formaction="@{/app/missions/delete}"
+
+                                            formmethod="post" name="code"
+
+                                            th:value="${page.selected.code}"
+
+                                            th:data-confirm-msg="#{missions.confirmDelete}"
+
+                                            onclick="return confirm(this.dataset.confirmMsg);"
+
+                                            th:text="#{missions.btn.delete}">Supprimer</button>
+
+                                    <a th:if="${page.selected != null}" class="secondary-btn missions-wizard-download" hidden
+
+                                       th:href="@{/app/missions/{code}/order.docx(code=${page.selected.code})}"
+
+                                       th:text="#{missions.btn.downloadOrder}">Télécharger</a>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+
+                <div th:if="${page.activeTab == 'report'}">
+
+                    <h3 class="courier-subheading" th:text="#{missions.section.report}">Compte rendu</h3>
+
+                    <p class="muted"><span th:text="#{missions.report.submittedLabel}">Rapport</span> :
+
+                        <span th:text="${page.selected != null and page.selected.reportSubmittedDisplay != null ? page.selected.reportSubmittedDisplay : '—'}">—</span>
+
+                    </p>
+
+                    <p class="muted" th:if="${page.selected != null and !#strings.isEmpty(page.selected.reportAssigneeLabel)}">
+
+                        <span th:text="#{missions.report.assigneeCurrent}">Rédacteur désigné</span> :
+
+                        <span th:text="${page.selected.reportAssigneeLabel}">—</span>
+
+                    </p>
+
+                    <p class="muted" th:if="${page.selected != null and !page.selected.canEditReport and !page.selected.canAssignReport}"
+
+                       th:text="#{missions.report.readOnlyHint}">Lecture seule.</p>
+
+                    <div class="missions-report-attachments-columns missions-report-fields-columns">
+
+                        <div class="missions-report-attachments-label missions-report-fields-label-spacer" aria-hidden="true"></div>
+
+                        <div class="missions-report-attachments-main missions-report-fields-main">
+
+                            <form th:if="${page.selected != null and page.selected.canAssignReport}" method="post" th:action="@{/app/missions/report/assign}" class="missions-report-assign-form">
+
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                                <input type="hidden" name="code" th:value="${page.selected.code}" />
+
+                                <label class="form-label" th:text="#{missions.report.assign.label}">Désigner</label>
+
+                                <select class="form-input" name="assigneeUserId">
+
+                                    <option value="" th:selected="${page.selected.reportAssigneeUserId == null}"
+
+                                            th:text="#{missions.report.assign.selfLead}">Moi</option>
+
+                                    <option th:each="ch : ${page.selected.reportDelegateChoices}"
+
+                                            th:value="${ch.id}"
+
+                                            th:selected="${page.selected.reportAssigneeUserId != null and page.selected.reportAssigneeUserId == ch.id}"
+
+                                            th:text="${ch.label}">Agent</option>
+
+                                </select>
+
+                                <p class="muted form-hint" th:if="${#lists.isEmpty(page.selected.reportDelegateChoices)}"
+
+                                   th:text="#{missions.report.assign.noDelegates}">—</p>
+
+                                <div class="missions-detail-actions missions-report-assign-actions">
+
+                                    <button type="submit" class="secondary-btn btn-sm" th:text="#{missions.report.assign.submit}">Mettre à jour</button>
+
+                                </div>
+
+                            </form>
+
+                            <form id="missions-workspace-report-save-form" method="post" th:action="@{/app/missions/report}" class="missions-report-save-form">
+
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                                <input type="hidden" name="code" th:value="${page.selected != null ? page.selected.code : ''}" />
+
+                                <label class="form-label" th:text="#{missions.field.reportText}">Texte du rapport</label>
+
+                                <textarea class="form-textarea missions-report-area" name="reportText"
+
+                                          th:disabled="${page.selected == null or !page.selected.canEditReport}"
+
+                                          th:text="${page.selected != null ? page.selected.reportText : ''}"></textarea>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                    <div class="missions-report-attachments-block" th:if="${page.selected != null}">
+
+                        <div class="missions-report-attachments-columns">
+
+                            <div class="missions-report-attachments-label" th:text="#{missions.report.attachmentsTitle}">Pièces jointes</div>
+
+                            <div class="missions-report-attachments-main">
+
+                                <ul class="missions-report-attachment-list" th:if="${!#lists.isEmpty(page.selected.reportAttachments)}">
+
+                                    <li th:each="a : ${page.selected.reportAttachments}" class="missions-report-attachment-row">
+
+                                        <a class="courier-ref-link"
+
+                                           th:href="@{/app/missions/{c}/report/attachment/{id}(c=${page.selected.code},id=${a.id})}"
+
+                                           th:text="${a.fileName}">fichier.pdf</a>
+
+                                        <span class="muted" th:text="' · ' + ${a.uploadedAtDisplay} + ' · ' + ${a.uploadedByUsername}">meta</span>
+
+                                        <form th:if="${page.selected.canEditReport}" method="post" th:action="@{/app/missions/report/attachment/delete}"
+
+                                              class="missions-report-attachment-delete-form" style="display:inline;">
+
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                                            <input type="hidden" name="code" th:value="${page.selected.code}" />
+
+                                            <input type="hidden" name="attachmentId" th:value="${a.id}" />
+
+                                            <button type="submit" class="secondary-btn btn-sm" th:text="#{missions.report.attachmentRemove}">Retirer</button>
+
+                                        </form>
+
+                                    </li>
+
+                                </ul>
+
+                                <p class="muted missions-report-attachments-empty" th:if="${#lists.isEmpty(page.selected.reportAttachments)}"
+
+                                   th:text="#{missions.report.attachmentsEmpty}">—</p>
+
+                                <form th:if="${page.selected.canEditReport}" method="post" enctype="multipart/form-data"
+
+                                      th:action="@{/app/missions/report/attachment}" class="missions-report-upload-form"
+
+                                      data-upload-enhanced="true" data-upload-native-submit="true">
+
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                                    <input type="hidden" name="code" th:value="${page.selected.code}" />
+
+                                    <input id="missions-workspace-report-attachment-file" type="file" name="file"
+
+                                           accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx,.txt,application/pdf,image/png,image/jpeg"
+
+                                           data-dnd-uploader="true" data-upload-single="true" />
+
+                                    <p class="missions-report-attachments-hint muted" th:text="#{missions.report.attachmentsStorageHint}">Formats</p>
+
+                                    <div class="missions-detail-actions missions-report-upload-actions">
+
+                                        <button type="submit" class="primary-btn btn-sm" th:text="#{missions.report.attachmentUploadBtn}">Téléverser</button>
+
+                                    </div>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="missions-detail-actions">
+
+                        <button type="submit" class="primary-btn btn-sm" form="missions-workspace-report-save-form"
+
+                                th:disabled="${page.selected == null or !page.selected.canEditReport}"
+
+                                th:text="#{missions.btn.saveReport}">Enregistrer</button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Native <dialog>: « Fermer » uses form[method=dialog] so the browser closes reliably on submit. -->
+    <dialog id="missionsAiDrawer" class="missions-ai-dialog-root" aria-labelledby="missionsAiDrawerTitle">
+
+        <div class="missions-ai-dialog-layout">
+
+            <button type="button" id="missionsAiDismissTap" class="missions-ai-dismiss-tap"
+
+                    th:attr="aria-label=#{missions.assistant.close}"></button>
+
+            <div class="missions-ai-drawer-panel">
+
+                <div class="missions-ai-drawer-head">
+
+                    <div>
+
+                        <h2 id="missionsAiDrawerTitle" class="missions-ai-drawer-title"
+
+                            th:text="#{missions.assistant.title}">Assistant</h2>
+
+                        <p class="muted missions-ai-drawer-sub" th:text="#{missions.assistant.subtitle}">Subtitle</p>
+
+                    </div>
+
+                    <form method="dialog" class="missions-ai-close-form">
+
+                        <button type="submit" id="missionsAiCloseBtn" class="secondary-btn btn-sm"
+
+                                th:text="#{missions.assistant.close}">Fermer</button>
+
+                    </form>
+
+                </div>
+
+                <p class="muted missions-ai-welcome" th:text="#{missions.assistant.welcome}">Welcome</p>
+
+                <div id="missionsAiSuggests" class="missions-ai-suggests"></div>
+
+                <div id="missionsAiThread" class="missions-ai-thread ct-assistant-thread chat-thread" aria-live="polite"></div>
+
+                <label class="missions-ai-check">
+
+                    <input type="checkbox" id="missionsAiAttachForm" checked />
+
+                    <span th:text="#{missions.assistant.includeForm}">Include form</span>
+
+                </label>
+
+                <div class="missions-ai-compose">
+
+                    <label class="sr-only" for="missionsAiInput" th:text="#{missions.assistant.placeholder}">Input</label>
+
+                    <textarea id="missionsAiInput" class="form-input missions-ai-input" rows="3"
+
+                              th:placeholder="#{missions.assistant.placeholder}"></textarea>
+
+                    <button type="button" id="missionsAiSendBtn" class="primary-btn"
+
+                            th:text="#{missions.assistant.send}">Envoyer</button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </dialog>
+
+    <button type="button" id="missionsAiFab" class="missions-ai-fab"
+
+            th:title="#{missions.assistant.fabAria}" th:attr="aria-label=#{missions.assistant.fabAria}">
+
+        <span aria-hidden="true">✦</span>
+
+    </button>
+
+
+
+    <script th:inline="javascript">
+
+        /*<![CDATA[*/
+
+        window.syscoMissionsAssistant = {
+
+            chatUrl: /*[[@{/app/missions/api/assistant/chat}]]*/ '/app/missions/api/assistant/chat',
+
+            assistantLive: /*[[${missionsAssistantLiveAi}]]*/ false,
+
+            offlineBanner: /*[[#{missions.assistant.offlineBanner}]]*/ '',
+
+            adminHint: /*[[#{missions.assistant.adminHint}]]*/ '',
+
+            labels: {
+
+                busy: /*[[#{missions.assistant.busy}]]*/ '',
+
+                error: /*[[#{missions.assistant.error}]]*/ '',
+
+                user: /*[[#{missions.assistant.roleYou}]]*/ 'You',
+
+                assistant: /*[[#{missions.assistant.title}]]*/ 'Assistant',
+
+                aiUnavailable: /*[[#{missions.assistant.aiUnavailableNotice}]]*/ ''
+
+            },
+
+            suggests: [
+
+                /*[[#{missions.assistant.suggest1}]]*/ '',
+
+                /*[[#{missions.assistant.suggest2}]]*/ '',
+
+                /*[[#{missions.assistant.suggest3}]]*/ ''
+
+            ]
+
+        };
+
+        /*]]>*/
+
+    </script>
+
+    <script th:src="@{/js/missions-assistant.js}"></script>
+
+    <script th:if="${page.activeTab == 'mission'}" th:src="@{/js/missions-wizard.js}"></script>
+
+</section>
+
+</body>
+
+</html>
+

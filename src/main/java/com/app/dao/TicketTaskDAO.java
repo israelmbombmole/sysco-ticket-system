@@ -11,7 +11,9 @@ import com.app.model.TicketEvent;
 import com.app.security.RoleUtil;
 import com.app.service.AuditService;
     import com.app.util.DB;
+import com.app.util.DbConfig;
 import com.app.util.RoleFlowUtil;
+import com.app.util.SqlDialect;
 
     import java.sql.*;
 import java.time.LocalDateTime;
@@ -38,19 +40,21 @@ import javafx.scene.layout.StackPane;
         t.description,
         t.parent_task_id,
         t.assigned_to,
+        t.created_at,
+        t.assigned_by,
         t.status,
         t.started_at,
         t.completed_at,
         t.duration_minutes,
-        COALESCE(u.username, 'Unassigned') AS assigned_name
+        COALESCE(u.username, 'Unassigned') AS assigned_name,
+        COALESCE(ua.username, '-') AS assigned_by_name
 
     FROM ticket_tasks t
     LEFT JOIN users u ON t.assigned_to = u.id
+    LEFT JOIN users ua ON t.assigned_by = ua.id
 
     WHERE t.ticket_id = ?
-      AND t.title IS NOT NULL
-      AND TRIM(t.title) != ''
-      AND LOWER(t.title) != 'task assignment'   -- ✅ FIX
+      AND LOWER(TRIM(COALESCE(t.title, ''))) != 'task assignment'
 
     ORDER BY t.id DESC
 """;
@@ -73,6 +77,14 @@ import javafx.scene.layout.StackPane;
             task.setTicketId(rs.getInt("ticket_id"));
             task.setTitle(rs.getString("title"));
             task.setStatus(rs.getString("status"));
+            try {
+                String created = rs.getString("created_at");
+                if (created != null && !created.isBlank()) {
+                    task.setCreatedAt(java.time.LocalDateTime.parse(created.replace(" ", "T")));
+                }
+            } catch (Exception e) {
+                System.out.println("⚠️ CREATED parse error: " + rs.getString("created_at"));
+            }
 
             // =========================
             // DURATION (SAFE)
@@ -103,6 +115,8 @@ import javafx.scene.layout.StackPane;
                 task.setAssignedTo(assignedId);
                 task.setAssignedToName(rs.getString("assigned_name"));
             }
+            task.setAssignedBy(rs.getInt("assigned_by"));
+            task.setCreatedByName(rs.getString("assigned_by_name"));
 
             // =========================
             // START DATE
@@ -171,7 +185,9 @@ System.out.println("DEBUG closed = " + closed);
         VALUES (?, ?, ?, ?, ?, ?, 'PENDING', datetime('now','localtime'))
     """;
 
-    try (PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    try (PreparedStatement ps = DbConfig.isOracle()
+            ? c.prepareStatement(sql, new String[] { "ID" })
+            : c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
         ps.setInt(1, ticketId);
 
@@ -195,7 +211,11 @@ System.out.println("DEBUG closed = " + closed);
         ResultSet rs = ps.getGeneratedKeys();
 
         if (rs.next()) {
-            int id = rs.getInt(1);
+            Number generatedId = (Number) rs.getObject(1);
+            if (generatedId == null) {
+                throw new SQLException("Creating task failed, no numeric ID obtained.");
+            }
+            int id = generatedId.intValue();
             System.out.println("✅ TASK CREATED ID = " + id);
             return id;
         } else {
@@ -284,6 +304,35 @@ public static boolean allAgentsHaveTasks(int ticketId, List<User> agents) {
     return false;
 }
 
+    /**
+     * Users who have at least one <strong>completed</strong> normal task on this ticket
+     * (excludes synthetic "task assignment" rows). Used for sequential multi-assign workflow.
+     */
+    public static Set<Integer> getUserIdsWithCompletedNormalTasks(int ticketId) {
+        Set<Integer> ids = new HashSet<>();
+        String sql = """
+            SELECT DISTINCT assigned_to
+            FROM ticket_tasks
+            WHERE ticket_id = ?
+              AND LOWER(TRIM(COALESCE(status, ''))) = 'completed'
+              AND LOWER(TRIM(COALESCE(title, ''))) != 'task assignment'
+            """;
+        try (Connection c = DB.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, ticketId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                int uid = rs.getInt("assigned_to");
+                if (!rs.wasNull() && uid > 0) {
+                    ids.add(uid);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ids;
+    }
+
 
 
 public static void createTask(
@@ -334,8 +383,7 @@ public static void createTask(
 public static ObservableList<TicketTask> getTasksForAgent(int userId) {
 
     ObservableList<TicketTask> list = FXCollections.observableArrayList();
-
-  String sql = """
+    String sql = """
     SELECT 
         tt.*,
         u.username AS assigned_to_name,
@@ -344,7 +392,7 @@ public static ObservableList<TicketTask> getTasksForAgent(int userId) {
     LEFT JOIN users u ON u.id = tt.assigned_to
     LEFT JOIN tickets t ON t.id = tt.ticket_id
     WHERE tt.assigned_to = ?
-      AND LOWER(tt.title) != 'task assignment'
+      AND LOWER(TRIM(COALESCE(tt.title, ''))) != 'task assignment'
     ORDER BY tt.created_at DESC
 """;
 
@@ -362,7 +410,8 @@ public static ObservableList<TicketTask> getTasksForAgent(int userId) {
             // ================= BASIC =================
             task.setId(rs.getInt("id"));
             task.setTicketId(rs.getInt("ticket_id"));
-            task.setParentTaskId((Integer) rs.getObject("parent_task_id"));
+            Object parentObj = rs.getObject("parent_task_id");
+            task.setParentTaskId(parentObj == null ? null : ((Number) parentObj).intValue());
             task.setTitle(rs.getString("title"));
             task.setDescription(rs.getString("description"));
             task.setAssignedTo(rs.getInt("assigned_to"));
@@ -455,7 +504,12 @@ public static void updateTaskDetails(int taskId, String status, int progress, St
 
 public static void logTaskEvent(int taskId, String type, String description) {
 
-    String sql = """
+    String sql = DbConfig.isOracle()
+            ? """
+        INSERT INTO task_events(task_id, user_id, event_type, description)
+        VALUES (?, ?, ?, ?)
+    """
+            : """
         INSERT INTO task_events(task_id, username, type, description)
         VALUES (?, ?, ?, ?)
     """;
@@ -464,9 +518,20 @@ public static void logTaskEvent(int taskId, String type, String description) {
          PreparedStatement ps = conn.prepareStatement(sql)) {
 
         ps.setInt(1, taskId);
-        ps.setString(2, Session.getUsername());
-        ps.setString(3, type);
-        ps.setString(4, description);
+        if (DbConfig.isOracle()) {
+            int userId = Session.getUserId();
+            if (userId <= 0) {
+                ps.setNull(2, Types.INTEGER);
+            } else {
+                ps.setInt(2, userId);
+            }
+            ps.setString(3, type);
+            ps.setString(4, description);
+        } else {
+            ps.setString(2, Session.getUsername());
+            ps.setString(3, type);
+            ps.setString(4, description);
+        }
 
         ps.executeUpdate();
 
@@ -479,8 +544,24 @@ public static List<TicketEvent> getTaskEvents(int taskId) {
 
     List<TicketEvent> list = new ArrayList<>();
 
-    String sql = """
-        SELECT *
+    String sql = DbConfig.isOracle()
+            ? """
+        SELECT
+            COALESCE(u.username, '-') AS username,
+            te.event_type AS type,
+            te.description AS description,
+            te.created_at AS created_at
+        FROM task_events te
+        LEFT JOIN users u ON u.id = te.user_id
+        WHERE te.task_id = ?
+        ORDER BY te.created_at DESC
+    """
+            : """
+        SELECT
+            username,
+            type,
+            description,
+            created_at
         FROM task_events
         WHERE task_id = ?
         ORDER BY created_at DESC
@@ -509,6 +590,39 @@ public static List<TicketEvent> getTaskEvents(int taskId) {
         e.printStackTrace();
     }
 
+    return list;
+}
+
+public static List<TicketEvent> getTaskTrackingEvents(int taskId) {
+    List<TicketEvent> list = new ArrayList<>();
+    String sql = """
+        SELECT t.created_at AS created_at,
+               COALESCE(ub.username, '-') AS assigned_by_name,
+               COALESCE(ut.username, '-') AS assigned_to_name,
+               COALESCE(t.title, 'Task') AS title
+        FROM ticket_tasks t
+        LEFT JOIN users ub ON ub.id = t.assigned_by
+        LEFT JOIN users ut ON ut.id = t.assigned_to
+        WHERE t.id = ?
+    """;
+    try (Connection c = DB.getConnection();
+         PreparedStatement ps = c.prepareStatement(sql)) {
+        ps.setInt(1, taskId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            TicketEvent ev = new TicketEvent();
+            ev.setUsername(rs.getString("assigned_by_name"));
+            ev.setType("TASK_CREATED");
+            ev.setDescription("Created task \"" + rs.getString("title")
+                    + "\" and assigned to " + rs.getString("assigned_to_name"));
+            ev.setCreatedAt(rs.getString("created_at"));
+            list.add(ev);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    list.addAll(getTaskEvents(taskId));
     return list;
 }
 
@@ -621,15 +735,17 @@ public static String getSlaStatus(int taskId) {
 public static void createNotification(int userId, String message) {
 
     String sql = """
-        INSERT INTO notifications(user_id, message)
-        VALUES (?, ?)
+        INSERT INTO notifications(user_id, title, "message", type)
+        VALUES (?, ?, ?, ?)
     """;
 
     try (Connection conn = DB.getConnection();
          PreparedStatement ps = conn.prepareStatement(sql)) {
 
         ps.setInt(1, userId);
-        ps.setString(2, message);
+        ps.setString(2, "Task Notification");
+        ps.setString(3, message);
+        ps.setString(4, "TASK");
         ps.executeUpdate();
 
     } catch (Exception e) {
@@ -643,7 +759,7 @@ public static List<String> getNotifications(int userId) {
     List<String> list = new ArrayList<>();
 
     String sql = """
-        SELECT message FROM notifications
+        SELECT "message" AS message_text FROM notifications
         WHERE user_id = ? AND is_read = 0
     """;
 
@@ -655,7 +771,7 @@ public static List<String> getNotifications(int userId) {
         ResultSet rs = ps.executeQuery();
 
         while (rs.next()) {
-            list.add(rs.getString("message"));
+            list.add(rs.getString("message_text"));
         }
 
     } catch (Exception e) {
@@ -667,6 +783,25 @@ public static List<String> getNotifications(int userId) {
 
 
 public static void startTask(int taskId) {
+
+    Integer ticketId = null;
+    Integer assignedTo = null;
+    Integer assignedBy = null;
+    String taskTitle = null;
+    String metaSql = "SELECT ticket_id, assigned_to, assigned_by, title FROM ticket_tasks WHERE id = ?";
+    try (Connection c = DB.getConnection();
+         PreparedStatement ps = c.prepareStatement(metaSql)) {
+        ps.setInt(1, taskId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            ticketId = rs.getInt("ticket_id");
+            assignedTo = rs.getInt("assigned_to");
+            assignedBy = rs.getInt("assigned_by");
+            taskTitle = rs.getString("title");
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
 
     String sql = """
         UPDATE ticket_tasks
@@ -683,6 +818,24 @@ public static void startTask(int taskId) {
         ps.executeUpdate();
 
         System.out.println("✅ Task started");
+        logTaskEvent(taskId, "TASK_STARTED", "Task started by " + Session.getUsername());
+
+        if (assignedBy != null
+                && assignedTo != null
+                && assignedTo == Session.getUserId()
+                && assignedBy > 0
+                && assignedBy != Session.getUserId()) {
+            NotificationDAO.create(
+                    assignedBy,
+                    "Task Started",
+                    Session.getUsername() + " started task \"" + (taskTitle != null ? taskTitle : ("#" + taskId))
+                            + "\" for ticket " + com.app.util.TicketUtil.formatTicketRef(ticketId != null ? ticketId : 0),
+                    "TASK_STARTED",
+                    "TASK",
+                    taskId,
+                    ticketId != null ? com.app.util.TicketUtil.formatTicketRef(ticketId) : null
+            );
+        }
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -692,24 +845,63 @@ public static void startTask(int taskId) {
 
 public static void completeTask(int taskId) {
 
-    String sql = """
-        UPDATE ticket_tasks
-        SET status='COMPLETED',
-            completed_at=datetime('now','localtime'),
-            duration_minutes =
-                CASE
-                    WHEN started_at IS NOT NULL
-                    THEN (strftime('%s','now','localtime') - strftime('%s', started_at)) / 60
-                    ELSE NULL
-                END
-        WHERE id=?
-    """;
+    Integer ticketId = null;
+    Integer assignedTo = null;
+    Integer assignedBy = null;
+    String taskTitle = null;
+    String metaSql = "SELECT ticket_id, assigned_to, assigned_by, title FROM ticket_tasks WHERE id = ?";
+    try (Connection c = DB.getConnection();
+         PreparedStatement ps = c.prepareStatement(metaSql)) {
+        ps.setInt(1, taskId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            ticketId = rs.getInt("ticket_id");
+            assignedTo = rs.getInt("assigned_to");
+            assignedBy = rs.getInt("assigned_by");
+            taskTitle = rs.getString("title");
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    String sql =
+        "UPDATE ticket_tasks\n" +
+        "SET status='COMPLETED',\n" +
+        "    completed_at=datetime('now','localtime'),\n" +
+        "    duration_minutes =\n" +
+        "        CASE\n" +
+        "            WHEN started_at IS NOT NULL\n" +
+        "            THEN CASE\n" +
+        "                WHEN (" + SqlDialect.ceilMinutesBetweenNowAnd("started_at") + ") < 1 THEN 1\n" +
+        "                ELSE CAST(" + SqlDialect.ceilMinutesBetweenNowAnd("started_at") + " AS INTEGER)\n" +
+        "            END\n" +
+        "            ELSE NULL\n" +
+        "        END\n" +
+        "WHERE id=?";
 
     try (Connection conn = DB.getConnection();
          PreparedStatement ps = conn.prepareStatement(sql)) {
 
         ps.setInt(1, taskId);
         ps.executeUpdate();
+        logTaskEvent(taskId, "TASK_COMPLETED", "Task completed by " + Session.getUsername());
+
+        if (assignedBy != null
+                && assignedTo != null
+                && assignedTo == Session.getUserId()
+                && assignedBy > 0
+                && assignedBy != Session.getUserId()) {
+            NotificationDAO.create(
+                    assignedBy,
+                    "Task Completed",
+                    Session.getUsername() + " completed task \"" + (taskTitle != null ? taskTitle : ("#" + taskId))
+                            + "\" for ticket " + com.app.util.TicketUtil.formatTicketRef(ticketId != null ? ticketId : 0),
+                    "TASK_COMPLETED",
+                    "TASK",
+                    taskId,
+                    ticketId != null ? com.app.util.TicketUtil.formatTicketRef(ticketId) : null
+            );
+        }
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -762,6 +954,7 @@ public static void reassignTask(int taskId, int newUserId) {
         }
 
         System.out.println("✅ Task reassigned");
+        logTaskEvent(taskId, "TASK_REASSIGNED", "Task reassigned to " + targetUser.getUsername());
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -855,7 +1048,9 @@ public static int createTaskAndReturnId(
     """;
 
     try (Connection c = DB.getConnection();
-         PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+         PreparedStatement ps = DbConfig.isOracle()
+                 ? c.prepareStatement(sql, new String[] { "ID" })
+                 : c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
         ps.setInt(1, ticketId);
         ps.setString(2, title);
@@ -868,8 +1063,25 @@ public static int createTaskAndReturnId(
         ResultSet rs = ps.getGeneratedKeys();
 
         if (rs.next()) {
-            int id = rs.getInt(1);
+            Number generatedId = (Number) rs.getObject(1);
+            if (generatedId == null) {
+                throw new SQLException("Creating task failed, no numeric ID obtained.");
+            }
+            int id = generatedId.intValue();
             System.out.println("✅ TASK CREATED ID = " + id);
+
+            if (assignedTo > 0 && assignedTo != Session.getUserId()) {
+                NotificationDAO.create(
+                        assignedTo,
+                        "New Task Assigned",
+                        Session.getUsername() + " assigned you task \"" + title + "\" for ticket "
+                                + com.app.util.TicketUtil.formatTicketRef(ticketId),
+                        "TICKET_TASK_ASSIGNED",
+                        "TASK",
+                        id,
+                        com.app.util.TicketUtil.formatTicketRef(ticketId)
+                );
+            }
             return id;
         }
 
@@ -944,17 +1156,40 @@ public static ObservableList<TicketTask> getTasksByUser(int userId) {
 
 public static void closeTask(int taskId) {
 
-    String sql = """
-        UPDATE ticket_tasks
-        SET 
-            status = 'COMPLETED',
-            completed_at = datetime('now','localtime'),
-            duration_minutes = 
-                CAST(
-                    (strftime('%s', datetime('now','localtime')) - strftime('%s', started_at)) / 60
-                AS INTEGER)
-        WHERE id = ?
-    """;
+    Integer ticketId = null;
+    Integer assignedTo = null;
+    Integer assignedBy = null;
+    String taskTitle = null;
+    String metaSql = "SELECT ticket_id, assigned_to, assigned_by, title FROM ticket_tasks WHERE id = ?";
+    try (Connection c = DB.getConnection();
+         PreparedStatement ps = c.prepareStatement(metaSql)) {
+        ps.setInt(1, taskId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            ticketId = rs.getInt("ticket_id");
+            assignedTo = rs.getInt("assigned_to");
+            assignedBy = rs.getInt("assigned_by");
+            taskTitle = rs.getString("title");
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    String sql =
+        "UPDATE ticket_tasks\n" +
+        "SET\n" +
+        "    status = 'COMPLETED',\n" +
+        "    completed_at = datetime('now','localtime'),\n" +
+        "    duration_minutes =\n" +
+        "        CASE\n" +
+        "            WHEN started_at IS NOT NULL\n" +
+        "            THEN CASE\n" +
+        "                WHEN (" + SqlDialect.ceilMinutesBetweenNowAnd("started_at") + ") < 1 THEN 1\n" +
+        "                ELSE CAST(" + SqlDialect.ceilMinutesBetweenNowAnd("started_at") + " AS INTEGER)\n" +
+        "            END\n" +
+        "            ELSE NULL\n" +
+        "        END\n" +
+        "WHERE id = ?";
 
     try (Connection c = DB.getConnection();
          PreparedStatement ps = c.prepareStatement(sql)) {
@@ -963,6 +1198,23 @@ public static void closeTask(int taskId) {
         ps.executeUpdate();
 
         System.out.println("✅ Task closed with duration");
+
+        if (assignedBy != null
+                && assignedTo != null
+                && assignedTo == Session.getUserId()
+                && assignedBy > 0
+                && assignedBy != Session.getUserId()) {
+            NotificationDAO.create(
+                    assignedBy,
+                    "Task Completed",
+                    Session.getUsername() + " completed task \"" + (taskTitle != null ? taskTitle : ("#" + taskId))
+                            + "\" for ticket " + com.app.util.TicketUtil.formatTicketRef(ticketId != null ? ticketId : 0),
+                    "TASK_COMPLETED",
+                    "TASK",
+                    taskId,
+                    ticketId != null ? com.app.util.TicketUtil.formatTicketRef(ticketId) : null
+            );
+        }
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -1007,6 +1259,57 @@ public static ObservableList<TicketTask> getSubTasks(int parentTaskId) {
     }
 
     return list;
+}
+
+public static TicketTask getTaskById(int taskId) {
+    String sql = """
+        SELECT t.*, 
+               COALESCE(u.username, 'Unassigned') AS assigned_name,
+               COALESCE(ua.username, '-') AS assigned_by_name
+        FROM ticket_tasks t
+        LEFT JOIN users u ON t.assigned_to = u.id
+        LEFT JOIN users ua ON t.assigned_by = ua.id
+        WHERE t.id = ?
+        LIMIT 1
+    """;
+
+    try (Connection c = DB.getConnection();
+         PreparedStatement ps = c.prepareStatement(sql)) {
+        ps.setInt(1, taskId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            TicketTask task = new TicketTask();
+            task.setId(rs.getInt("id"));
+            task.setTicketId(rs.getInt("ticket_id"));
+            task.setTitle(rs.getString("title"));
+            task.setDescription(rs.getString("description"));
+            task.setStatus(rs.getString("status"));
+            task.setAssignedTo(rs.getInt("assigned_to"));
+            task.setAssignedToName(rs.getString("assigned_name"));
+            task.setAssignedBy(rs.getInt("assigned_by"));
+            task.setCreatedByName(rs.getString("assigned_by_name"));
+            String created = rs.getString("created_at");
+            if (created != null && !created.isBlank()) {
+                task.setCreatedAt(LocalDateTime.parse(created.replace(" ", "T")));
+            }
+            String started = rs.getString("started_at");
+            if (started != null && !started.isBlank()) {
+                task.setStartedAt(LocalDateTime.parse(started.replace(" ", "T")));
+            }
+            String completed = rs.getString("completed_at");
+            if (completed != null && !completed.isBlank()) {
+                task.setClosedAt(LocalDateTime.parse(completed.replace(" ", "T")));
+            }
+            Object duration = rs.getObject("duration_minutes");
+            if (duration != null) {
+                task.setDurationMinutes(((Number) duration).intValue());
+            }
+            return task;
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return null;
 }
 
 

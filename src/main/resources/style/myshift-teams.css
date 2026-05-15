@@ -1,0 +1,299 @@
+/* MyShift — Socium SIRH–inspired (clean enterprise: navy header, teal actions, soft cards) */
+
+.myshift-teams-page {
+    -fx-font-family: "Segoe UI", "Segoe UI Variable", system-ui, sans-serif;
+    -fx-background-color: #f0f2f5;
+    -fx-spacing: 0;
+}
+
+/* Header: bandeau SIRH institutionnel (bleu) */
+.myshift-teams-hero {
+    -fx-background-color: linear-gradient(to right, #0a3050, #0c4a6e);
+    -fx-padding: 18 24 20 24;
+    -fx-spacing: 2;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.14), 6, 0, 0, 1);
+}
+
+.myshift-teams-hero .myshift-teams-hero-kicker {
+    -fx-text-fill: rgba(255,255,255,0.80);
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-letter-spacing: 0.6;
+}
+
+.myshift-teams-hero .myshift-teams-hero-title {
+    -fx-text-fill: white;
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+}
+
+/* Live clock (pointage) */
+.label.myshift-teams-hero-clock {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: 600;
+    -fx-padding: 4 0 0 0;
+    -fx-font-family: "Segoe UI Semibold", "Segoe UI", "Consolas", system-ui, sans-serif;
+}
+
+.myshift-teams-hero .myshift-teams-hero-sub {
+    -fx-text-fill: rgba(255,255,255,0.90);
+    -fx-font-size: 13px;
+    -fx-padding: 2 0 0 0;
+}
+
+/* Body */
+.myshift-teams-body {
+    -fx-background-color: #f0f2f5;
+    -fx-padding: 20 24 28 24;
+    -fx-spacing: 20;
+}
+
+/* Card */
+.myshift-teams-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8;
+    -fx-border-color: #d8dee6;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-padding: 20;
+    -fx-spacing: 12;
+    -fx-effect: dropshadow(gaussian, rgba(10, 48, 80, 0.06), 8, 0, 0, 1);
+}
+
+.myshift-teams-card-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0a3050;
+}
+
+/* Toolbar */
+.myshift-teams-toolbar {
+    -fx-spacing: 8;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 0 0 4 0;
+}
+
+/* Intro / muted */
+.myshift-teams-muted {
+    -fx-text-fill: #4b5b6b;
+    -fx-font-size: 13px;
+    -fx-wrap-text: true;
+    -fx-max-width: 720;
+}
+
+/* Step labels */
+.label.myshift-teams-section-label {
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #64748b;
+    -fx-padding: 10 0 0 0;
+    -fx-letter-spacing: 0.3;
+}
+
+/* Status line */
+.label.myshift-teams-status-line {
+    -fx-text-fill: #475569;
+    -fx-font-size: 13px;
+    -fx-wrap-text: true;
+    -fx-padding: 4 0 0 0;
+    -fx-max-width: 720;
+}
+.label.myshift-teams-status-line.myshift-teams-status-ok {
+    -fx-text-fill: #0f5c4a;
+    -fx-font-weight: 600;
+    -fx-background-color: #ecfdf5;
+    -fx-background-radius: 6;
+    -fx-border-color: #99f6e4;
+    -fx-border-width: 0 0 0 3;
+    -fx-border-radius: 6 0 0 6;
+    -fx-padding: 10 12 10 12;
+}
+.label.myshift-teams-status-line.myshift-teams-status-err {
+    -fx-text-fill: #9f2c24;
+    -fx-font-weight: 600;
+    -fx-background-color: #fff1f2;
+    -fx-border-color: #fecdd3;
+    -fx-border-width: 0 0 0 3;
+    -fx-background-radius: 0 4 4 0;
+    -fx-padding: 8 10;
+}
+
+/* Dev / face API */
+.label.myshift-teams-dev-hint {
+    -fx-background-color: #fff7ed;
+    -fx-text-fill: #7c2d12;
+    -fx-border-color: #fed7aa;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 10 12;
+    -fx-font-size: 12px;
+    -fx-wrap-text: true;
+    -fx-max-width: 720;
+}
+
+/* Teal = action principale (arrivée / enregistrement) */
+.button.myshift-teams-btn-primary {
+    -fx-background-color: #0d9488;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 8 18;
+    -fx-font-weight: 600;
+    -fx-min-height: 34;
+}
+.button.myshift-teams-btn-primary:hover {
+    -fx-background-color: #0f766e;
+}
+.button.myshift-teams-btn-primary:pressed {
+    -fx-background-color: #115e59;
+}
+
+/* Secondaire = contour froid (départ / choix) */
+.button.myshift-teams-btn-secondary {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #0a3050;
+    -fx-border-color: #94a3b8;
+    -fx-border-width: 1;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 7 16;
+    -fx-min-height: 34;
+}
+.button.myshift-teams-btn-secondary:hover {
+    -fx-background-color: #f8fafc;
+}
+
+.button.myshift-teams-btn-primary:disabled,
+.button.myshift-teams-btn-secondary:disabled {
+    -fx-opacity: 0.5;
+}
+.button.myshift-teams-btn-primary:disabled {
+    -fx-background-color: #5eead4;
+    -fx-text-fill: #f0fdfa;
+}
+.button.myshift-teams-btn-secondary:disabled {
+    -fx-background-color: #f8fafc;
+    -fx-text-fill: #94a3b8;
+    -fx-border-color: #cbd5e1;
+}
+
+/* Grilles (vue direction) */
+.myshift-teams-page .table-view {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d8dee6;
+    -fx-border-radius: 6;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+.myshift-teams-page .table-view .column-header,
+.myshift-teams-page .table-view .filler,
+.myshift-teams-page .table-view .table-column,
+.myshift-teams-page .table-view .nested-column-header {
+    -fx-background-color: #e8f1f3;
+    -fx-border-color: #cbd5e1;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0a3050;
+    -fx-font-size: 12px;
+}
+.myshift-teams-page .table-view .table-row-cell:odd {
+    -fx-background-color: #f8fafb;
+}
+.myshift-teams-page .table-view .table-row-cell:selected {
+    -fx-background-color: #ccfbf1;
+    -fx-text-background-color: #0a3050;
+}
+.myshift-teams-page .table-view .table-row-cell:hover:selected,
+.myshift-teams-page .table-view .table-row-cell:hover {
+    -fx-background-color: #d1fae5;
+}
+.myshift-teams-page .table-view .placeholder .label {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 13px;
+    -fx-padding: 12 8;
+    -fx-wrap-text: true;
+    -fx-text-alignment: CENTER;
+}
+
+/* Cadre live caméra / photo */
+.myshift-teams-face-frame {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #cbd5e1;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+}
+
+.myshift-teams-page .separator .line {
+    -fx-border-color: #d8dee6;
+}
+
+/* Scroll (agent) */
+.myshift-teams-scroll {
+    -fx-background-color: #f0f2f5;
+    -fx-background: #f0f2f5;
+    -fx-padding: 0;
+}
+.myshift-teams-scroll .viewport,
+.myshift-teams-scroll .content {
+    -fx-background-color: #f0f2f5;
+}
+
+.label.myshift-teams-sous-warn {
+    -fx-text-fill: #9f2c24;
+    -fx-font-size: 13px;
+    -fx-wrap-text: true;
+    -fx-padding: 0 0 4 0;
+}
+
+/* Compteur agents en ligne (direction / sous-direction) */
+.label.myshift-teams-online-badge {
+    -fx-background-color: #ecfdf5;
+    -fx-text-fill: #0f5c4a;
+    -fx-border-color: #5eead4;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 4 10;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}
+
+/* Grille calendrier mois (planning agent) */
+.label.myshift-teams-mcal-head {
+    -fx-text-fill: #0a3050;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-padding: 0 0 2 0;
+}
+.label.myshift-teams-mcal-cell {
+    -fx-background-color: #f8fafb;
+    -fx-border-color: #d8dee6;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 4 2;
+    -fx-font-size: 11px;
+    -fx-text-alignment: CENTER;
+    -fx-alignment: CENTER;
+    -fx-min-width: 44;
+    -fx-pref-width: 72;
+    -fx-min-height: 40;
+    -fx-text-fill: #64748b;
+}
+.label.myshift-teams-mcal-cell.myshift-teams-mcal-cell-filled {
+    -fx-background-color: #e6fffa;
+    -fx-text-fill: #0a3050;
+    -fx-font-weight: 600;
+    -fx-border-color: #5eead4;
+}
+
+.myshift-teams-page .date-picker,
+.myshift-teams-page .date-picker .text-field {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #94a3b8;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}

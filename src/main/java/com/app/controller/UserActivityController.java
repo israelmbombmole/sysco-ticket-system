@@ -5,6 +5,9 @@ import com.app.dao.DataShareDAO;
 import com.app.dao.TicketDAO;
 import com.app.model.DataShareFile;
 import com.app.model.Ticket;
+import com.app.util.AppUiStyles;
+import com.app.util.I18n;
+import com.app.util.LanguageManager;
 
 
 import javafx.collections.FXCollections;
@@ -22,12 +25,12 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Label;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import javafx.stage.Stage;
 
 import java.util.List;
-import java.util.ResourceBundle;
 
 public class UserActivityController {
 
@@ -97,6 +100,16 @@ public class UserActivityController {
         colRef.setCellValueFactory(new PropertyValueFactory<>("reference"));
         colTitle.setCellValueFactory(new PropertyValueFactory<>("title"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+        colStatus.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : I18n.status(item));
+            }
+        });
+
+        tableMyTickets.setPlaceholder(new Label(I18n.t("noContentInTable", "No content in table")));
+        tableMyFiles.setPlaceholder(new Label(I18n.t("noContentInTable", "No content in table")));
 
         // Shared files
         colFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
@@ -272,7 +285,7 @@ public class UserActivityController {
 
         FXMLLoader loader = new FXMLLoader(
         getClass().getResource("/view/TicketDetails.fxml"),
-        ResourceBundle.getBundle("lang.messages")
+        LanguageManager.getBundle()
 );
 
 Parent root = loader.load();
@@ -281,9 +294,10 @@ Parent root = loader.load();
         controller.setTicket(ticket);
 
         Stage stage = new Stage();
-        stage.setTitle("Ticket Details - TCK-" + ticket.getId());
+        stage.setTitle(I18n.t("ticketDetails", "Ticket Details") + " - TCK-" + ticket.getId());
 
         Scene scene = new Scene(root);
+        AppUiStyles.applyToScene(scene);
         stage.setScene(scene);
 
         stage.setMaximized(true);
@@ -310,7 +324,7 @@ Parent root = loader.load();
 
             loader = new FXMLLoader(
                     getClass().getResource("/view/external_ticket_edit.fxml"),
-                    ResourceBundle.getBundle("lang.messages")
+                    LanguageManager.getBundle()
             );
 
             root = loader.load();
@@ -325,7 +339,7 @@ Parent root = loader.load();
 
             loader = new FXMLLoader(
                     getClass().getResource("/view/ticket_create.fxml"),
-                    ResourceBundle.getBundle("lang.messages")
+                    LanguageManager.getBundle()
             );
 
             root = loader.load();
@@ -335,8 +349,10 @@ Parent root = loader.load();
         }
 
         Stage stage = new Stage();
-        stage.setScene(new Scene(root));
-        stage.setTitle("Edit Ticket");
+        Scene editScene = new Scene(root);
+        AppUiStyles.applyToScene(editScene);
+        stage.setScene(editScene);
+        stage.setTitle(I18n.t("button.edit", "Edit") + " " + I18n.t("ticket", "Ticket"));
         stage.show();
 
     } catch (Exception e) {

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title">Task detail</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page ticket-management-page">
+    <div class="card page-panel ticket-management-shell">
+        <div class="page-alerts" th:if="${successKey != null or errorKey != null}">
+            <p class="success-banner" th:if="${successKey != null}" th:text="#{${successKey}}">Success</p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Error</p>
+        </div>
+        <a class="secondary-btn btn-sm" th:href="${taskDetailBackHref}">Retour</a>
+        <h2 class="courier-subheading" th:text="${task.title}">Task</h2>
+        <div class="ticket-fx-info-grid">
+            <div class="ticket-fx-label"><span th:text="#{ticketMgmt.detail.status}">Status</span> :</div><div th:text="${@uiLabels.taskStatus(task.status, #locale)}">OPEN</div>
+            <div class="ticket-fx-label">Assigne :</div><div th:text="${task.assignee}">user</div>
+            <div class="ticket-fx-label">Echeance :</div><div th:text="${task.dueAt}">-</div>
+            <div class="ticket-fx-label"><span th:text="#{ticketMgmt.detail.priority}">Priority</span> :</div><div th:text="${@uiLabels.ticketPriority(task.priority, #locale)}">MEDIUM</div>
+            <div class="ticket-fx-label">Debut :</div><div th:text="${#strings.isEmpty(task.startAt) ? '-' : task.startAt}">-</div>
+            <div class="ticket-fx-label">Fermer :</div><div th:text="${#strings.isEmpty(task.closeAt) ? '-' : task.closeAt}">-</div>
+            <div class="ticket-fx-label">Duree :</div><div th:text="${#strings.isEmpty(task.duration) ? '-' : task.duration}">-</div>
+            <div class="ticket-fx-label">Ticket :</div>
+            <div>
+                <a th:if="${task.ticketId != null}"
+                   th:href="@{/app/ticket-management/{id}(id=${task.ticketId})}"
+                   th:text="${#strings.isEmpty(task.linkedTicketNumber) ? ('#' + task.ticketId) : task.linkedTicketNumber}">TCK-1</a>
+                <span th:if="${task.ticketId == null}">-</span>
+            </div>
+            <div class="ticket-fx-label">Equipe sur ticket :</div>
+            <div th:text="${#lists.isEmpty(task.workers) ? '-' : #strings.listJoin(task.workers, ', ')}">user1,user2</div>
+        </div>
+        <div class="ticket-fx-section">
+            <h3 class="courier-subheading">Description</h3>
+            <div class="ticket-fx-description" th:text="${#strings.isEmpty(task.description) ? '-' : task.description}">-</div>
+        </div>
+        <div class="ticket-fx-section">
+            <h3 class="courier-subheading">Commentaires</h3>
+            <div class="ticket-fx-comments">
+                <div th:each="c : ${task.comments}" class="ticket-fx-comment-row">
+                    <p><strong th:text="${#strings.isEmpty(c.author) ? 'system' : c.author}">admin</strong> - Commentaire</p>
+                    <p th:text="${c.text}">comment</p>
+                    <p class="muted"><span th:text="${c.createdAt}">date</span></p>
+                    <div class="ticket-fx-comment-attachments" th:if="${!#lists.isEmpty(c.attachmentPaths())}">
+                        <div class="ticket-fx-attachment-card"
+                             th:each="p,iter : ${c.attachmentPaths()}"
+                             th:with="attUrl=@{/app/my-work/task-comment-attachment/{commentId}(commentId=${c.id},idx=${iter.index})},
+                                      lp=${#strings.toLowerCase(p)},
+                                      isImg=${#strings.endsWith(lp, '.png') or #strings.endsWith(lp, '.jpg') or #strings.endsWith(lp, '.jpeg') or #strings.endsWith(lp, '.gif') or #strings.endsWith(lp, '.webp')}">
+                            <div class="ticket-fx-attachment-body">
+                                <a th:if="${isImg}" class="ticket-fx-attachment-thumb-link" th:href="${attUrl}" target="_blank" rel="noopener">
+                                    <img class="ticket-fx-attachment-preview" th:src="${attUrl}" alt=""/>
+                                </a>
+                                <div th:unless="${isImg}" class="ticket-fx-attachment-doc">
+                                    <span class="ticket-fx-attachment-doc-icon" aria-hidden="true">📎</span>
+                                    <span class="ticket-fx-attachment-doc-label" th:text="#{ticketMgmt.comment.fileAttachment}">File</span>
+                                </div>
+                            </div>
+                            <div class="ticket-fx-attachment-footer">
+                                <span class="ticket-fx-attachment-name muted"
+                                      th:text="#{ticketMgmt.comment.partLabel(${iter.index + 1})}">piece-1</span>
+                                <div class="ticket-fx-attachment-actions">
+                                    <a class="ticket-fx-attachment-action" th:href="${attUrl}" target="_blank" rel="noopener"
+                                       th:text="#{ticketMgmt.comment.preview}">Preview</a>
+                                    <span class="ticket-fx-attachment-actions-sep" aria-hidden="true">·</span>
+                                    <a class="ticket-fx-attachment-action"
+                                       th:href="${attUrl}"
+                                       download=""
+                                       th:text="#{ticketMgmt.comment.download}">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="muted" th:if="${#lists.isEmpty(task.comments)}">Aucun commentaire pour cette tâche.</p>
+            </div>
+            <form class="ticket-fx-comment-box" th:if="${canComment}"
+                  method="post" th:action="@{/app/my-work/task/{id}/comment(id=${task.id})}" enctype="multipart/form-data">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="button" class="secondary-btn btn-sm" id="task-detail-comment-plus">+</button>
+                <input class="form-input" type="text" name="commentText" placeholder="Ecrire un commentaire..."/>
+                <input class="ticket-fx-hidden-file-input" type="file" name="attachment" id="task-detail-comment-files" multiple/>
+                <button type="submit" class="secondary-btn btn-sm ticket-fx-comment-submit-btn" th:text="#{ticketMgmt.comment.submitAdd}">Ajouter</button>
+            </form>
+            <div class="ticket-fx-comment-draft-attachments" id="task-detail-comment-draft"></div>
+            <div class="ticket-fx-hidden-file-frame"></div>
+        </div>
+    </div>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        (function () {
+            const plusBtn = document.getElementById('task-detail-comment-plus');
+            const commentFiles = document.getElementById('task-detail-comment-files');
+            const commentDraft = document.getElementById('task-detail-comment-draft');
+            const fileAttachmentLabel = /*[[#{ticketMgmt.comment.fileAttachment}]]*/ 'File';
+            if (!plusBtn || !commentFiles || !commentDraft) {
+                return;
+            }
+            plusBtn.addEventListener('click', function () {
+                commentFiles.click();
+            });
+            commentFiles.addEventListener('change', function () {
+                commentDraft.innerHTML = '';
+                Array.from(commentFiles.files || []).forEach(function (file) {
+                    const card = document.createElement('div');
+                    card.className = 'ticket-fx-attachment-card';
+                    const body = document.createElement('div');
+                    body.className = 'ticket-fx-attachment-body';
+                    if (file.type && file.type.startsWith('image/')) {
+                        const wrap = document.createElement('div');
+                        wrap.className = 'ticket-fx-attachment-thumb-link';
+                        const img = document.createElement('img');
+                        img.className = 'ticket-fx-attachment-preview';
+                        img.alt = '';
+                        img.src = URL.createObjectURL(file);
+                        wrap.appendChild(img);
+                        body.appendChild(wrap);
+                    } else {
+                        const doc = document.createElement('div');
+                        doc.className = 'ticket-fx-attachment-doc';
+                        const icon = document.createElement('span');
+                        icon.className = 'ticket-fx-attachment-doc-icon';
+                        icon.setAttribute('aria-hidden', 'true');
+                        icon.textContent = '\uD83D\uDCCE';
+                        const lab = document.createElement('span');
+                        lab.className = 'ticket-fx-attachment-doc-label';
+                        lab.textContent = fileAttachmentLabel;
+                        doc.appendChild(icon);
+                        doc.appendChild(lab);
+                        body.appendChild(doc);
+                    }
+                    const footer = document.createElement('div');
+                    footer.className = 'ticket-fx-attachment-footer';
+                    const fname = document.createElement('span');
+                    fname.className = 'ticket-fx-attachment-name muted';
+                    fname.textContent = file.name;
+                    footer.appendChild(fname);
+                    card.appendChild(body);
+                    card.appendChild(footer);
+                    commentDraft.appendChild(card);
+                });
+            });
+        })();
+        /*]]>*/
+    </script>
+</section>
+</body>
+</html>

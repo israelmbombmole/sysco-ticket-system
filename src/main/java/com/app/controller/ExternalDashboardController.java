@@ -4,6 +4,7 @@ import com.app.auth.Session;
 import com.app.dao.TicketDAO;
 import com.app.dao.FileDAO;
 import com.app.dao.MessageDAO;
+import com.app.util.I18n;
 
 import javafx.fxml.FXML;
 import javafx.scene.chart.PieChart;
@@ -43,7 +44,7 @@ public class ExternalDashboardController {
         int messageCount = MessageDAO.countMessagesForUser(userId);
 
         lblTickets.setText(String.valueOf(ticketCount));
-       
+        lblFiles.setText(String.valueOf(fileCount));
         lblMessages.setText(String.valueOf(messageCount));
     }
 
@@ -57,9 +58,9 @@ public class ExternalDashboardController {
         int closed = TicketDAO.countTicketsByStatus(userId, "CLOSED");
 
         ObservableList<PieChart.Data> data = FXCollections.observableArrayList(
-                new PieChart.Data("Open", open),
-                new PieChart.Data("In Progress", progress),
-                new PieChart.Data("Closed", closed)
+                new PieChart.Data(I18n.t("dashboardChart.open", "Open"), open),
+                new PieChart.Data(I18n.t("dashboardChart.inProgress", "In Progress"), progress),
+                new PieChart.Data(I18n.t("dashboardChart.closed", "Closed"), closed)
         );
 
         ticketChart.setData(data);

@@ -29,11 +29,13 @@ import com.app.model.SousDirection;
 import com.app.security.RoleUtil;
 import static com.app.security.RoleUtil.canManage;
 import com.app.service.AuditService;
+import com.app.util.AccessContext;
+import com.app.util.AppUiStyles;
+import com.app.util.I18n;
+import com.app.util.LanguageManager;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.ResourceBundle;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.scene.layout.Region;
@@ -43,6 +45,7 @@ public class UserManagementController {
     @FXML private TableView<User> tableUsers;
     @FXML private TableColumn<User, Integer> colId;
     @FXML private TableColumn<User, String> colUsername;
+    @FXML private TableColumn<User, String> colMatricule;
     @FXML private TableColumn<User, String> colRole;
     @FXML private TableColumn<User, Boolean> colActive;
     @FXML private TextField txtSearch;
@@ -87,6 +90,11 @@ public void initialize() {
             User selected = tableUsers.getSelectionModel().getSelectedItem();
 
             if (selected == null) return true;
+
+            if (AccessContext.isBuiltInSuperAdminUsername(selected.getUsername())
+                    && !AccessContext.isSystemSuperAdmin()) {
+                return true;
+            }
 
             int current = getRoleLevel(Session.getRole());
             int target = getRoleLevel(selected.getRole());
@@ -143,16 +151,21 @@ public void initialize() {
     tableUsers.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
     colId.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.1));
-    colUsername.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.25));
-    colRole.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.2));
-    colActive.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.15));
-    colSousDirection.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.3));
+    colUsername.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.18));
+    colMatricule.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.16));
+    colRole.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.16));
+    colActive.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.10));
+    colSousDirection.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.28));
+    colDelete.prefWidthProperty().bind(tableUsers.widthProperty().multiply(0.12));
 
     colId.setCellValueFactory(data ->
             new SimpleIntegerProperty(data.getValue().getId()).asObject());
 
     colUsername.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().getUsername()));
+    
+    colMatricule.setCellValueFactory(data ->
+            new SimpleStringProperty(data.getValue().getMatricule() == null ? "" : data.getValue().getMatricule()));
 
     colRole.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().getRole()));
@@ -163,10 +176,18 @@ public void initialize() {
     colSousDirection.setCellValueFactory(data -> {
         String sd = data.getValue().getSousDirectionName();
         String dir = data.getValue().getDirectionName();
-
-        return new SimpleStringProperty(
-                (dir != null && !dir.isBlank()) ? sd + " - " + dir : sd
-        );
+        boolean hasDir = dir != null && !dir.isBlank();
+        boolean hasSd = sd != null && !sd.isBlank();
+        if (hasDir && hasSd) {
+            return new SimpleStringProperty(dir + " — " + sd);
+        }
+        if (hasDir) {
+            return new SimpleStringProperty(dir);
+        }
+        if (hasSd) {
+            return new SimpleStringProperty(sd);
+        }
+        return new SimpleStringProperty("");
     });
     
     tableUsers.setRowFactory(tv -> {
@@ -220,7 +241,7 @@ private void handleCreate() {
 
     // 🔒 role check
     if (RoleUtil.getLevel(normalizeRole(Session.getRole())) < 5) {
-        showInfo("You are not authorized to create users");
+        showInfo(I18n.t("err.notAuthorizedCreateUsers", "You are not authorized to create users"));
         return;
     }
 
@@ -234,7 +255,7 @@ private void handleDelete() {
     User user = tableUsers.getSelectionModel().getSelectedItem();
 
     if (user == null) {
-        showInfo("Please select a user");
+        showInfo(I18n.t("pleaseSelectUser", "Please select a user"));
         return;
     }
 
@@ -264,7 +285,7 @@ private String normalizeRole(String role) {
 
     if (selectedUser == null) {
         new Alert(Alert.AlertType.WARNING,
-                "Please select a user first.",
+                I18n.t("pleaseSelectUserFirst", "Please select a user first."),
                 ButtonType.OK).showAndWait();
         return null;
     }
@@ -278,7 +299,7 @@ private void handleEdit() {
     User selectedUser = tableUsers.getSelectionModel().getSelectedItem();
 
     if (selectedUser == null) {
-        showInfo("Please select a user");
+        showInfo(I18n.t("pleaseSelectUser", "Please select a user"));
         return;
     }
 
@@ -291,7 +312,8 @@ private void openUserForm(User user) {
     try {
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/edit-user.fxml")
+                getClass().getResource("/view/edit-user.fxml"),
+                LanguageManager.getBundle()
         );
 
         Parent root = loader.load(); // ✅ NEW INSTANCE every time
@@ -305,10 +327,13 @@ private void openUserForm(User user) {
         }
 
         Stage stage = new Stage();
-        stage.setTitle(user == null ? "Create User" : "Edit User");
+        stage.setTitle(user == null
+                ? I18n.t("createUser", "Create User")
+                : I18n.t("editUser", "Edit User"));
 
-        // ✅ FIXED SIZE (for scroll)
-        stage.setScene(new Scene(root, 500, 600));
+        Scene editScene = new Scene(root, 500, 600);
+        AppUiStyles.applyToScene(editScene);
+        stage.setScene(editScene);
 
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.initOwner(tableUsers.getScene().getWindow());
@@ -326,13 +351,9 @@ private void openUserForm(User user) {
     private void openEditPopup(User user) {
     try {
 
-        Locale locale = new Locale("fr"); // or "en"
-
-ResourceBundle bundle = ResourceBundle.getBundle("lang.messages", locale);
-
 FXMLLoader loader = new FXMLLoader(
         getClass().getResource("/view/edit-user.fxml"),
-        bundle
+        LanguageManager.getBundle()
 );
 
 Parent root = loader.load();
@@ -341,8 +362,10 @@ Parent root = loader.load();
         controller.setUser(user);
 
         Stage stage = new Stage();
-        stage.setTitle("Edit User");
-        stage.setScene(new Scene(root));
+        stage.setTitle(I18n.t("editUser", "Edit User"));
+        Scene editScene2 = new Scene(root);
+        AppUiStyles.applyToScene(editScene2);
+        stage.setScene(editScene2);
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.initOwner(tableUsers.getScene().getWindow());
         stage.showAndWait();
@@ -365,13 +388,13 @@ private void handleToggleActive() {
    User selectedUser = tableUsers.getSelectionModel().getSelectedItem();
 
 if (selectedUser == null) {
-    showMessage("Veuillez sélectionner un utilisateur");
+    showMessage(I18n.t("pleaseSelectUser", "Please select a user"));
     return;
 }
 
 // 🔥 BLOCK ONLY SELF ACTION
 if (selectedUser.getId() == Session.getUserId()) {
-    showMessage("Vous ne pouvez pas désactiver votre propre compte.");
+    showMessage(I18n.t("err.cannotDisableSelf", "You cannot disable your own account."));
     return;
 }
 
@@ -380,7 +403,7 @@ UserDAO.toggleActive(selectedUser.getId());
 
 loadUsers(); // refresh table
 
-showMessage("L'utilisateur a été mis à jour avec succès");
+showMessage(I18n.t("userUpdatedSuccess", "User updated successfully"));
 }
 
 
@@ -404,7 +427,7 @@ private void handleChangeRole() {
     User targetUser = tableUsers.getSelectionModel().getSelectedItem();
 
     if (targetUser == null) {
-        showInfo("Veuillez sélectionner un utilisateur");
+        showInfo(I18n.t("pleaseSelectUser", "Please select a user"));
         return;
     }
 
@@ -413,7 +436,7 @@ private void handleChangeRole() {
 
     // 🔥 BLOCK if trying to modify equal or higher role
     if (!canManage(currentRole, targetRole)) {
-        showInfo("Vous ne pouvez pas modifier un utilisateur ayant un rôle égal ou supérieur.");
+        showInfo(I18n.t("err.cannotModifyEqualHigherRole", "You cannot modify a user with an equal or higher role."));
         return;
     }
     
@@ -426,11 +449,13 @@ private void handleChangeRole() {
             "INSPECTEUR",
             "CONTROLEUR",
             "VERIFICATEUR",
-            "VERIFICATEUR-ASSISTANT"
+            "VERIFICATEUR-ASSISTANT",
+            "COURIER",
+            "SECRETAIRE"
     );
 
-    dialog.setTitle("Change Role");
-    dialog.setHeaderText("Change role for " + targetUser.getUsername());
+    dialog.setTitle(I18n.t("changeRole", "Change Role"));
+    dialog.setHeaderText(I18n.t("changeRoleFor", "Change role for") + " " + targetUser.getUsername());
 
     dialog.showAndWait().ifPresent(newRole -> {
 
@@ -460,7 +485,7 @@ private int getRoleLevel(String role) {
         case "INSPECTEUR" -> 4;
         case "CONTROLEUR", "AGENT" -> 3;
         case "VERIFICATEUR", "USER" -> 2;
-        case "VERIFICATEUR-ASSISTANT" -> 1;
+        case "VERIFICATEUR-ASSISTANT", "SECRETAIRE", "COURIER" -> 1;
         default -> 0;
     };
 }
@@ -483,16 +508,16 @@ private boolean canManage(String currentRole, String targetRole) {
         if (u == null) return;
 
         Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("Reset Password");
+        dialog.setTitle(I18n.t("resetPassword", "Reset Password"));
 
         ButtonType resetBtn =
-                new ButtonType("Reset", ButtonBar.ButtonData.OK_DONE);
+                new ButtonType(I18n.t("reset", "Reset"), ButtonBar.ButtonData.OK_DONE);
 
         dialog.getDialogPane().getButtonTypes()
                 .addAll(resetBtn, ButtonType.CANCEL);
 
         PasswordField pwd = new PasswordField();
-        pwd.setPromptText("New password");
+        pwd.setPromptText(I18n.t("newPassword", "New password"));
 
         dialog.getDialogPane().setContent(pwd);
         dialog.setResultConverter(btn -> btn == resetBtn ? pwd.getText() : null);
@@ -511,7 +536,7 @@ private boolean canManage(String currentRole, String targetRole) {
         "Reset password for user: " + u.getUsername()
 );
 
-            showInfo("Password reset successfully");
+            showInfo(I18n.t("passwordResetSuccess", "Password reset successfully"));
         });
     }
 
@@ -530,6 +555,7 @@ private boolean canManage(String currentRole, String targetRole) {
 
         tableUsers.setItems(users.filtered(u ->
                 u.getUsername().toLowerCase().contains(q) ||
+                (u.getMatricule() != null && u.getMatricule().toLowerCase().contains(q)) ||
                 u.getRole().toLowerCase().contains(q)
         ));
     }
@@ -574,19 +600,15 @@ private boolean canManage(String currentRole, String targetRole) {
     @FXML
     private void openAuditLogs() {
         try {
-            Locale locale = new Locale("fr"); // or "en"
-
-ResourceBundle bundle =
-        ResourceBundle.getBundle("lang.messages", locale);
-
 FXMLLoader loader = new FXMLLoader(
         getClass().getResource("/view/audit-log.fxml"),
-        bundle
+        LanguageManager.getBundle()
 );
             Scene scene = new Scene(loader.load(), 900, 550);
+            AppUiStyles.applyToScene(scene);
 
             Stage stage = new Stage();
-            stage.setTitle("Audit Logs");
+            stage.setTitle(I18n.t("auditLogs", "Audit Logs"));
             stage.setScene(scene);
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(tableUsers.getScene().getWindow());
@@ -607,7 +629,7 @@ FXMLLoader loader = new FXMLLoader(
 
     colDelete.setCellFactory(param -> new TableCell<>() {
 
-        private final Button btn = new Button("Delete");
+        private final Button btn = new Button(I18n.t("delete", "Delete"));
 
         {
             btn.setStyle("-fx-background-color:#e74c3c; -fx-text-fill:white;");
@@ -636,16 +658,16 @@ FXMLLoader loader = new FXMLLoader(
     private void confirmDelete(User user) {
 
     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-    alert.setTitle("Delete User");
-    alert.setHeaderText("Are you sure?");
-    alert.setContentText("Delete user: " + user.getUsername());
+    alert.setTitle(I18n.t("deleteUser", "Delete User"));
+    alert.setHeaderText(I18n.t("areYouSure", "Are you sure?"));
+    alert.setContentText(I18n.t("deleteUserLabel", "Delete user:") + " " + user.getUsername());
 
     Optional<ButtonType> result = alert.showAndWait();
 
     if (result.isPresent() && result.get() == ButtonType.OK) {
 
         if (!verifyAdminPassword()) {
-            showInfo("❌ Incorrect admin password");
+            showInfo(I18n.t("err.incorrectAdminPassword", "Incorrect admin password"));
             return;
         }
 
@@ -665,7 +687,7 @@ FXMLLoader loader = new FXMLLoader(
                     "User hidden from UI (deactivated): " + user.getUsername()
             );
 
-            showInfo("Utilisateur supprimé de la liste");
+            showInfo(I18n.t("userRemovedFromList", "User removed from list"));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -676,14 +698,14 @@ FXMLLoader loader = new FXMLLoader(
     private boolean verifyAdminPassword() {
 
     Dialog<String> dialog = new Dialog<>();
-    dialog.setTitle("Admin Verification");
-    dialog.setHeaderText("Enter admin password to confirm deletion");
+    dialog.setTitle(I18n.t("adminVerification", "Admin Verification"));
+    dialog.setHeaderText(I18n.t("enterAdminPasswordConfirmDeletion", "Enter admin password to confirm deletion"));
 
-    ButtonType confirmBtn = new ButtonType("Confirm", ButtonBar.ButtonData.OK_DONE);
+    ButtonType confirmBtn = new ButtonType(I18n.t("confirm", "Confirm"), ButtonBar.ButtonData.OK_DONE);
     dialog.getDialogPane().getButtonTypes().addAll(confirmBtn, ButtonType.CANCEL);
 
     PasswordField passwordField = new PasswordField();
-    passwordField.setPromptText("Admin password");
+    passwordField.setPromptText(I18n.t("adminPassword", "Admin password"));
 
     dialog.getDialogPane().setContent(passwordField);
 

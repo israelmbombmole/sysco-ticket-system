@@ -18,7 +18,7 @@
         <Region HBox.hgrow="ALWAYS"/>
 
         <TextField fx:id="txtSearch"
-                   promptText="Search ticket..."
+                   promptText="%searchTickets"
                    prefWidth="250"/>
 
         <Button text="%Search"
@@ -49,9 +49,10 @@
     </HBox>
 
 
-    <!-- TICKET TABLE -->
-    <TableView fx:id="tableTickets"
-               VBox.vgrow="ALWAYS">
+    <!-- TICKET TABLE: horizontal scroll on narrow windows -->
+    <ScrollPane fitToWidth="false" fitToHeight="true" hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
+                VBox.vgrow="ALWAYS" maxWidth="Infinity" minHeight="240" styleClass="my-work-table-scroll">
+    <TableView fx:id="tableTickets" minWidth="1540" minHeight="200" maxWidth="Infinity">
 
         <columns>
 
@@ -108,6 +109,7 @@
 </columns>
 
     </TableView>
+    </ScrollPane>
     <HBox alignment="CENTER_LEFT" spacing="8">
 
     <ProgressIndicator fx:id="progressEscalation"
@@ -116,7 +118,7 @@
                        visible="false"/>
 
     <Label fx:id="lblEscalationStatus"
-           text="⏳ Escalation en cours..."
+           text="%escalationInProgress"
            visible="false"
            style="-fx-text-fill:#ff9800; -fx-font-weight:bold;"/>
 

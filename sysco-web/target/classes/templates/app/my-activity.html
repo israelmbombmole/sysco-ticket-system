@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">My activity</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page my-activity-page">
+    <div class="card page-panel my-activity-shell">
+        <h1 class="title-large" th:text="#{${pageTitleKey}}">Mon activité</h1>
+        <div class="page-alerts" th:if="${successKey != null or errorKey != null or otpInfo != null}">
+            <p class="success-banner" th:if="${successKey != null}" th:text="#{${successKey}}">Succès</p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Erreur</p>
+            <p class="muted form-hint" th:if="${otpInfo != null}">
+                <span th:text="#{myActivity.flash.otpHint}">OTP:</span>
+                <strong th:text="${otpInfo}">123456</strong>
+            </p>
+        </div>
+
+        <h3 class="courier-subheading" th:text="#{myActivity.myTickets}">Mes tickets</h3>
+        <form method="get" th:action="@{/app/my-activity}">
+            <input type="hidden" name="fileQ" th:value="${page.fileQ}" />
+            <input class="form-input my-activity-search" type="text" name="ticketQ" th:value="${page.ticketQ}" th:placeholder="#{myActivity.ticketSearchPlaceholder}"/>
+        </form>
+        <table class="sysco-table my-activity-data-table">
+            <thead>
+            <tr>
+                <th th:text="#{myActivity.col.reference}">Référence</th>
+                <th th:text="#{myActivity.col.title}">Titre</th>
+                <th th:text="#{myActivity.col.status}">Statut</th>
+                <th th:text="#{myActivity.col.view}">Voir</th>
+                <th th:text="#{myActivity.col.edit}">Modifier</th>
+                <th th:text="#{myActivity.col.deleteOrMerge}">Supprimer / Fusionner</th>
+                <th>Suivi arbre</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${page.myTickets}">
+                <td th:text="${t.ticketNumber}">TCK-2026-001</td>
+                <td th:text="${t.title}">Titre</td>
+                <td th:text="${@uiLabels.ticketStatus(t.status, #locale)}">OPEN</td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:href="@{/app/ticket-management/{id}(id=${t.id},returnTo='/app/my-activity')}">Voir</a>
+                </td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:if="${t.canEdit}"
+                       th:href="@{/app/my-activity/ticket/{id}/edit(id=${t.id})}"
+                       th:text="#{myActivity.col.edit}">Modifier</a>
+                    <span class="muted my-activity-action-muted" th:unless="${t.canEdit}"
+                          th:text="#{myActivity.editUnavailable}">—</span>
+                </td>
+                <td class="my-activity-delete-merge-cell">
+                    <form th:if="${t.canDelete}" method="post" th:action="@{/app/my-activity/ticket/{id}/delete(id=${t.id})}" class="inline-form">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="my-work-pill my-work-pill-close user-pill-btn"
+                                th:data-confirm-msg="#{ticketMgmt.confirmDelete}"
+                                onclick="return confirm(this.dataset.confirmMsg);"
+                                th:text="#{delete}">Supprimer</button>
+                    </form>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:if="${t.canMerge}"
+                       th:href="@{/app/my-activity/ticket/{id}/merge(id=${t.id})}"
+                       th:text="#{myActivity.btn.merge}">Fusionner</a>
+                    <span class="muted my-activity-action-muted"
+                          th:if="${!t.canDelete and !t.canMerge}"
+                          th:text="#{myActivity.mergeDeleteUnavailable}">—</span>
+                </td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:href="@{/app/ticket-management/{id}(id=${t.id},returnTo='/app/my-activity')}">Voir arbre</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.myTickets)}">
+                <td colspan="7" class="muted" th:text="#{myActivity.emptyTable}">Aucun contenu dans le tableau</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h3 class="courier-subheading" th:text="#{myActivity.myCouriers}">Mes courriers</h3>
+        <table class="sysco-table my-activity-data-table">
+            <thead>
+            <tr>
+                <th th:text="#{courier.col.ref}">Réf.</th>
+                <th th:text="#{courier.col.title}">Titre</th>
+                <th th:text="#{courier.col.status}">Statut</th>
+                <th th:text="#{courier.col.created}">Créé</th>
+                <th th:text="#{myActivity.col.view}">Voir</th>
+                <th th:text="#{myActivity.col.edit}">Modifier</th>
+                <th th:text="#{delete}">Supprimer</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${page.myCouriers}">
+                <td th:text="${c.refCode}">CP-2026-00001</td>
+                <td th:text="${c.title}">Objet</td>
+                <td th:text="${@uiLabels.courierPacketStatus(c.status, #locale)}">En attente</td>
+                <td th:text="${c.createdAt}">2026-05-05 12:00</td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:href="@{/app/courier(selected=${c.id})}"
+                       th:text="#{myActivity.col.view}">Voir</a>
+                </td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:if="${c.canEdit}"
+                       th:href="@{/app/courier-management(selected=${c.id})}"
+                       th:text="#{myActivity.col.edit}">Modifier</a>
+                    <span class="muted my-activity-action-muted" th:unless="${c.canEdit}"
+                          th:text="#{myActivity.editUnavailable}">—</span>
+                </td>
+                <td>
+                    <form th:if="${c.canDelete}" method="post" th:action="@{/app/courier-management/delete}" class="inline-form">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <input type="hidden" name="packetId" th:value="${c.id}"/>
+                        <button type="submit" class="my-work-pill my-work-pill-close user-pill-btn"
+                                th:data-confirm-msg="#{courierMgmt.confirmDelete}"
+                                onclick="return confirm(this.dataset.confirmMsg);"
+                                th:text="#{delete}">Supprimer</button>
+                    </form>
+                    <span class="muted my-activity-action-muted" th:unless="${c.canDelete}"
+                          th:text="#{myActivity.editUnavailable}">—</span>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.myCouriers)}">
+                <td colspan="7" class="muted" th:text="#{myActivity.emptyTable}">Aucun contenu dans le tableau</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h3 class="courier-subheading" th:text="#{myActivity.mySharedFiles}">Mes fichiers partagés</h3>
+        <form method="get" th:action="@{/app/my-activity}">
+            <input type="hidden" name="ticketQ" th:value="${page.ticketQ}" />
+            <input class="form-input my-activity-search" type="text" name="fileQ" th:value="${page.fileQ}" th:placeholder="#{myActivity.fileSearchPlaceholder}"/>
+        </form>
+        <table class="sysco-table my-activity-data-table my-activity-shared-files-table">
+            <thead>
+            <tr>
+                <th th:text="#{myActivity.fileCol.name}">Nom du fichier</th>
+                <th th:text="#{myActivity.fileCol.recipient}">Destinataire</th>
+                <th th:text="#{myActivity.fileCol.recipientRole}">Rôle</th>
+                <th th:text="#{myActivity.fileCol.date}">Date</th>
+                <th th:text="#{myActivity.fileCol.visibleUntil}">Visible jusqu'au</th>
+                <th th:text="#{myActivity.fileCol.actions}">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="f : ${page.mySharedFiles}" th:classappend="${f.expired} ? ' data-share-row-expired' : ''">
+                <td th:text="${f.fileName}">doc.pdf</td>
+                <td th:text="${f.recipient}">user2</td>
+                <td>
+                    <span th:if="${!#strings.isEmpty(f.role)}" th:text="${f.role}">ROLE</span>
+                    <span class="muted" th:if="${#strings.isEmpty(f.role)}" th:text="#{myActivity.roleUnknown}">—</span>
+                </td>
+                <td th:text="${f.date + ' ' + f.time}">2026-04-28 13:00:00</td>
+                <td>
+                    <span th:if="${f.visibleUntil != null and !#strings.isEmpty(f.visibleUntil)}"
+                          th:text="${f.visibleUntil}">—</span>
+                    <span class="muted" th:if="${f.visibleUntil == null or #strings.isEmpty(f.visibleUntil)}"
+                          th:text="#{myActivity.fileVisibilityUnlimited}">Sans limite</span>
+                </td>
+                <td class="my-activity-actions-cell data-share-actions-cell">
+                    <button type="button"
+                            class="my-activity-actions-toggle data-share-manage-open-btn"
+                            data-ma-manage-open="true"
+                            th:attr="aria-haspopup='dialog', aria-controls='myActivityShareManageDialog'"
+                            th:data-file-id="${f.id}"
+                            th:data-file-name="${f.fileName}"
+                            th:text="#{myActivity.btn.manageShare}">Gérer le partage</button>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.mySharedFiles)}">
+                <td colspan="6" class="muted" th:text="#{myActivity.emptyTable}">Aucun contenu dans le tableau</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <dialog id="myActivityShareManageDialog" class="sysco-escalate-dialog data-share-manage-dialog" aria-modal="true">
+            <div class="sysco-escalate-dialog-surface">
+                <header class="sysco-escalate-dialog-header">
+                    <h2 class="sysco-escalate-dialog-title" th:text="#{dataShare.manageDialogTitle}">Manage share</h2>
+                    <button type="button" class="sysco-escalate-dialog-x" id="myActivityShareManageCloseX"
+                            th:attr="aria-label=#{myWork.escalate.closeDialog}">×</button>
+                </header>
+                <div class="sysco-escalate-dialog-body sysco-share-manage-dialog-body data-share-manage-dialog-body">
+                    <p class="muted data-share-manage-file-line">
+                        <span th:text="#{dataShare.manageDialogFile}">File</span>:
+                        <strong id="myActivityShareManageFileName"></strong>
+                    </p>
+                    <div class="my-activity-share-stack data-share-manage-stack">
+                        <form method="post" class="my-activity-share-form" id="maManageVisForm" action="#">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <label class="sr-only" for="maManageVisMin" th:text="#{myActivity.visibilityMinutesShort}">Min</label>
+                            <input id="maManageVisMin" type="number" name="visibilityMinutes" min="1"
+                                   class="form-input my-activity-mini-input"
+                                   th:placeholder="#{myActivity.visibilityMinutesPlaceholder}"/>
+                            <input type="datetime-local" id="maManageVisUntil" name="visibleUntilEnd"
+                                   class="form-input my-activity-datetime-input"
+                                   th:aria-label="#{myActivity.visibilityUntilLabel}"/>
+                            <button type="submit" class="secondary-btn btn-sm" th:text="#{myActivity.btn.updateVisibility}">
+                                Visibilité
+                            </button>
+                        </form>
+                        <form method="post" class="inline-form data-share-manage-inline-form" id="maManageOtpForm" action="#">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="primary-btn btn-sm" th:text="#{myActivity.btn.regenerateOtp}">OTP</button>
+                        </form>
+                        <form method="post" class="my-activity-share-form" id="maManageReplaceForm" action="#"
+                              enctype="multipart/form-data" data-upload-enhanced="true">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="file" id="maManageReplaceFile" name="file" class="form-input my-activity-file-input"
+                                   required data-dnd-uploader="true" data-upload-single="true"/>
+                            <button type="submit" class="secondary-btn btn-sm" th:text="#{myActivity.btn.replaceFile}">
+                                Remplacer
+                            </button>
+                        </form>
+                        <form method="post" class="inline-form data-share-manage-inline-form" id="maManageDeleteForm" action="#">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="danger-btn btn-sm" th:text="#{delete}"
+                                    th:data-confirm-msg="#{dataShare.confirmDeleteShare}"
+                                    onclick="return confirm(this.dataset.confirmMsg);">
+                                Supprimer
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+        <script th:inline="javascript">
+            (function () {
+                var dlg = document.getElementById('myActivityShareManageDialog');
+                var base = /*[[@{/app/my-activity/file/}]]*/ '/app/my-activity/file/';
+                var nameEl = document.getElementById('myActivityShareManageFileName');
+                var visForm = document.getElementById('maManageVisForm');
+                var otpForm = document.getElementById('maManageOtpForm');
+                var replaceForm = document.getElementById('maManageReplaceForm');
+                var delForm = document.getElementById('maManageDeleteForm');
+                var visMin = document.getElementById('maManageVisMin');
+                var visUntil = document.getElementById('maManageVisUntil');
+                var replaceFile = document.getElementById('maManageReplaceFile');
+                var closeX = document.getElementById('myActivityShareManageCloseX');
+                function openManage(fileId, fileName) {
+                    if (!dlg || !visForm || !otpForm || !replaceForm || !delForm) {
+                        return;
+                    }
+                    var id = String(fileId);
+                    visForm.action = base + id + '/visibility';
+                    otpForm.action = base + id + '/regenerate-otp';
+                    replaceForm.action = base + id + '/replace';
+                    delForm.action = base + id + '/delete';
+                    if (nameEl) {
+                        nameEl.textContent = fileName || '';
+                    }
+                    if (visMin) {
+                        visMin.value = '';
+                    }
+                    if (visUntil) {
+                        visUntil.value = '';
+                    }
+                    if (replaceFile) {
+                        replaceFile.value = '';
+                    }
+                    dlg.showModal();
+                }
+                document.querySelectorAll('[data-ma-manage-open]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        openManage(btn.getAttribute('data-file-id'), btn.getAttribute('data-file-name'));
+                    });
+                });
+                if (closeX && dlg) {
+                    closeX.addEventListener('click', function () {
+                        dlg.close();
+                    });
+                }
+            })();
+        </script>
+    </div>
+</section>
+</body>
+</html>
+

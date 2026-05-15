@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Create ticket</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page create-ticket-page">
+    <div class="card create-ticket-shell ct-jira-shell"
+         th:classappend="${editTicket == null} ? ' ct-has-assistant'">
+        <div class="ct-jira-header-row">
+            <div class="ct-jira-title-block">
+                <p class="ct-jira-kicker" th:text="#{createTicket.jira.kicker}">Issue tracker</p>
+                <h1 class="title-large create-ticket-title"
+                    th:text="${editTicket != null} ? #{myActivity.editTicketTitle} : #{createTicket.title}">
+                    Créer un nouveau ticket
+                </h1>
+                <p class="muted ct-jira-sub" th:text="#{createTicket.jira.subtitle}" th:if="${editTicket == null}">
+                    Wizard guidé : type de problème, routage de traitement, pièces jointes.
+                </p>
+            </div>
+            <ol class="ct-step-indicator" th:if="${editTicket == null}">
+                <li data-step="issue"><span>1</span><small th:text="#{createTicket.step.issue}">Problème</small></li>
+                <li data-step="routing"><span>2</span><small th:text="#{createTicket.step.routing}">Routage</small></li>
+                <li data-step="files"><span>3</span><small th:text="#{createTicket.step.files}">Fichiers</small></li>
+            </ol>
+        </div>
+
+        <div class="page-alerts"
+             th:if="${successKey != null or errorKey != null or warnNoEmail != null or warnMailDisabled != null}">
+            <p class="success-banner" th:if="${successKey != null}">
+                <span th:if="${createdTicketRef != null}" th:text="#{createTicket.flash.created(${createdTicketRef})}">Succès</span>
+                <span th:if="${createdTicketRef == null}" th:text="#{${successKey}}">Succès</span>
+            </p>
+            <p class="sysco-banner-warn" th:if="${warnNoEmail != null}" th:text="#{createTicket.warn.noEmail}">
+                Aucune adresse e-mail sur votre profil — confirmation non envoyée.
+            </p>
+            <p class="sysco-banner-warn" th:if="${warnMailDisabled != null}" th:text="#{createTicket.warn.mailDisabled}">
+                SMTP non configuré.
+            </p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Erreur</p>
+        </div>
+
+        <div class="ct-assistant-layout"
+             th:classappend="${editTicket != null} ? ' ct-assistant-layout--solo'">
+            <aside id="ctAssistantPanel" class="ct-assistant-panel" th:if="${editTicket == null}">
+                <div class="ct-assistant-head">
+                    <div class="ct-assistant-head-text">
+                        <h2 class="ct-assistant-title" th:text="#{createTicket.assistant.title}">Assistant</h2>
+                        <p class="muted ct-assistant-sub" th:text="#{createTicket.assistant.subtitle}">Guided chat</p>
+                    </div>
+                    <button type="button" id="ctAssistantHideBtn" class="secondary-btn btn-sm ct-assistant-hide-btn"
+                            th:text="#{createTicket.assistant.hide}">Hide</button>
+                </div>
+                <p id="ctAssistantReady" class="ct-assistant-ready-banner" hidden
+                   th:text="#{createTicket.assistant.readyBanner}">Ready</p>
+                <div id="ctAssistantThread" class="ct-assistant-thread chat-thread" aria-live="polite"></div>
+                <div class="ct-assistant-compose">
+                    <label class="sr-only" for="ctAssistantInput" th:text="#{createTicket.assistant.placeholder}">Input</label>
+                    <textarea id="ctAssistantInput" class="form-input ct-assistant-input" rows="2"
+                              th:placeholder="#{createTicket.assistant.placeholder}"></textarea>
+                    <div class="ct-assistant-compose-actions">
+                        <button type="button" class="secondary-btn" id="ctAssistantReset"
+                                th:text="#{createTicket.assistant.reset}">Restart</button>
+                        <button type="button" class="primary-btn" id="ctAssistantSend"
+                                th:text="#{createTicket.assistant.send}">Send</button>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="ct-assistant-form-wrap">
+        <form method="post"
+              th:action="${editTicket != null} ? @{/app/my-activity/ticket/{id}/update(id=${editTicket.id})} : @{/app/create-ticket}"
+              enctype="multipart/form-data" data-upload-enhanced="true"
+              th:attr="data-ct-edit=${editTicket != null ? '1' : '0'},
+                       data-ct-reporter-sd=${editTicket != null ? editTicket.reporterSousDirectionId : ''},
+                       data-ct-reporter-dir=${editTicket != null ? editTicket.reporterDirectionId : ''},
+                       data-ct-reporting-office=${editTicket != null ? editTicket.reportingOffice : ''},
+                       data-ct-handling-sd=${editTicket != null ? editTicket.handlingSousDirectionId : ''},
+                       data-ct-handling-dir=${editTicket != null ? editTicket.handlingDirectionId : ''}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input id="ctReporterSd" type="hidden" name="reporterSousDirectionId"
+                   th:value="${editTicket != null ? editTicket.reporterSousDirectionId : ''}"/>
+            <input id="ctReporterDir" type="hidden" name="reporterDirectionId"
+                   th:value="${editTicket != null ? editTicket.reporterDirectionId : ''}"/>
+            <input id="ctReportingOffice" type="hidden" name="reportingOffice"
+                   th:value="${editTicket != null ? editTicket.reportingOffice : ''}"/>
+
+            <script type="application/json" id="ctDirectionsBySd" th:utext="${directionsBySousJson}">{}</script>
+
+            <div class="create-ticket-grid ct-jira-grid">
+
+                <h2 class="ct-section-title" th:text="#{createTicket.section.issue}">Problème</h2>
+
+                <label class="form-label" for="ctPreset" th:text="#{createTicket.field.issuePreset}">
+                    Type de problème courant</label>
+                <select id="ctPreset" name="issuePresetCode" class="form-input" required>
+                    <option th:each="p : ${issuePresets}"
+                            th:value="${p.code}"
+                            th:text="#{${p.msgKey}}"
+                            th:selected="${editTicket != null and editTicket.issuePresetCode == p.code}">
+                        Preset</option>
+                </select>
+
+                <label class="form-label" for="ctSummary" th:text="#{createTicket.field.summary}">
+                    Résumé</label>
+                <input id="ctSummary" name="summary" class="form-input" type="text" maxlength="4000" required
+                       th:placeholder="#{createTicket.ph.summary}"
+                       th:value="${editTicket != null} ? ${editTicket.title} : null"/>
+
+                <label class="form-label" for="ctDesc" th:text="#{createTicket.field.description}">
+                    Description détaillée</label>
+                <textarea id="ctDesc" name="description" class="form-textarea" rows="5" maxlength="12000"
+                          th:placeholder="#{createTicket.ph.description}"
+                          th:text="${editTicket != null} ? ${editTicket.description} : ''"></textarea>
+
+                <p class="muted ct-field-hint ct-field-hint--span"
+                   th:text="#{createTicket.hint.issuePreset}">
+                    Choisissez une catégorie ou « Autre », puis décrivez le problème dans le résumé ou la description.
+                </p>
+
+                <h2 class="ct-section-title" th:text="#{createTicket.section.routing}">Routage & priorité</h2>
+
+                <label class="form-label" for="ctHandlingSd" th:text="#{createTicket.field.handlingDirection}">
+                    Direction chargée du traitement (DGDA)</label>
+                <select id="ctHandlingSd" class="form-input" required>
+                    <option value="" th:if="${editTicket == null}" disabled selected th:text="#{createTicket.ph.handlingDirection}">
+                        Choisir…</option>
+                    <option th:each="sd : ${sousDirections}"
+                            th:value="${sd.id}"
+                            th:text="${sd.name}"
+                            th:selected="${editTicket != null and editTicket.handlingSousDirectionId != null and editTicket.handlingSousDirectionId == sd.id}">
+                        DGDA</option>
+                </select>
+
+                <label class="form-label" for="ctHandlingDir" th:text="#{createTicket.field.handlingSousDirection}">
+                    Sous-direction de traitement</label>
+                <select id="ctHandlingDir" name="handlingDirectionId" class="form-input" required>
+                </select>
+
+                <p class="muted ct-field-hint ct-field-hint--routing"
+                   th:text="#{createTicket.hint.handlingDgdaPair}">
+                    Choisissez d’abord la direction DGDA de traitement…
+                </p>
+
+                <p class="muted ct-field-hint ct-field-hint--routing"
+                   th:text="#{createTicket.hint.handling}">
+                    Les sous-directeurs rattachés à la direction de traitement reçoivent un e-mail pour affecter la demande.
+                </p>
+
+                <label class="form-label" for="ctPriority" th:text="#{createTicket.field.priority}">
+                    Priorité</label>
+                <select id="ctPriority" name="priority" class="form-input">
+                    <option value="LOW" th:selected="${editTicket != null and editTicket.priority == 'LOW'}"
+                            th:text="${@uiLabels.ticketPriority('LOW', #locale)}">LOW</option>
+                    <option value="MEDIUM" th:selected="${editTicket == null or editTicket.priority == 'MEDIUM'}"
+                            th:text="${@uiLabels.ticketPriority('MEDIUM', #locale)}">MEDIUM</option>
+                    <option value="HIGH" th:selected="${editTicket != null and editTicket.priority == 'HIGH'}"
+                            th:text="${@uiLabels.ticketPriority('HIGH', #locale)}">HIGH</option>
+                    <option value="CRITICAL" th:selected="${editTicket != null and editTicket.priority == 'CRITICAL'}"
+                            th:text="${@uiLabels.ticketPriority('CRITICAL', #locale)}">CRITICAL</option>
+                </select>
+
+                <h2 class="ct-section-title" th:text="#{createTicket.section.attachments}">Pièces jointes</h2>
+
+                <label class="form-label" for="ctFiles" th:text="#{createTicket.field.attachments}">
+                    Images / fichiers</label>
+                <div class="create-ticket-file-box">
+                    <input id="ctFiles" name="files" class="form-input" type="file" multiple
+                           accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.xlsx,.txt"
+                           data-dnd-uploader="true"/>
+                </div>
+                <p class="muted form-hint ct-field-hint--span" th:if="${editTicket != null}"
+                   th:text="#{createTicket.editAttachmentsHint}">
+                    Optional — add more files.
+                </p>
+            </div>
+
+            <div class="create-ticket-actions">
+                <a class="secondary-btn" th:if="${editTicket != null}" th:href="@{/app/my-activity}"
+                   th:text="#{createTicket.cancelToActivity}">Retour</a>
+                <button type="reset" class="secondary-btn" th:unless="${editTicket != null}"
+                        th:text="#{createTicket.clear}">Effacer</button>
+                <button type="submit" class="primary-btn"
+                        th:text="${editTicket != null} ? #{createTicket.saveChanges} : #{createTicket.create}">
+                    Créer le ticket
+                </button>
+            </div>
+        </form>
+            </div>
+        </div>
+
+        <button type="button" id="ctAssistantShowBtn" class="ct-assistant-reopen-fab" hidden
+                th:if="${editTicket == null}"
+                th:title="#{createTicket.assistant.show}"
+                th:attr="aria-label=#{createTicket.assistant.show}">✦</button>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.syscoCreateTicketAssistant = {
+            chatUrl: /*[[@{/app/create-ticket/api/assistant/chat}]]*/ '/app/create-ticket/api/assistant/chat',
+            resetUrl: /*[[@{/app/create-ticket/api/assistant/reset}]]*/ '/app/create-ticket/api/assistant/reset',
+            suggestHandlingUrl: /*[[@{/app/create-ticket/api/assistant/suggest-handling}]]*/ '/app/create-ticket/api/assistant/suggest-handling',
+            msgBoot: /*[[#{createTicket.assistant.bootLoading}]]*/ '',
+            msgError: /*[[#{createTicket.assistant.error}]]*/ '',
+            createdTicketRef: /*[[${createdTicketRef}]]*/ '',
+            msgCreatedRef: /*[[#{createTicket.assistant.createdRef}]]*/ ''
+        };
+        /*]]>*/
+    </script>
+    <script th:inline="javascript">
+        (function () {
+            var handlingDirPlaceholder = /*[[#{createTicket.ph.handlingSousDirection}]]*/ 'Select';
+            var form = document.querySelector('form[data-upload-enhanced]');
+            if (!form) return;
+            var raw = document.getElementById('ctDirectionsBySd');
+            var map = {};
+            try {
+                map = JSON.parse(raw.textContent || '{}');
+            } catch (e) {
+                map = {};
+            }
+            var handlingSdSel = document.getElementById('ctHandlingSd');
+            var handlingDirSel = document.getElementById('ctHandlingDir');
+            var stepIndicator = document.querySelector('.ct-step-indicator');
+            var presetEl = document.getElementById('ctPreset');
+            var summaryEl = document.getElementById('ctSummary');
+            var reporterSdEl = document.getElementById('ctReporterSd');
+            var reporterDirEl = document.getElementById('ctReporterDir');
+            var reportingOfficeEl = document.getElementById('ctReportingOffice');
+            var filesEl = document.getElementById('ctFiles');
+
+            function setStepState(stepKey, ok) {
+                if (!stepIndicator) return;
+                var li = stepIndicator.querySelector('li[data-step="' + stepKey + '"]');
+                if (!li) return;
+                li.classList.remove('is-done', 'is-pending');
+                li.classList.add(ok ? 'is-done' : 'is-pending');
+            }
+
+            function updateStepIndicator() {
+                var issueDone = !!(presetEl && presetEl.value && summaryEl && summaryEl.value && summaryEl.value.trim());
+                var routingDone = !!(reporterSdEl && reporterSdEl.value && reporterDirEl && reporterDirEl.value
+                    && reportingOfficeEl && reportingOfficeEl.value && reportingOfficeEl.value.trim()
+                    && handlingSdSel && handlingSdSel.value && handlingDirSel && handlingDirSel.value);
+                var filesDone = !!(filesEl && filesEl.files && filesEl.files.length > 0);
+                setStepState('issue', issueDone);
+                setStepState('routing', routingDone);
+                setStepState('files', filesDone);
+            }
+
+            function refillPair(sdVal, dirSelEl, placeholderText) {
+                var rows = map[sdVal] || [];
+                var prev = dirSelEl.value;
+                dirSelEl.innerHTML = '';
+                var placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.disabled = true;
+                placeholder.selected = rows.length === 0;
+                placeholder.textContent = placeholderText;
+                dirSelEl.appendChild(placeholder);
+                rows.forEach(function (r) {
+                    var o = document.createElement('option');
+                    o.value = r.id;
+                    o.textContent = r.name || ('#' + r.id);
+                    dirSelEl.appendChild(o);
+                });
+                if (prev && Array.prototype.some.call(dirSelEl.options, function (o) { return o.value === prev; })) {
+                    dirSelEl.value = prev;
+                } else if (rows.length > 0) {
+                    dirSelEl.selectedIndex = 1;
+                }
+            }
+
+            function refillHandlingDirs() {
+                refillPair(handlingSdSel.value, handlingDirSel, handlingDirPlaceholder);
+            }
+
+            if (handlingSdSel && handlingDirSel) {
+                handlingSdSel.addEventListener('change', refillHandlingDirs);
+                refillHandlingDirs();
+            }
+            var descEl = document.getElementById('ctDesc');
+            var assistCfg = window.syscoCreateTicketAssistant || {};
+            var suggestHandlingUrl = assistCfg.suggestHandlingUrl || '';
+            var suggestTimer = null;
+            var handlingLockedByUser = false;
+            function csrfPairForm() {
+                var tokenMeta = document.querySelector('meta[name="_csrf"]');
+                var headerMeta = document.querySelector('meta[name="_csrf_header"]');
+                return {
+                    token: tokenMeta ? tokenMeta.getAttribute('content') : '',
+                    header: headerMeta ? headerMeta.getAttribute('content') : ''
+                };
+            }
+            if (handlingSdSel) {
+                handlingSdSel.addEventListener('change', function (e) {
+                    if (e && e.isTrusted) handlingLockedByUser = true;
+                });
+            }
+            if (handlingDirSel) {
+                handlingDirSel.addEventListener('change', function (e) {
+                    if (e && e.isTrusted) handlingLockedByUser = true;
+                });
+            }
+            function scheduleSuggestHandling() {
+                if (editMode || !suggestHandlingUrl || !handlingSdSel || !handlingDirSel) return;
+                if (suggestTimer) clearTimeout(suggestTimer);
+                suggestTimer = setTimeout(runSuggestHandling, 450);
+            }
+            function runSuggestHandling() {
+                if (editMode || !suggestHandlingUrl || !handlingSdSel || !handlingDirSel) return;
+                if (handlingLockedByUser) return;
+                var sum = summaryEl && summaryEl.value ? summaryEl.value.trim() : '';
+                var d = descEl && descEl.value ? descEl.value.trim() : '';
+                if (sum.length < 4 && d.length < 10) return;
+                var preset = presetEl && presetEl.value ? presetEl.value.trim() : '';
+                var csrf = csrfPairForm();
+                var headers = {'Content-Type': 'application/json'};
+                if (csrf.token && csrf.header) headers[csrf.header] = csrf.token;
+                fetch(suggestHandlingUrl, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        issuePresetCode: preset,
+                        summary: sum,
+                        description: d
+                    })
+                }).then(function (r) {
+                    return r.ok ? r.json() : {};
+                }).then(function (data) {
+                    if (!data || !data.handlingSousDirectionId || !data.handlingDirectionId) return;
+                    if (handlingLockedByUser) return;
+                    handlingSdSel.value = String(data.handlingSousDirectionId);
+                    refillHandlingDirs();
+                    window.requestAnimationFrame(function () {
+                        handlingDirSel.value = String(data.handlingDirectionId);
+                        handlingDirSel.dispatchEvent(new Event('change', { bubbles: true }));
+                        updateStepIndicator();
+                    });
+                }).catch(function () {});
+            }
+            [presetEl, summaryEl, descEl, reporterSdEl, reporterDirEl, reportingOfficeEl, handlingSdSel, handlingDirSel, filesEl]
+                .forEach(function (el) {
+                    if (!el) return;
+                    el.addEventListener('input', updateStepIndicator);
+                    el.addEventListener('change', updateStepIndicator);
+                });
+            [presetEl, summaryEl, descEl].forEach(function (el) {
+                if (!el || editMode) return;
+                el.addEventListener('input', scheduleSuggestHandling);
+                el.addEventListener('change', scheduleSuggestHandling);
+            });
+
+            var editMode = form.getAttribute('data-ct-edit') === '1';
+            if (editMode) {
+                var preReporterSd = form.getAttribute('data-ct-reporter-sd');
+                var preReporterDir = form.getAttribute('data-ct-reporter-dir');
+                var preReportingOffice = form.getAttribute('data-ct-reporting-office');
+                var repSd = document.getElementById('ctReporterSd');
+                var repDir = document.getElementById('ctReporterDir');
+                var repOffice = document.getElementById('ctReportingOffice');
+                if (repSd && preReporterSd) repSd.value = preReporterSd;
+                if (repDir && preReporterDir) repDir.value = preReporterDir;
+                if (repOffice && preReportingOffice) repOffice.value = preReportingOffice;
+                var preHandlingSd = form.getAttribute('data-ct-handling-sd');
+                var preHandlingDir = form.getAttribute('data-ct-handling-dir');
+                if (handlingSdSel && handlingDirSel && preHandlingSd) {
+                    handlingSdSel.value = preHandlingSd;
+                    refillHandlingDirs();
+                }
+                if (handlingDirSel && preHandlingDir) {
+                    handlingDirSel.value = preHandlingDir;
+                }
+            }
+            updateStepIndicator();
+        })();
+    </script>
+    <script th:if="${editTicket == null}">
+        (function () {
+            var cfg = window.syscoCreateTicketAssistant || {};
+            var thread = document.getElementById('ctAssistantThread');
+            var input = document.getElementById('ctAssistantInput');
+            var sendBtn = document.getElementById('ctAssistantSend');
+            var resetBtn = document.getElementById('ctAssistantReset');
+            var readyBanner = document.getElementById('ctAssistantReady');
+            if (!thread || !input || !sendBtn || !cfg.chatUrl) return;
+
+            function csrfPair() {
+                var tokenMeta = document.querySelector('meta[name="_csrf"]');
+                var headerMeta = document.querySelector('meta[name="_csrf_header"]');
+                return {
+                    token: tokenMeta ? tokenMeta.getAttribute('content') : '',
+                    header: headerMeta ? headerMeta.getAttribute('content') : ''
+                };
+            }
+
+            function esc(s) {
+                return (s || '').replace(/[&<>"']/g, function (c) {
+                    return ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]);
+                });
+            }
+
+            function appendBubble(role, text) {
+                var div = document.createElement('div');
+                div.className = 'chat-msg ct-assistant-msg' + (role === 'user' ? ' mine' : '');
+                var inner = '<div class="chat-msg-head"><div class="chat-avatar">' +
+                    (role === 'user' ? 'M' : 'AI') +
+                    '</div><strong>' + (role === 'user' ? 'Vous' : 'Assistant') + '</strong></div>';
+                var lines = (text || '').split('\n');
+                inner += '<div class="ct-assistant-msg-body">';
+                for (var i = 0; i < lines.length; i++) {
+                    inner += '<p>' + esc(lines[i]) + '</p>';
+                }
+                inner += '</div>';
+                div.innerHTML = inner;
+                thread.appendChild(div);
+                thread.scrollTop = thread.scrollHeight;
+            }
+
+            function applyPrefill(prefill) {
+                if (!prefill) return;
+                var s = document.getElementById('ctSummary');
+                var d = document.getElementById('ctDesc');
+                var preset = document.getElementById('ctPreset');
+                var pri = document.getElementById('ctPriority');
+                if (prefill.summary != null && prefill.summary !== '' && s) s.value = prefill.summary;
+                if (prefill.description != null && prefill.description !== '' && d) d.value = prefill.description;
+                if (prefill.issuePresetCode != null && prefill.issuePresetCode !== '' && preset) {
+                    preset.value = prefill.issuePresetCode;
+                    preset.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (prefill.priority != null && prefill.priority !== '' && pri) {
+                    pri.value = prefill.priority;
+                }
+                var sdH = document.getElementById('ctHandlingSd');
+                var dirH = document.getElementById('ctHandlingDir');
+                var repSd = document.getElementById('ctReporterSd');
+                var repDir = document.getElementById('ctReporterDir');
+                var repOffice = document.getElementById('ctReportingOffice');
+                if (prefill.reporterSousDirectionId != null && prefill.reporterSousDirectionId !== '' && repSd) {
+                    repSd.value = String(prefill.reporterSousDirectionId);
+                }
+                if (prefill.reporterDirectionId != null && prefill.reporterDirectionId !== '' && repDir) {
+                    repDir.value = String(prefill.reporterDirectionId);
+                }
+                if (prefill.reportingOffice != null && prefill.reportingOffice !== '' && repOffice) {
+                    repOffice.value = String(prefill.reportingOffice);
+                }
+                if (prefill.handlingSousDirectionId != null && prefill.handlingSousDirectionId !== ''
+                        && prefill.handlingDirectionId != null && prefill.handlingDirectionId !== ''
+                        && sdH && dirH) {
+                    sdH.value = String(prefill.handlingSousDirectionId);
+                    sdH.dispatchEvent(new Event('change', { bubbles: true }));
+                    var hid = String(prefill.handlingDirectionId);
+                    window.requestAnimationFrame(function () {
+                        dirH.value = hid;
+                        dirH.dispatchEvent(new Event('change', { bubbles: true }));
+                        window.requestAnimationFrame(function () {
+                            var evt = new Event('input', { bubbles: true });
+                            if (repOffice) repOffice.dispatchEvent(evt);
+                            if (dirH) dirH.dispatchEvent(evt);
+                        });
+                    });
+                }
+            }
+
+            function postChat(message, doneFn) {
+                var csrf = csrfPair();
+                var headers = {'Content-Type': 'application/json'};
+                if (csrf.token && csrf.header) headers[csrf.header] = csrf.token;
+                fetch(cfg.chatUrl, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({message: message == null ? '' : message})
+                }).then(function (r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                }).then(function (data) {
+                    if (doneFn) {
+                        doneFn();
+                    }
+                    appendBubble('assistant', data.reply || '');
+                    applyPrefill(data.prefill);
+                    if (readyBanner) {
+                        if (data.conversationComplete) {
+                            readyBanner.hidden = false;
+                        } else {
+                            readyBanner.hidden = true;
+                        }
+                    }
+                }).catch(function () {
+                    if (doneFn) {
+                        doneFn();
+                    }
+                    appendBubble('assistant', cfg.msgError || 'Error');
+                });
+            }
+
+            function boot() {
+                thread.innerHTML = '';
+                if (readyBanner) readyBanner.hidden = true;
+                if (cfg.createdTicketRef) {
+                    var doneMsg = cfg.msgCreatedRef || 'Ticket created successfully. Reference: {0}.';
+                    appendBubble('assistant', doneMsg.replace('{0}', String(cfg.createdTicketRef)));
+                    return;
+                }
+                appendBubble('assistant', cfg.msgBoot || '…');
+                postChat('', function () {
+                    if (thread.firstChild) {
+                        thread.removeChild(thread.firstChild);
+                    }
+                });
+            }
+
+            sendBtn.addEventListener('click', function () {
+                var t = (input.value || '').trim();
+                if (!t) return;
+                appendBubble('user', t);
+                input.value = '';
+                postChat(t);
+            });
+
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendBtn.click();
+                }
+            });
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function () {
+                    var csrf = csrfPair();
+                    var headers = {};
+                    if (csrf.token && csrf.header) headers[csrf.header] = csrf.token;
+                    fetch(cfg.resetUrl, {method: 'POST', headers: headers}).finally(function () {
+                        boot();
+                    });
+                });
+            }
+
+            boot();
+        })();
+    </script>
+    <script th:if="${editTicket == null}">
+        (function () {
+            var shell = document.querySelector('.create-ticket-shell.ct-jira-shell');
+            var panel = document.getElementById('ctAssistantPanel');
+            var hideBtn = document.getElementById('ctAssistantHideBtn');
+            var showBtn = document.getElementById('ctAssistantShowBtn');
+            if (!shell || !panel || !hideBtn || !showBtn) {
+                return;
+            }
+            hideBtn.addEventListener('click', function () {
+                panel.hidden = true;
+                showBtn.hidden = false;
+                shell.classList.remove('ct-has-assistant');
+                try {
+                    showBtn.focus();
+                } catch (ignore) {}
+            });
+            showBtn.addEventListener('click', function () {
+                panel.hidden = false;
+                showBtn.hidden = true;
+                shell.classList.add('ct-has-assistant');
+                var inp = document.getElementById('ctAssistantInput');
+                if (inp) {
+                    try {
+                        inp.focus();
+                    } catch (ignore) {}
+                }
+            });
+        })();
+    </script>
+</section>
+</body>
+</html>

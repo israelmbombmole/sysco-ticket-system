@@ -1,0 +1,35 @@
+# Training / demo instance — activate with:
+#   java -jar sysco-web.jar --spring.profiles.active=formation
+# or: set SPRING_PROFILES_ACTIVE=formation
+#
+# Uses a separate H2 file DB and upload folder so exercise data never touches your usual dev DB.
+#
+# Default HTTP port 9081 — avoids clashes with common dev ports (8080, 8081).
+# If 9081 is busy too: mvn spring-boot:run -Dspring-boot.run.profiles=formation -Dspring-boot.run.arguments="--server.port=9090"
+# Or cmd: set SERVER_PORT=9090
+
+spring:
+  devtools:
+    livereload:
+      enabled: false
+  datasource:
+    url: jdbc:h2:file:./data/sysco-web-formation-db;MODE=LEGACY;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;AUTO_SERVER=TRUE
+
+server:
+  port: 9081
+  servlet:
+    session:
+      # Avoid sharing login cookies if you ever alternate profiles on the same host/port.
+      cookie:
+        name: SYSCOSESSION_FORMATION
+
+sysco:
+  formation:
+    enabled: true
+  uploads:
+    directory: ${SYSCO_UPLOAD_DIR:${user.home}/.sysco-web-formation/uploads}
+  # Do not send real ticket mail from a sandbox unless you override SMTP explicitly.
+  mail:
+    public-base-url: ${SYSCO_PUBLIC_BASE_URL:http://localhost:9081}
+  assistant:
+    openai-api-key: ""

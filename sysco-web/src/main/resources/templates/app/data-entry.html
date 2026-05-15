@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Data entry</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page data-entry-page">
+    <div class="data-entry-sysco-wrap">
+        <h1 class="title-large data-entry-sysco-title" th:text="#{dataEntry.formTitle}">Saisie des données Courier</h1>
+        <div class="page-alerts">
+            <p class="success-banner" th:if="${createdTicketRef != null}"
+               th:text="#{dataEntry.flash.success(${createdTicketRef})}">
+                Saved.
+            </p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{__${errorKey}__}">
+                Error
+            </p>
+        </div>
+
+        <form class="data-entry-form data-entry-sysco-form" th:action="@{/app/data-entry}" method="post" enctype="multipart/form-data" data-upload-enhanced="true">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <div class="form-grid-single">
+            <label class="form-label" for="dateEnreg" th:text="#{dataEntry.dateEnreg}">Registration date</label>
+            <input class="form-input" id="dateEnreg" type="text" readonly
+                   th:value="${todayDisplay}"/>
+
+            <label class="form-label" for="expediteur" th:text="#{dataEntry.expediteur}">Sender</label>
+            <input class="form-input" id="expediteur" name="expediteur" type="text" required maxlength="2000"
+                   th:value="${form.expediteur()}"
+                   autocomplete="off"/>
+
+            <label class="form-label" for="objet" th:text="#{dataEntry.objet}">Subject</label>
+            <textarea class="form-textarea" id="objet" name="objet" required rows="4" maxlength="12000"
+                      th:text="${form.objet()}"></textarea>
+
+            <label class="form-label" for="priority" th:text="#{dataEntry.priority}">Priority</label>
+            <select class="form-input" id="priority" name="priority">
+                <option th:each="p : ${priorities}" th:value="${p}"
+                        th:text="${@uiLabels.ticketPriority(p, #locale)}"
+                        th:selected="${p == form.normalizedPriority()}">MEDIUM</option>
+            </select>
+
+            <label class="form-label" for="files" th:text="#{dataEntry.attachments}">Attachments</label>
+            <div class="data-entry-file-row">
+                <input class="form-input" id="files" name="files" type="file" multiple data-dnd-uploader="true"
+                       accept=".png,.jpg,.jpeg,.pdf,.docx,.xlsx,.txt,image/png,image/jpeg,application/pdf"/>
+                <p class="muted form-hint" th:text="#{dataEntry.attachmentsHint}">
+                    Optional — same extensions as the desktop file chooser.
+                </p>
+            </div>
+        </div>
+
+        <div class="form-actions data-entry-sysco-actions">
+            <button type="button" class="secondary-btn" id="data-entry-open-recent"
+                    th:text="#{dataEntry.openRecent}">View recent entries</button>
+            <button type="submit" class="primary-btn" th:text="#{dataEntry.save}">Save</button>
+        </div>
+        </form>
+    </div>
+
+    <div id="data-entry-recent-modal" class="data-entry-recent-modal" hidden role="dialog"
+         aria-modal="true" aria-labelledby="data-entry-recent-modal-title">
+        <div class="data-entry-recent-modal-backdrop" data-close-modal="1"></div>
+        <div class="data-entry-recent-modal-panel card dash-table-card">
+            <button type="button" class="data-entry-recent-modal-close" data-close-modal="1"
+                    th:aria-label="#{dataEntry.modal.close}">&times;</button>
+            <h2 id="data-entry-recent-modal-title" class="dash-heading data-entry-recent-modal-heading"
+                th:text="#{dataEntry.section.recent}">My recent entries</h2>
+            <table class="sysco-table">
+                <thead>
+                <tr>
+                    <th th:text="#{dataEntry.col.id}">ID</th>
+                    <th th:text="#{dataEntry.col.number}">Number</th>
+                    <th th:text="#{dataEntry.col.title}">Title</th>
+                    <th th:text="#{dataEntry.col.status}">Status</th>
+                    <th th:text="#{dataEntry.col.priority}">Priority</th>
+                    <th th:text="#{dataEntry.col.view}">View</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${recentEntries}">
+                    <td th:text="${row.id()}">1</td>
+                    <td th:text="${row.ticketNumber()}">TCK</td>
+                    <td th:text="${row.title()}">—</td>
+                    <td th:text="${@uiLabels.ticketStatus(row.status(), #locale)}">OPEN</td>
+                    <td th:text="${@uiLabels.ticketPriority(row.priority(), #locale)}">MEDIUM</td>
+                    <td>
+                        <a class="link-pill"
+                           th:if="${row.id() != null}"
+                           th:href="@{/app/ticket-management/{id}(id=${row.id()})}"
+                           th:text="#{dataEntry.col.view}">View</a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(recentEntries)}">
+                    <td colspan="6" class="muted" th:text="#{dataEntry.noRecent}">No recent entries.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        (function () {
+            var modal = document.getElementById('data-entry-recent-modal');
+            var openBtn = document.getElementById('data-entry-open-recent');
+            if (!modal || !openBtn) return;
+
+            function openModal() {
+                modal.hidden = false;
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeModal() {
+                modal.hidden = true;
+                document.body.style.overflow = '';
+                openBtn.focus();
+            }
+
+            openBtn.addEventListener('click', openModal);
+            modal.querySelectorAll('[data-close-modal="1"]').forEach(function (el) {
+                el.addEventListener('click', closeModal);
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !modal.hidden) {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
+</section>
+</body>
+</html>

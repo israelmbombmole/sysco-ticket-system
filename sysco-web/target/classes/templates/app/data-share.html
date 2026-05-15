@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Data share</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page data-share-page">
+    <div class="card page-panel data-share-shell">
+        <h1 class="title-large" th:text="#{${pageTitleKey}}">Partage de données</h1>
+        <div class="page-alerts" th:if="${successKey != null or errorKey != null or otpInfo != null}">
+            <p class="success-banner" th:if="${successKey != null}" role="status" aria-live="polite"
+               th:text="#{${successKey}}">Succès</p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Erreur</p>
+            <p class="muted form-hint data-share-otp-banner" th:if="${otpInfo != null}">
+                <span th:text="#{dataShare.flash.otpSummaryLabel}">OTP</span>
+                <strong th:text="${otpInfo}">OTP info</strong>
+            </p>
+        </div>
+
+        <details class="data-share-send-collapsible" th:open="${sharePanelOpen}">
+            <summary class="data-share-send-summary" th:text="#{dataShare.toggleShareForm}">Partager un fichier</summary>
+            <div class="data-share-send-body">
+                <form id="dsDirectionForm" class="data-share-filter-form" method="get" th:action="@{/app/data-share}">
+                    <input type="hidden" name="fileQ" th:value="${page.fileQ}"/>
+                    <input type="hidden" name="shareOpen" id="dsShareOpenInput" th:value="${sharePanelOpen ? '1' : ''}"/>
+                    <div class="data-share-exp-row">
+                        <label class="form-label" for="dsSousDirection" th:text="#{dataShare.direction}">Direction</label>
+                        <select id="dsSousDirection" class="form-input" name="sousDirectionId"
+                                onchange="if (this.form) this.form.requestSubmit();">
+                            <option value="" th:text="#{courier.filterAllDirections}">All directions</option>
+                            <option th:each="sd : ${page.sousDirections()}" th:value="${sd.id()}" th:text="${sd.name()}"
+                                    th:selected="${page.selectedSousDirectionId() != null and page.selectedSousDirectionId() == sd.id()}">
+                                Direction
+                            </option>
+                        </select>
+                    </div>
+                    <div class="data-share-exp-row">
+                        <label class="form-label" for="dsDirection" th:text="#{dataShare.sousDirection}">Sous-direction</label>
+                        <select id="dsDirection" class="form-input" name="directionId"
+                                onchange="if (this.form) this.form.requestSubmit();">
+                            <option value="" th:text="#{dataShare.allSousDirections}">All sous-directions</option>
+                            <option th:each="d : ${page.directions()}" th:value="${d.id()}" th:text="${d.name()}"
+                                    th:selected="${page.selectedDirectionId() != null and page.selectedDirectionId() == d.id()}">
+                                Sous-direction
+                            </option>
+                        </select>
+                    </div>
+                </form>
+
+                <form method="post" th:action="@{/app/data-share/share}" enctype="multipart/form-data"
+                      data-upload-enhanced="true" data-upload-native-submit="true">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="sousDirectionId" th:value="${page.selectedSousDirectionId()}"/>
+                    <input type="hidden" name="directionId" th:value="${page.selectedDirectionId()}"/>
+                    <div class="data-share-upload-row">
+                        <label class="form-label" for="dsFile" th:text="#{dataShare.fileToShare}">Fichier sélectionné</label>
+                        <input class="form-input" id="dsFile" type="file" name="file" multiple data-dnd-uploader="true"/>
+                    </div>
+
+                    <div class="data-share-exp-row">
+                        <label class="form-label" for="dsExpDate" th:text="#{dataShare.expDate}">Date d'expiration</label>
+                        <input class="form-input" id="dsExpDate" type="date" name="expiresAt"/>
+                        <p class="muted form-hint data-share-field-hint" th:text="#{dataShare.expDateHint}">Optional calendar date.</p>
+                    </div>
+
+                    <div class="data-share-exp-row">
+                        <label class="form-label" for="dsVisMin" th:text="#{dataShare.visibilityMinutes}">Minutes</label>
+                        <input class="form-input" id="dsVisMin" type="number" name="visibilityMinutes" min="1"
+                               th:placeholder="#{dataShare.visibilityPlaceholder}" autocomplete="off"/>
+                        <p class="muted form-hint data-share-field-hint" th:text="#{dataShare.visibilityHint}">Hint</p>
+                    </div>
+
+                    <h3 class="courier-subheading" th:text="#{dataShare.pickRecipients}">Sélectionner les destinataires</h3>
+                    <div class="data-share-recipient-live-wrap" th:unless="${#lists.isEmpty(page.recipients)}">
+                        <div class="data-share-exp-row">
+                            <label class="form-label" for="dsRecipientLiveFilter" th:text="#{dataShare.recipientSearchLabel}">
+                                Rechercher un destinataire
+                            </label>
+                            <input class="form-input" id="dsRecipientLiveFilter" type="search" autocomplete="off"
+                                   th:placeholder="#{dataShare.recipientSearchPlaceholder}"/>
+                        </div>
+                    </div>
+                    <p class="muted form-hint" th:if="${#lists.isEmpty(page.recipients)}"
+                       th:text="#{dataShare.noRecipientsForFilter}">No recipients.</p>
+                    <div id="dsRecipientList" class="data-share-recipient-list" th:unless="${#lists.isEmpty(page.recipients)}">
+                        <label class="data-share-recipient-item" th:each="r : ${page.recipients}"
+                               th:attr="data-search-text=${#strings.toLowerCase(r.username + ' ' + r.role + ' ' + r.directionName)}">
+                            <input type="checkbox" name="recipientIds" th:value="${r.id}"/>
+                            <span th:text="${r.username + ' - ' + r.role + ' - ' + r.directionName}">admin2 - ADMIN - Direction</span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="success-btn" th:text="#{dataShare.shareBtn}">Partager le fichier</button>
+                    </div>
+                </form>
+            </div>
+        </details>
+
+        <h3 class="courier-subheading" th:text="#{dataShare.receivedFiles}">Fichiers Reçu</h3>
+        <p class="muted form-hint data-share-otp-hint" th:text="#{dataShare.receivedOtpHint}">
+            Le code OTP est envoyé dans vos notifications lors de la réception du fichier.
+        </p>
+        <form class="data-share-recipient-search" method="get" th:action="@{/app/data-share}">
+            <label class="form-label" for="dsFileSearch" th:text="#{dataShare.search}">Rechercher</label>
+            <input class="form-input" id="dsFileSearch" type="text" name="fileQ" th:value="${page.fileQ}" th:placeholder="#{dataShare.fileSearchPlaceholder}"/>
+            <input type="hidden" name="directionId" th:value="${page.selectedDirectionId()}"/>
+            <input type="hidden" name="sousDirectionId" th:value="${page.selectedSousDirectionId()}"/>
+            <input type="hidden" name="shareOpen" value="1" th:if="${sharePanelOpen}"/>
+            <button type="submit" class="secondary-btn btn-sm" th:text="#{dataShare.search}">Rechercher</button>
+        </form>
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{dataShare.col.fileName}">Nom du fichier</th>
+                <th th:text="#{dataShare.col.sharedBy}">Partagé par</th>
+                <th th:text="#{dataShare.col.role}">Rôle</th>
+                <th th:text="#{dataShare.col.date}">Date</th>
+                <th th:text="#{dataShare.col.time}">Heure</th>
+                <th th:text="#{dataShare.col.visibleUntil}">Visible jusqu'au</th>
+                <th th:text="#{dataShare.col.preview}">Aperçu</th>
+                <th th:text="#{dataShare.col.download}">Télécharger</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="f : ${page.receivedFiles}" th:classappend="${f.expired} ? ' data-share-row-expired' : ''">
+                <td th:text="${f.fileName}">file.pdf</td>
+                <td th:text="${f.sharedBy}">admin</td>
+                <td th:text="${f.role}">ADMIN</td>
+                <td th:text="${f.date}">2026-04-28</td>
+                <td th:text="${f.time}">13:10:00</td>
+                <td>
+                    <span th:if="${f.visibleUntil != null and !#strings.isEmpty(f.visibleUntil)}" th:text="${f.visibleUntil}">—</span>
+                    <span class="muted" th:if="${f.visibleUntil == null or #strings.isEmpty(f.visibleUntil)}"
+                          th:text="#{dataShare.visibleUnlimited}">—</span>
+                </td>
+                <td>
+                    <button type="button"
+                            th:if="${!f.expired}"
+                            class="my-work-pill my-work-pill-alloc user-pill-btn"
+                            th:attr="onclick=|syscoOpenDataShareOtp(${f.id}, 'preview')|"
+                            th:text="#{dataShare.col.preview}">Aperçu</button>
+                    <span class="muted" th:if="${f.expired}">—</span>
+                </td>
+                <td>
+                    <button type="button"
+                            th:if="${!f.expired}"
+                            class="my-work-pill my-work-pill-view user-pill-btn"
+                            th:attr="onclick=|syscoOpenDataShareOtp(${f.id}, 'download')|"
+                            th:text="#{dataShare.col.download}">Télécharger</button>
+                    <span class="muted" th:if="${f.expired}">—</span>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.receivedFiles)}">
+                <td colspan="8" class="muted" th:text="#{dataShare.emptyTable}">No content in table</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h3 class="courier-subheading" th:text="#{dataShare.sentFiles}">Sent files</h3>
+        <p class="muted form-hint" th:text="#{dataShare.sentHint}">
+            Extend access or generate a new OTP for files you shared. Uses the same search and direction as above.
+        </p>
+        <table class="sysco-table data-share-sent-table">
+            <thead>
+            <tr>
+                <th th:text="#{dataShare.col.fileName}">Nom du fichier</th>
+                <th th:text="#{dataShare.col.recipient}">Destinataire</th>
+                <th th:text="#{dataShare.col.role}">Rôle</th>
+                <th th:text="#{dataShare.col.date}">Date</th>
+                <th th:text="#{dataShare.col.visibleUntil}">Visible jusqu'au</th>
+                <th th:text="#{dataShare.col.actions}">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="f : ${page.sentFiles}" th:classappend="${f.expired} ? ' data-share-row-expired' : ''">
+                <td th:text="${f.fileName}">doc.pdf</td>
+                <td th:text="${f.recipient}">user2</td>
+                <td>
+                    <span th:if="${!#strings.isEmpty(f.role)}" th:text="${f.role}">ROLE</span>
+                    <span class="muted" th:if="${#strings.isEmpty(f.role)}">—</span>
+                </td>
+                <td th:text="${f.date + ' ' + f.time}">2026-05-02 14:06:19</td>
+                <td>
+                    <span th:if="${f.visibleUntil != null and !#strings.isEmpty(f.visibleUntil)}"
+                          th:text="${f.visibleUntil}">—</span>
+                    <span class="muted" th:if="${f.visibleUntil == null or #strings.isEmpty(f.visibleUntil)}"
+                          th:text="#{dataShare.visibleUnlimited}">—</span>
+                </td>
+                <td class="my-activity-actions-cell data-share-actions-cell">
+                    <button type="button"
+                            class="my-activity-actions-toggle data-share-manage-open-btn"
+                            data-ds-manage-open="true"
+                            th:attr="aria-haspopup='dialog', aria-controls='dataShareManageDialog'"
+                            th:data-file-id="${f.id}"
+                            th:data-file-name="${f.fileName}"
+                            th:text="#{myActivity.btn.manageShare}">Gérer le partage</button>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.sentFiles)}">
+                <td colspan="6" class="muted" th:text="#{dataShare.sentEmpty}">No sent files</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <dialog id="dataShareManageDialog" class="sysco-escalate-dialog data-share-manage-dialog" aria-modal="true">
+            <div class="sysco-escalate-dialog-surface">
+                <header class="sysco-escalate-dialog-header">
+                    <h2 class="sysco-escalate-dialog-title" th:text="#{dataShare.manageDialogTitle}">Manage share</h2>
+                    <button type="button" class="sysco-escalate-dialog-x" id="dataShareManageCloseX"
+                            th:attr="aria-label=#{myWork.escalate.closeDialog}">×</button>
+                </header>
+                <div class="sysco-escalate-dialog-body sysco-share-manage-dialog-body data-share-manage-dialog-body">
+                    <p class="muted data-share-manage-file-line">
+                        <span th:text="#{dataShare.manageDialogFile}">File</span>:
+                        <strong id="dataShareManageFileName"></strong>
+                    </p>
+                    <div class="my-activity-share-stack data-share-manage-stack">
+                        <form method="post" class="my-activity-share-form" id="dsManageVisForm" action="#">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="fileQ" th:value="${page.fileQ}"/>
+                            <input type="hidden" name="sousDirectionId" th:value="${page.selectedSousDirectionId()}"/>
+                            <input type="hidden" name="directionId" th:value="${page.selectedDirectionId()}"/>
+                            <input type="hidden" name="shareOpen" value="1" th:if="${sharePanelOpen}"/>
+                            <label class="sr-only" for="dsManageVisMin" th:text="#{myActivity.visibilityMinutesShort}">Min</label>
+                            <input id="dsManageVisMin" type="number" name="visibilityMinutes" min="1"
+                                   class="form-input my-activity-mini-input"
+                                   th:placeholder="#{myActivity.visibilityMinutesPlaceholder}"/>
+                            <input type="datetime-local" id="dsManageVisUntil" name="visibleUntilEnd"
+                                   class="form-input my-activity-datetime-input"
+                                   th:aria-label="#{myActivity.visibilityUntilLabel}"/>
+                            <button type="submit" class="secondary-btn btn-sm" th:text="#{myActivity.btn.updateVisibility}">
+                                Mettre à jour la visibilité
+                            </button>
+                        </form>
+                        <form method="post" class="inline-form data-share-manage-inline-form" id="dsManageOtpForm" action="#">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="fileQ" th:value="${page.fileQ}"/>
+                            <input type="hidden" name="sousDirectionId" th:value="${page.selectedSousDirectionId()}"/>
+                            <input type="hidden" name="directionId" th:value="${page.selectedDirectionId()}"/>
+                            <input type="hidden" name="shareOpen" value="1" th:if="${sharePanelOpen}"/>
+                            <button type="submit" class="primary-btn btn-sm" th:text="#{myActivity.btn.regenerateOtp}">
+                                Nouvel OTP
+                            </button>
+                        </form>
+                        <form method="post" class="my-activity-share-form" id="dsManageReplaceForm" action="#"
+                              enctype="multipart/form-data" data-upload-enhanced="true">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="fileQ" th:value="${page.fileQ}"/>
+                            <input type="hidden" name="sousDirectionId" th:value="${page.selectedSousDirectionId()}"/>
+                            <input type="hidden" name="directionId" th:value="${page.selectedDirectionId()}"/>
+                            <input type="hidden" name="shareOpen" value="1" th:if="${sharePanelOpen}"/>
+                            <input type="file" id="dsManageReplaceFile" name="file" class="form-input my-activity-file-input"
+                                   required data-dnd-uploader="true" data-upload-single="true"/>
+                            <button type="submit" class="secondary-btn btn-sm" th:text="#{myActivity.btn.replaceFile}">
+                                Remplacer le fichier
+                            </button>
+                        </form>
+                        <form method="post" class="inline-form data-share-manage-inline-form" id="dsManageDeleteForm" action="#">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="fileQ" th:value="${page.fileQ}"/>
+                            <input type="hidden" name="sousDirectionId" th:value="${page.selectedSousDirectionId()}"/>
+                            <input type="hidden" name="directionId" th:value="${page.selectedDirectionId()}"/>
+                            <input type="hidden" name="shareOpen" value="1" th:if="${sharePanelOpen}"/>
+                            <button type="submit" class="danger-btn btn-sm" th:text="#{delete}"
+                                    th:data-confirm-msg="#{dataShare.confirmDeleteShare}"
+                                    onclick="return confirm(this.dataset.confirmMsg);">
+                                Supprimer
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+
+        <dialog id="dataShareOtpDialog" class="data-share-otp-dialog">
+            <form method="dialog" class="data-share-otp-dialog-close">
+                <button type="submit" class="data-share-dialog-x" aria-label="Close">&times;</button>
+            </form>
+            <h3 class="dash-heading" th:text="#{dataShare.otpDialogTitle}">Code OTP</h3>
+            <p class="muted" th:text="#{dataShare.otpDialogBody}">Saisissez le code reçu dans vos notifications.</p>
+            <form id="dataShareOtpForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <label class="form-label" for="dataShareOtpInput" th:text="#{dataShare.otpPlaceholder}">OTP</label>
+                <input class="form-input" id="dataShareOtpInput" name="otp" type="text" autocomplete="one-time-code"
+                       maxlength="32" required/>
+                <div class="data-share-otp-dialog-actions">
+                    <button type="submit" class="primary-btn" th:text="#{dataShare.otpDialogConfirm}">Continuer</button>
+                    <button type="button" class="secondary-btn" id="dataShareOtpCancel" th:text="#{dataShare.otpDialogCancel}">Annuler</button>
+                </div>
+            </form>
+        </dialog>
+        <script th:inline="javascript">
+            (function () {
+                var dlg = document.getElementById('dataShareManageDialog');
+                var base = /*[[@{/app/data-share/file/}]]*/ '/app/data-share/file/';
+                var nameEl = document.getElementById('dataShareManageFileName');
+                var visForm = document.getElementById('dsManageVisForm');
+                var otpForm = document.getElementById('dsManageOtpForm');
+                var replaceForm = document.getElementById('dsManageReplaceForm');
+                var delForm = document.getElementById('dsManageDeleteForm');
+                var visMin = document.getElementById('dsManageVisMin');
+                var visUntil = document.getElementById('dsManageVisUntil');
+                var replaceFile = document.getElementById('dsManageReplaceFile');
+                var closeX = document.getElementById('dataShareManageCloseX');
+                function openManage(fileId, fileName) {
+                    if (!dlg || !visForm || !otpForm || !replaceForm || !delForm) {
+                        return;
+                    }
+                    var id = String(fileId);
+                    visForm.action = base + id + '/visibility';
+                    otpForm.action = base + id + '/regenerate-otp';
+                    replaceForm.action = base + id + '/replace';
+                    delForm.action = base + id + '/delete';
+                    if (nameEl) {
+                        nameEl.textContent = fileName || '';
+                    }
+                    if (visMin) {
+                        visMin.value = '';
+                    }
+                    if (visUntil) {
+                        visUntil.value = '';
+                    }
+                    if (replaceFile) {
+                        replaceFile.value = '';
+                    }
+                    dlg.showModal();
+                }
+                document.querySelectorAll('[data-ds-manage-open]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        openManage(btn.getAttribute('data-file-id'), btn.getAttribute('data-file-name'));
+                    });
+                });
+                if (closeX && dlg) {
+                    closeX.addEventListener('click', function () {
+                        dlg.close();
+                    });
+                }
+            })();
+            (function () {
+                var dlg = document.getElementById('dataShareOtpDialog');
+                var form = document.getElementById('dataShareOtpForm');
+                var input = document.getElementById('dataShareOtpInput');
+                var base = /*[[@{/app/data-share/file/}]]*/ '/app/data-share/file/';
+                document.getElementById('dataShareOtpCancel').addEventListener('click', function () {
+                    dlg.close();
+                    input.value = '';
+                });
+                form.addEventListener('submit', function () {
+                    dlg.close();
+                });
+                window.syscoOpenDataShareOtp = function (fileId, mode) {
+                    var path = mode === 'download' ? 'download' : 'preview';
+                    form.action = base + fileId + '/' + path;
+                    input.value = '';
+                    dlg.showModal();
+                    setTimeout(function () {
+                        input.focus();
+                    }, 50);
+                };
+            })();
+        </script>
+        <script>
+            (function () {
+                var details = document.querySelector('.data-share-send-collapsible');
+                var shareOpenInput = document.getElementById('dsShareOpenInput');
+                var dirForm = document.getElementById('dsDirectionForm');
+                if (details && shareOpenInput) {
+                    details.addEventListener('toggle', function () {
+                        shareOpenInput.value = details.open ? '1' : '';
+                    });
+                }
+                if (dirForm && details && shareOpenInput) {
+                    dirForm.addEventListener('submit', function () {
+                        if (details.open) {
+                            shareOpenInput.value = '1';
+                        }
+                    });
+                }
+                var liveInput = document.getElementById('dsRecipientLiveFilter');
+                var list = document.getElementById('dsRecipientList');
+                if (liveInput && list) {
+                    liveInput.addEventListener('input', function () {
+                        var raw = liveInput.value.trim().toLowerCase();
+                        var tokens = raw ? raw.split(/\s+/).filter(function (t) {
+                            return t.length > 0;
+                        }) : [];
+                        list.querySelectorAll('.data-share-recipient-item').forEach(function (lab) {
+                            var hay = (lab.getAttribute('data-search-text') || '').toLowerCase();
+                            var ok = tokens.length === 0 || tokens.every(function (t) {
+                                return hay.indexOf(t) !== -1;
+                            });
+                            lab.style.display = ok ? '' : 'none';
+                        });
+                    });
+                }
+            })();
+        </script>
+    </div>
+</section>
+</body>
+</html>
+

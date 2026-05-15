@@ -13,6 +13,16 @@ public class TicketUtil {
     String base = "TCK-" + Year.now().getValue() + "-" + String.format("%03d", ticketId);
 
     try (Connection c = DB.getConnection()) {
+        try (PreparedStatement psNum = c.prepareStatement("SELECT ticket_number FROM tickets WHERE id = ?")) {
+            psNum.setInt(1, ticketId);
+            ResultSet rsNum = psNum.executeQuery();
+            if (rsNum.next()) {
+                String ticketNumber = rsNum.getString("ticket_number");
+                if (ticketNumber != null && !ticketNumber.isBlank()) {
+                    return ticketNumber;
+                }
+            }
+        }
 
         String sql = """
             SELECT id

@@ -5,6 +5,9 @@ import com.app.dao.AttachmentDAO;
 import com.app.dao.TicketDAO;
 import com.app.dao.TicketTaskDAO;
 import com.app.model.User;
+import com.app.util.BusinessRuleException;
+import com.app.util.I18n;
+import com.app.util.RoleFlowUtil;
 import com.app.util.SecurityUtil;
 
 import java.awt.Desktop;
@@ -15,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
@@ -24,6 +28,7 @@ import javafx.stage.Stage;
 public class AddTaskPopupController {
 
     @FXML private TextField txtTaskTitle;
+    @FXML private TextField txtAgentSearch;
     @FXML private ComboBox<User> cmbAgents;
     @FXML private TextArea txtDescription;
     @FXML private ListView<File> attachmentList;
@@ -31,6 +36,9 @@ public class AddTaskPopupController {
 
     private int ticketId;
     private ObservableList<User> agents;
+    private FilteredList<User> filteredAgents;
+    /** Full assignee list for coverage / multi-assign finalization (may differ from combo when sequential). */
+    private List<User> coverageAssignees;
     private List<File> selectedFiles = new ArrayList<>();
 
     // ============================
@@ -69,19 +77,35 @@ public class AddTaskPopupController {
         // hide attachment frame initially
         attachmentFrame.setVisible(true);
         attachmentFrame.setManaged(true);
-        attachmentList.setPlaceholder(new Label("No files selected"));
+        attachmentList.setPlaceholder(new Label(I18n.t("noFilesSelected", "No files selected")));
     }
 
     // ============================
     // INIT DATA
     // ============================
-    public void initData(int ticketId, ObservableList<User> agents) {
+    public void initData(int ticketId, ObservableList<User> comboAgents) {
+        initData(ticketId, comboAgents, null);
+    }
+
+    /**
+     * @param coverageForMultiAssign if non-null, used for "every assignee has a task" and
+     *                               {@link TicketDAO#assignTicketToMultipleUsers}; otherwise loaded from DB.
+     */
+    public void initData(int ticketId, ObservableList<User> comboAgents, List<User> coverageForMultiAssign) {
         this.ticketId = ticketId;
-        this.agents = agents;
+        this.agents = comboAgents;
 
-        cmbAgents.setItems(agents);
+        if (coverageForMultiAssign != null && !coverageForMultiAssign.isEmpty()) {
+            this.coverageAssignees = new ArrayList<>(coverageForMultiAssign);
+        } else {
+            List<User> ordered = TicketDAO.getActiveAssignedUsersOrdered(ticketId);
+            this.coverageAssignees = ordered.isEmpty() ? null : new ArrayList<>(ordered);
+        }
 
-        if (!agents.isEmpty()) {
+        filteredAgents = new FilteredList<>(comboAgents, u -> true);
+        cmbAgents.setItems(filteredAgents);
+
+        if (!comboAgents.isEmpty()) {
             cmbAgents.getSelectionModel().selectFirst();
         }
 
@@ -100,6 +124,24 @@ public class AddTaskPopupController {
                 setText(empty || user == null ? null : user.getUsername());
             }
         });
+
+        txtAgentSearch.clear();
+        txtAgentSearch.textProperty().addListener((obs, oldVal, newVal) -> {
+            String q = newVal == null ? "" : newVal.trim().toLowerCase();
+            filteredAgents.setPredicate(user -> {
+                if (user == null) return false;
+                if (q.isEmpty()) return true;
+                String username = user.getUsername() == null ? "" : user.getUsername().toLowerCase();
+                String role = user.getRole() == null ? "" : user.getRole().toLowerCase();
+                return username.contains(q) || role.contains(q);
+            });
+
+            if (!filteredAgents.isEmpty() && !filteredAgents.contains(cmbAgents.getValue())) {
+                cmbAgents.getSelectionModel().selectFirst();
+            } else if (filteredAgents.isEmpty()) {
+                cmbAgents.getSelectionModel().clearSelection();
+            }
+        });
     }
 
     // ============================
@@ -116,7 +158,7 @@ private void handleSave() {
     // ✅ STEP 1: BASIC VALIDATION FIRST
     // ============================
     if (taskTitle.isEmpty() || selectedAgent == null) {
-        showError("Please enter task and select agent.");
+        showError(I18n.t("err.selectTaskAndAgent", "Please enter task and select agent."));
         return;
     }
 
@@ -127,20 +169,21 @@ private void handleSave() {
     String targetRole = selectedAgent.getRole();
 
     if (currentRole == null || targetRole == null) {
-        showError("Role configuration error. Contact admin.");
+        showError(I18n.t("err.roleConfiguration", "Role configuration error. Contact admin."));
         return;
     }
 
     if (!canAssignTo(currentRole, targetRole)) {
-        showError("You cannot assign a task to a higher role.");
+        showError(I18n.t("err.assignHigherRole", "You cannot assign a task to a higher role."));
         return;
     }
 
     // ============================
     // ✅ STEP 3: SECURITY CHECK
     // ============================
-    if (!SecurityUtil.canAccessTicket(ticketId)) {
-        showError("You are not allowed to add tasks");
+    boolean canManageByRole = RoleFlowUtil.canSeeUnassignedTicketsForAssignment(currentRole);
+    if (!canManageByRole && !SecurityUtil.canAccessTicket(ticketId)) {
+        showError(I18n.t("err.notAllowedAddTasks", "You are not allowed to add tasks"));
         return;
     }
 
@@ -157,7 +200,7 @@ private void handleSave() {
         );
 
         if (taskId == -1) {
-            showError("Failed to create task");
+            showError(I18n.t("err.failedCreateTask", "Failed to create task"));
             return;
         }
 
@@ -182,15 +225,20 @@ private void handleSave() {
         }
 
         // ============================
-        // ✅ CHECK COVERAGE
+        // ✅ CHECK COVERAGE (full assignee list, not the sequential combo alone)
         // ============================
+        List<User> coverageList =
+                (coverageAssignees != null && !coverageAssignees.isEmpty())
+                        ? coverageAssignees
+                        : new ArrayList<>(agents);
+
         boolean allCovered =
-                TicketTaskDAO.allAgentsHaveTasks(ticketId, agents);
+                TicketTaskDAO.allAgentsHaveTasks(ticketId, coverageList);
 
         if (allCovered) {
 
             List<Integer> ids = new ArrayList<>();
-            for (User u : agents) {
+            for (User u : coverageList) {
                 ids.add(u.getId());
             }
 
@@ -207,7 +255,13 @@ private void handleSave() {
 
             txtTaskTitle.clear();
             txtDescription.clear();
-            cmbAgents.getSelectionModel().clearSelection();
+            // Remove the user that just got a task, so the next assignee appears automatically.
+            agents.removeIf(u -> u != null && u.getId() == selectedAgent.getId());
+            if (!agents.isEmpty()) {
+                cmbAgents.getSelectionModel().selectFirst();
+            } else {
+                cmbAgents.getSelectionModel().clearSelection();
+            }
 
             selectedFiles.clear();
             attachmentList.getItems().clear();
@@ -216,9 +270,11 @@ private void handleSave() {
             attachmentFrame.setManaged(true);
         }
 
+    } catch (BusinessRuleException e) {
+        showError(e.getMessage());
     } catch (Exception e) {
         e.printStackTrace();
-        showError("Error saving task");
+        showError(I18n.t("err.errorSavingTask", "Error saving task"));
     }
 }
     
@@ -231,7 +287,7 @@ private void handleSave() {
     private void handleBrowseFiles() {
 
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Select Attachments");
+        chooser.setTitle(I18n.t("selectAttachments", "Select Attachments"));
 
         List<File> files = chooser.showOpenMultipleDialog(null);
 
@@ -279,7 +335,7 @@ private void handleSave() {
     // ============================
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Error");
+        alert.setTitle(I18n.t("error", "Error"));
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
@@ -290,6 +346,7 @@ private void handleSave() {
     if (role == null) return -1; 
 
     return switch (role.toUpperCase()) {
+        case "ADMIN" -> 99;
         case "DIRECTEUR" -> 6;
         case "SOUS-DIRECTEUR" -> 5;
         case "INSPECTEUR" -> 4;
@@ -301,6 +358,9 @@ private void handleSave() {
 }
 
 private boolean canAssignTo(String currentRole, String targetRole) {
+    if ("ADMIN".equalsIgnoreCase(currentRole)) {
+        return true;
+    }
     return getRoleLevel(currentRole) >= getRoleLevel(targetRole);
 }
     

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Data management</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page data-mgmt-page">
+    <div class="card page-hero">
+        <h1 class="title-large" th:text="#{${pageTitleKey}}">Data management</h1>
+        <p class="subtitle" th:text="#{dataMgmt.subtitle}">
+            Excel workbook editor — same columns as the JavaFX screen.
+        </p>
+        <p class="muted form-hint data-mgmt-path-hint"
+           th:text="#{dataMgmt.excelPath(${page.excelPathDisplay})}">Path hint</p>
+    </div>
+
+    <div class="page-alerts">
+        <p class="success-banner" th:if="${flashSuccess != null}" th:text="#{__${flashSuccess}__}">OK</p>
+        <p class="login-error" th:if="${flashError != null}" th:text="#{__${flashError}__}">Err</p>
+    </div>
+
+    <form method="get" th:action="@{/app/data-management}" class="card page-panel courier-filter-bar">
+        <div class="courier-filter-grid">
+            <div>
+                <label class="form-label" for="dmDate" th:text="#{dataMgmt.filter.registrationDate}">Date</label>
+                <input class="form-input" id="dmDate" type="date" name="registrationDate"
+                       th:value="${page.filterRegistrationDate()}"/>
+            </div>
+            <div>
+                <label class="form-label" for="dmExp" th:text="#{dataMgmt.filter.expediteur}">Expediteur</label>
+                <input class="form-input" id="dmExp" type="text" name="expediteur" autocomplete="off"
+                       th:value="${page.filterExpediteur()}"/>
+            </div>
+            <div>
+                <label class="form-label" for="dmCot" th:text="#{dataMgmt.filter.cotation}">Cotation</label>
+                <input class="form-input" id="dmCot" type="text" name="cotation" autocomplete="off"
+                       th:value="${page.filterCotation()}"/>
+            </div>
+            <div class="courier-filter-actions">
+                <button type="submit" class="primary-btn" th:text="#{dataMgmt.search}">Search</button>
+                <a class="secondary-btn"
+                   th:href="@{/app/data-management}" th:text="#{dataMgmt.reset}">Reset</a>
+            </div>
+            <p class="muted form-hint data-mgmt-live-filter-hint" th:text="#{dataMgmt.liveSearchHint}"></p>
+        </div>
+    </form>
+
+    <div class="card page-panel data-mgmt-io-panel">
+        <div class="data-mgmt-io-stack">
+            <a class="secondary-btn" th:href="@{/app/data-management/export}" th:text="#{dataMgmt.export}">Export</a>
+            <form class="data-mgmt-import-form" th:action="@{/app/data-management/import}" method="post"
+                  enctype="multipart/form-data" data-upload-enhanced="true">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="filterRegistrationDate" th:value="${page.filterRegistrationDate()}"/>
+                <input type="hidden" name="filterExpediteur" th:value="${page.filterExpediteur()}"/>
+                <input type="hidden" name="filterCotation" th:value="${page.filterCotation()}"/>
+                <input class="form-input data-mgmt-file-input" type="file" name="file" accept=".csv,.xlsx" required
+                       data-dnd-uploader="true" data-upload-single="true"/>
+                <button type="submit" class="primary-btn" th:text="#{dataMgmt.import}">Import</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card data-mgmt-table-shell">
+        <div class="courier-table-wrap">
+            <table class="sysco-table courier-table">
+                <thead>
+                <tr>
+                    <th th:text="#{dataMgmt.col.dateEnregistrement}">Date</th>
+                    <th th:text="#{dataMgmt.col.expediteur}">Exp.</th>
+                    <th th:text="#{dataMgmt.col.objet}">Objet</th>
+                    <th th:text="#{dataMgmt.col.sousDirection}">Sous</th>
+                    <th th:text="#{dataMgmt.col.cotation}">Cot.</th>
+                    <th th:text="#{dataMgmt.col.dateCotation}">Date cot.</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${page.rows()}"
+                    th:classappend="${page.selectedRowKey() != null && page.selectedRowKey() == row.rowKey()} ? ' courier-row-selected' : ''">
+                    <td>
+                        <a class="courier-ref-link"
+                           th:href="@{|/app/data-management?${filterQs}selected=${row.rowKey}|}"
+                           th:text="${row.record().dateEnregistrement()}">—</a>
+                    </td>
+                    <td th:text="${row.record().expediteur()}">—</td>
+                    <td class="courier-detail-desc" th:text="${row.record().objet()}">—</td>
+                    <td th:text="${row.record().sousDirection()}">—</td>
+                    <td th:text="${row.record().cotation()}">—</td>
+                    <td th:text="${row.record().dateCotation()}">—</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(page.rows())}">
+                    <td colspan="6" class="muted" th:text="#{dataMgmt.emptyTable}">No rows.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="data-mgmt-actions-bar">
+            <button type="button" class="primary-btn" th:if="${page.selected() != null}"
+                    onclick="document.getElementById('dataMgmtEditPanel').style.display='block';"
+                    th:text="#{dataMgmt.editAction}">
+                Modify
+            </button>
+            <form th:if="${page.selected() != null}" th:action="@{/app/data-management/delete}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="rowKey" th:value="${page.selectedRowKey()}"/>
+                <input type="hidden" name="filterRegistrationDate" th:value="${page.filterRegistrationDate()}"/>
+                <input type="hidden" name="filterExpediteur" th:value="${page.filterExpediteur()}"/>
+                <input type="hidden" name="filterCotation" th:value="${page.filterCotation()}"/>
+                <span id="dataMgmtConfirmMsg" style="display:none;" th:text="#{dataMgmt.confirmDelete}">Sure?</span>
+                <button type="submit" class="danger-btn"
+                        onclick="return confirm(document.getElementById('dataMgmtConfirmMsg').textContent);"
+                        th:text="#{delete}">Delete</button>
+            </form>
+            <p class="muted" th:if="${page.selected() == null}" th:text="#{dataMgmt.pickRow}">Select</p>
+        </div>
+    </div>
+
+    <div class="card page-panel data-mgmt-edit-panel" id="dataMgmtEditPanel"
+         th:if="${page.selected() != null}" style="display:none;">
+        <h2 class="dash-heading" th:text="#{dataMgmt.panelTitle}">Edit</h2>
+        <form th:action="@{/app/data-management/update}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="originalKey" th:value="${page.selectedRowKey()}"/>
+            <input type="hidden" name="filterRegistrationDate" th:value="${page.filterRegistrationDate()}"/>
+            <input type="hidden" name="filterExpediteur" th:value="${page.filterExpediteur()}"/>
+            <input type="hidden" name="filterCotation" th:value="${page.filterCotation()}"/>
+
+            <div class="form-grid-single">
+                <label class="form-label" for="dmReg" th:text="#{dataMgmt.col.dateEnregistrement}">Date</label>
+                <input class="form-input" id="dmReg" name="dateEnregistrement" required
+                       th:value="${page.selected().dateEnregistrement()}"/>
+
+                <label class="form-label" for="dmSen" th:text="#{dataMgmt.col.expediteur}">Exp.</label>
+                <input class="form-input" id="dmSen" name="expediteur" required
+                       th:value="${page.selected().expediteur()}"/>
+
+                <label class="form-label" for="dmObj" th:text="#{dataMgmt.col.objet}">Objet</label>
+                <textarea class="form-textarea" id="dmObj" name="objet" required rows="3"
+                          th:text="${page.selected().objet()}"></textarea>
+
+                <label class="form-label" for="dmCotation" th:text="#{dataMgmt.col.cotation}">Cotation</label>
+                <input class="form-input" id="dmCotation" name="cotation"
+                       th:value="${page.selected().cotation()}"/>
+
+                <label class="form-label" for="dmDc" th:text="#{dataMgmt.col.dateCotation}">Date cotation</label>
+                <input class="form-input" id="dmDc" name="dateCotation"
+                       th:value="${page.selected().dateCotation()}"/>
+
+                <label class="form-label" for="dmSd" th:text="#{dataMgmt.col.sousDirection}">Sous-direction</label>
+                <input class="form-input" id="dmSd" name="sousDirection"
+                       th:value="${page.selected().sousDirection()}"/>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="primary-btn" th:text="#{dataMgmt.save}">Save</button>
+            </div>
+        </form>
+    </div>
+    <script>
+        (function () {
+            var form = document.querySelector('.data-mgmt-page form.courier-filter-bar[method="get"]');
+            if (!form || form.tagName !== 'FORM') return;
+
+            var debounceMs = 420;
+            var timer;
+
+            function submitNow() {
+                clearTimeout(timer);
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+            }
+
+            function debouncedSubmit() {
+                clearTimeout(timer);
+                timer = setTimeout(submitNow, debounceMs);
+            }
+
+            var dmExp = document.getElementById('dmExp');
+            var dmCot = document.getElementById('dmCot');
+            var dmDate = document.getElementById('dmDate');
+            if (dmExp) dmExp.addEventListener('input', debouncedSubmit);
+            if (dmCot) dmCot.addEventListener('input', debouncedSubmit);
+            if (dmDate) dmDate.addEventListener('change', submitNow);
+        })();
+    </script>
+</section>
+</body>
+</html>

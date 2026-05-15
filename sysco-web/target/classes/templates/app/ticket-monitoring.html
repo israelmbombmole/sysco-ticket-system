@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Ticket monitoring</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page ticket-monitoring-page">
+    <div class="card page-panel ticket-monitoring-shell">
+        <div class="page-alerts" th:if="${successKey != null or errorKey != null}">
+            <p class="success-banner" th:text="#{${successKey}}">Action effectuée.</p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Erreur.</p>
+        </div>
+
+        <h1 class="title-large" th:text="#{ticketMonitoring.assignTitle}">Assigner un ticket</h1>
+        <div class="ticket-monitoring-search tm-live-search-bar">
+            <label class="form-label" for="tm-filter-assign" th:text="#{ticketMonitoring.search}">Search</label>
+            <input id="tm-filter-assign" class="form-input" type="search" autocomplete="off"
+                   th:placeholder="#{ticketMonitoring.searchAssignablePlaceholder}"/>
+        </div>
+        <table id="tm-table-assign" class="sysco-table ticket-monitoring-select-table">
+            <thead>
+            <tr>
+                <th></th>
+                <th th:text="#{ticketMonitoring.col.ticketId}">ID du ticket</th>
+                <th th:text="#{ticketMonitoring.col.title}">Title</th>
+                <th th:text="#{ticketMonitoring.col.status}">Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${page.assignableTickets}" class="tm-live-filter-data">
+                <td><input type="checkbox" class="tm-ticket" name="ticketIds" th:value="${t.id}"/></td>
+                <td th:text="${t.ticketNumber}">TCK-2026-001</td>
+                <td th:text="${t.title}">Titre</td>
+                <td th:text="${@uiLabels.ticketStatus(t.status, #locale)}">OPEN</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.assignableTickets)}" class="tm-live-filter-empty muted">
+                <td colspan="4" th:text="#{ticketMonitoring.emptyTable}">No content in table</td>
+            </tr>
+            <tr class="tm-live-filter-no-match muted" hidden>
+                <td colspan="4" th:text="#{ticketMonitoring.liveSearchNoMatches}">No matches</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <form id="tm-bulk-form" class="ticket-monitoring-bulk-form tm-bulk-assign-form" method="post" th:action="@{/app/ticket-monitoring/assign-bulk}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="createTasks" id="tm-create-tasks" value="false"/>
+            <p class="muted form-hint tm-agent-collapsed-hint" th:text="#{ticketMonitoring.agentsCollapsedHint}">Hint</p>
+            <button type="button" class="tm-agent-picker-open-btn" id="tm-open-agent-picker"
+                    th:attr="aria-haspopup='dialog', aria-controls='tm-agent-picker-dialog'"
+                    th:text="#{ticketMonitoring.agentsShowList}">Show agents</button>
+            <p id="tm-assignee-summary-line" class="muted tm-assignee-summary-line is-empty"
+               th:text="#{ticketMonitoring.agentsSummaryNone}">—</p>
+            <div id="tm-assignee-hidden"></div>
+            <div class="tm-bulk-assign-actions">
+                <button type="submit" class="primary-btn" th:text="#{ticketMonitoring.assignBtn}">Assigner</button>
+            </div>
+        </form>
+
+        <dialog id="tm-agent-picker-dialog" class="sysco-escalate-dialog tm-agent-picker-dialog" aria-modal="true">
+            <div class="sysco-escalate-dialog-surface">
+                <header class="sysco-escalate-dialog-header">
+                    <h2 class="sysco-escalate-dialog-title" th:text="#{ticketMonitoring.agentsModalTitle}">Agents</h2>
+                    <button type="button" class="sysco-escalate-dialog-x" id="tm-agent-picker-close-x"
+                            th:attr="aria-label=#{myWork.escalate.closeDialog}">×</button>
+                </header>
+                <div class="sysco-escalate-dialog-body">
+                    <p class="muted tm-agent-picker-hint" th:text="#{ticketMonitoring.agentsPanelHint}">Hint</p>
+                    <div class="tm-agent-modal-filter-wrap ticket-monitoring-search">
+                        <label class="form-label" for="tm-agent-modal-filter"
+                               th:text="#{ticketMonitoring.agentsModalSearchLabel}">Search</label>
+                        <input id="tm-agent-modal-filter" class="form-input" type="search" autocomplete="off"
+                               th:placeholder="#{ticketMonitoring.agentsModalSearchPlaceholder}"/>
+                    </div>
+                    <div class="ticket-monitoring-user-list tm-agent-modal-list" role="group"
+                         th:attr="aria-label=#{ticketMonitoring.agentsModalTitle}">
+                        <p id="tm-agent-modal-no-match" class="muted tm-agent-modal-no-match" hidden
+                           th:text="#{ticketMonitoring.agentsModalNoMatches}">No matches</p>
+                        <label th:each="a : ${page.agentChoices}" class="tm-agent-modal-option"
+                               th:data-matricule="${a.matricule ?: ''}">
+                            <input type="checkbox" class="tm-assignee-cb" th:data-assignee-id="${a.id}" th:value="${a.id}"/>
+                            <span th:text="${a.username + ' - ' + a.role}">user</span>
+                        </label>
+                    </div>
+                    <div class="tm-agent-modal-actions">
+                        <button type="button" class="secondary-btn btn-sm" id="tm-agent-picker-cancel"
+                                th:text="#{ticketMgmt.task.cancel}">Cancel</button>
+                        <button type="button" class="primary-btn btn-sm" id="tm-agent-picker-done"
+                                th:text="#{ticketMgmt.task.assigneeDone}">Done</button>
+                    </div>
+                </div>
+            </div>
+        </dialog>
+        <form id="tm-task-popup-form" method="post" th:action="@{/app/ticket-monitoring/assign-with-tasks}" style="display:none;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="ticketId" id="tm-task-ticket-id"/>
+        </form>
+        <div id="tm-task-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1200;">
+            <div style="background:#fff; width:min(760px, 92vw); margin:6vh auto; border-radius:10px; padding:16px; max-height:88vh; overflow:auto;">
+                <h3 class="courier-subheading" style="margin-top:0;">TASK</h3>
+                <p class="muted" id="tm-task-step-label">Ajoutez une tache pour chaque agent selectionne.</p>
+                <form id="tm-task-modal-form" enctype="multipart/form-data">
+                    <input type="hidden" name="assigneeIds" id="tm-step-assignee-id"/>
+                    <label class="form-label">Agent</label>
+                    <input class="form-input" id="tm-step-agent-label" type="text" readonly/>
+                    <label class="form-label">Titre</label>
+                    <input class="form-input" name="taskTitles" id="tm-step-title" value="Traitement ticket" required/>
+                    <label class="form-label">Description</label>
+                    <input class="form-input" name="taskDescriptions" id="tm-step-desc" value=""/>
+                    <label class="form-label">Echeance</label>
+                    <input class="form-input" name="taskDueAts" id="tm-step-due" type="datetime-local"/>
+                    <label class="form-label" th:text="#{ticketMgmt.task.priority}">Priority</label>
+                    <select class="form-input" name="priorities" id="tm-step-priority">
+                        <option value="LOW" th:text="${@uiLabels.ticketPriority('LOW', #locale)}">LOW</option>
+                        <option value="MEDIUM" selected th:text="${@uiLabels.ticketPriority('MEDIUM', #locale)}">MEDIUM</option>
+                        <option value="HIGH" th:text="${@uiLabels.ticketPriority('HIGH', #locale)}">HIGH</option>
+                        <option value="CRITICAL" th:text="${@uiLabels.ticketPriority('CRITICAL', #locale)}">CRITICAL</option>
+                    </select>
+                    <label class="form-label">Rappel (minutes)</label>
+                    <input class="form-input" type="number" min="1" name="reminderMinutes" id="tm-step-reminder" value="30"/>
+                    <label class="form-label">Pièces jointes</label>
+                    <input class="form-input" type="file" id="tm-step-attachments" multiple data-dnd-uploader="true"/>
+                    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                        <button type="button" id="tm-task-cancel" class="secondary-btn btn-sm">Annuler</button>
+                        <button type="button" id="tm-task-next" class="primary-btn btn-sm">Suivant</button>
+                        <button type="submit" id="tm-task-submit" class="primary-btn btn-sm" style="display:none;">Valider TASK</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <h3 class="courier-subheading" th:text="#{ticketMonitoring.assignedTickets}">Attributions de tickets</h3>
+        <div class="ticket-monitoring-search tm-live-search-bar">
+            <label class="form-label" for="tm-filter-assigned" th:text="#{ticketMonitoring.search}">Search</label>
+            <input id="tm-filter-assigned" class="form-input" type="search" autocomplete="off"
+                   th:placeholder="#{ticketMonitoring.searchAssignedPlaceholder}"/>
+        </div>
+        <table id="tm-table-assigned" class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{ticketMonitoring.col.ticketRef}">ID du ticket</th>
+                <th th:text="#{ticketMonitoring.col.agent}">Agent</th>
+                <th th:text="#{ticketMonitoring.col.status}">Statut</th>
+                <th th:text="#{ticketMonitoring.col.view}">Voir</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${page.assignedTickets}" class="tm-live-filter-data">
+                <td th:text="${t.ticketNumber}">TCK-2026-008</td>
+                <td th:text="${t.assignedToUsername}">jordan-paul</td>
+                <td class="ticket-monitoring-status"
+                    th:with="stRaw=${t.status},
+                             stCode=${stRaw != null and !#strings.isEmpty(#strings.trim(stRaw)) ? #strings.replace(#strings.toUpperCase(#strings.trim(stRaw)), ' ', '_') : 'NONE'}"
+                    th:classappend="'ticket-monitoring-status--' + ${stCode}"
+                    th:text="${@uiLabels.ticketStatus(t.status, #locale)}">ASSIGNED</td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:href="@{/app/ticket-management/{id}(id=${t.id},returnTo='/app/ticket-monitoring')}"
+                       th:text="#{ticketMonitoring.col.view}">Voir</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.assignedTickets)}" class="tm-live-filter-empty muted">
+                <td colspan="4" th:text="#{ticketMonitoring.emptyTable}">No content in table</td>
+            </tr>
+            <tr class="tm-live-filter-no-match muted" hidden>
+                <td colspan="4" th:text="#{ticketMonitoring.liveSearchNoMatches}">No matches</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h3 class="courier-subheading" th:text="#{ticketMonitoring.tasksTitle}">Tasks</h3>
+        <div class="ticket-monitoring-search tm-live-search-bar">
+            <label class="form-label" for="tm-filter-tasks" th:text="#{ticketMonitoring.search}">Search</label>
+            <input id="tm-filter-tasks" class="form-input" type="search" autocomplete="off"
+                   th:placeholder="#{ticketMonitoring.searchTasksPlaceholder}"/>
+        </div>
+        <table id="tm-table-tasks" class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{ticketMonitoring.col.taskTitle}">Task</th>
+                <th th:text="#{ticketMonitoring.col.agent}">Agent</th>
+                <th th:text="#{scheduler.col.ticket}">Ticket</th>
+                <th th:text="#{ticketMonitoring.col.status}">Status</th>
+                <th th:text="#{ticketMonitoring.col.due}">Due</th>
+                <th th:text="#{ticketMonitoring.col.priority}">Priority</th>
+                <th th:text="#{ticketMonitoring.col.view}">View</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="task : ${page.monitoringTasks}" class="tm-live-filter-data">
+                <td th:text="${task.title}">—</td>
+                <td th:text="${task.assigneeUsername}">—</td>
+                <td>
+                    <span th:if="${task.ticketId == null}" class="muted">—</span>
+                    <span th:if="${task.ticketId != null}" th:text="${task.ticketRef}">TCK</span>
+                </td>
+                <td th:text="${task.status}">OPEN</td>
+                <td th:text="${task.dueAt}">—</td>
+                <td th:text="${#strings.isEmpty(task.priority) ? '—' : @uiLabels.ticketPriority(task.priority, #locale)}">—</td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:href="@{/app/my-work/task/{id}(id=${task.jobId},returnTo='/app/ticket-monitoring')}"
+                       th:text="#{ticketMonitoring.col.view}">Voir</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.monitoringTasks)}" class="tm-live-filter-empty muted">
+                <td colspan="7" th:text="#{ticketMonitoring.emptyTable}">No content in table</td>
+            </tr>
+            <tr class="tm-live-filter-no-match muted" hidden>
+                <td colspan="7" th:text="#{ticketMonitoring.liveSearchNoMatches}">No matches</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h3 class="courier-subheading" th:text="#{ticketMonitoring.externalEscalations}">Escalades externes</h3>
+        <div class="ticket-monitoring-search tm-live-search-bar">
+            <label class="form-label" for="tm-filter-escalations" th:text="#{ticketMonitoring.search}">Search</label>
+            <input id="tm-filter-escalations" class="form-input" type="search" autocomplete="off"
+                   th:placeholder="#{ticketMonitoring.searchEscalationsPlaceholder}"/>
+        </div>
+        <table id="tm-table-escalations" class="sysco-table">
+            <thead>
+            <tr>
+                <th>Ticket</th>
+                <th>Depuis la direction</th>
+                <th>Vers la direction</th>
+                <th>Sous-direction</th>
+                <th th:text="#{ticketMonitoring.col.status}">Statut</th>
+                <th>Assigné à</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="e : ${page.escalatedTickets}" class="tm-live-filter-data">
+                <td th:text="${e.ticketNumber}">TCK-2026-0005</td>
+                <td>Direction source</td>
+                <td>Direction cible</td>
+                <td>—</td>
+                <td th:text="${@uiLabels.ticketStatus(e.status, #locale)}">ESCALATED</td>
+                <td th:text="${e.assignedToUsername}">agent</td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:href="@{/app/ticket-management/{id}(id=${e.id})}">Voir</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.escalatedTickets)}" class="tm-live-filter-empty muted">
+                <td colspan="7" th:text="#{ticketMonitoring.emptyTable}">No content in table</td>
+            </tr>
+            <tr class="tm-live-filter-no-match muted" hidden>
+                <td colspan="7" th:text="#{ticketMonitoring.liveSearchNoMatches}">No matches</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="ticket-monitoring-stats-grid">
+            <div class="tm-agent-stats-card">
+                <div class="tm-agent-stats-card-head">
+                    <h3 class="courier-subheading" th:text="#{ticketMonitoring.agentStats}">Statistiques de performance des agents</h3>
+                    <div class="tm-agent-stats-export-wrap">
+                        <a class="secondary-btn btn-sm tm-agent-stats-export-btn"
+                           th:href="@{/app/ticket-monitoring/export-agent-stats.csv}"
+                           th:text="#{ticketMonitoring.exportAgentStats}"
+                           th:attr="aria-label=#{ticketMonitoring.exportAgentStats.aria}">Export CSV</a>
+                        <p class="muted tm-agent-stats-export-hint" th:text="#{ticketMonitoring.exportAgentStats.hint}">Hint</p>
+                    </div>
+                </div>
+                <div class="ticket-monitoring-search tm-live-search-bar">
+                    <label class="form-label" for="tm-filter-agent-stats" th:text="#{ticketMonitoring.search}">Search</label>
+                    <input id="tm-filter-agent-stats" class="form-input" type="search" autocomplete="off"
+                           th:placeholder="#{ticketMonitoring.searchAgentStatsPlaceholder}"/>
+                </div>
+                <table id="tm-table-agent-stats" class="sysco-table">
+                    <thead>
+                    <tr>
+                        <th th:text="#{ticketMonitoring.col.agent}">Agent</th>
+                        <th th:text="#{ticketMonitoring.col.totalTickets}">Total des tickets</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="s : ${page.agentStats}" class="tm-live-filter-data">
+                        <td th:text="${s.agent}">agent</td>
+                        <td th:text="${s.totalTickets}">2</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(page.agentStats)}" class="tm-live-filter-empty muted">
+                        <td colspan="2" th:text="#{ticketMonitoring.emptyTable}">No content in table</td>
+                    </tr>
+                    <tr class="tm-live-filter-no-match muted" hidden>
+                        <td colspan="2" th:text="#{ticketMonitoring.liveSearchNoMatches}">No matches</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="ticket-monitoring-donut-wrap">
+                <h3 class="courier-subheading" th:text="#{ticketMonitoring.ticketStatus}">Statut des tickets</h3>
+                <div class="dash-donut" th:style="'background:' + ${page.donutGradient}"></div>
+                <div class="dash-legend">
+                    <span><i class="legend-dot legend-open"></i>Ouvert</span>
+                    <span><i class="legend-dot legend-closed"></i>Fermé</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script th:inline="javascript">
+        (function () {
+            const form = document.getElementById('tm-bulk-form');
+            const taskModal = document.getElementById('tm-task-modal');
+            const taskModalForm = document.getElementById('tm-task-modal-form');
+            const taskPopupForm = document.getElementById('tm-task-popup-form');
+            const taskStepLabel = document.getElementById('tm-task-step-label');
+            const taskNextBtn = document.getElementById('tm-task-next');
+            const taskSubmitBtn = document.getElementById('tm-task-submit');
+            const taskAgentInput = document.getElementById('tm-step-agent-label');
+            const taskAssigneeInput = document.getElementById('tm-step-assignee-id');
+            const taskTitleInput = document.getElementById('tm-step-title');
+            const taskDescInput = document.getElementById('tm-step-desc');
+            const taskDueInput = document.getElementById('tm-step-due');
+            const taskPriorityInput = document.getElementById('tm-step-priority');
+            const taskReminderInput = document.getElementById('tm-step-reminder');
+            const taskAttachmentsInput = document.getElementById('tm-step-attachments');
+            const agentDialog = document.getElementById('tm-agent-picker-dialog');
+            const agentModalFilter = document.getElementById('tm-agent-modal-filter');
+            const agentModalNoMatch = document.getElementById('tm-agent-modal-no-match');
+            const agentOpenBtn = document.getElementById('tm-open-agent-picker');
+            const agentDoneBtn = document.getElementById('tm-agent-picker-done');
+            const agentCancelBtn = document.getElementById('tm-agent-picker-cancel');
+            const agentCloseX = document.getElementById('tm-agent-picker-close-x');
+            const assigneeHidden = document.getElementById('tm-assignee-hidden');
+            const assigneeSummary = document.getElementById('tm-assignee-summary-line');
+            const noneAssigneeText = /*[[#{ticketMonitoring.agentsSummaryNone}]]*/ '';
+            let wizardAssignees = [];
+            let wizardIndex = 0;
+            let wizardEntries = [];
+
+            function filterAgentModalList() {
+                if (!agentDialog) {
+                    return;
+                }
+                const q = (agentModalFilter && agentModalFilter.value ? agentModalFilter.value : '').trim().toLowerCase();
+                const opts = agentDialog.querySelectorAll('.tm-agent-modal-option');
+                let visible = 0;
+                opts.forEach(function (lab) {
+                    const span = lab.querySelector('span');
+                    const txt = span ? span.textContent.toLowerCase() : '';
+                    const mat = (lab.getAttribute('data-matricule') || '').trim().toLowerCase();
+                    const cb = lab.querySelector('.tm-assignee-cb');
+                    const idStr =
+                        cb && cb.getAttribute('data-assignee-id')
+                            ? String(cb.getAttribute('data-assignee-id')).toLowerCase()
+                            : '';
+                    const hay = txt + ' ' + mat + ' ' + idStr;
+                    const match = !q || hay.indexOf(q) !== -1;
+                    lab.hidden = !match;
+                    if (match) {
+                        lab.style.removeProperty('display');
+                        visible++;
+                    } else {
+                        lab.style.setProperty('display', 'none', 'important');
+                    }
+                });
+                if (agentModalNoMatch) {
+                    var showEmpty = visible === 0 && opts.length > 0;
+                    agentModalNoMatch.hidden = !showEmpty;
+                    if (showEmpty) {
+                        agentModalNoMatch.style.removeProperty('display');
+                    } else {
+                        agentModalNoMatch.style.setProperty('display', 'none', 'important');
+                    }
+                }
+            }
+
+            function applyCommittedAgentsToDialog() {
+                if (!assigneeHidden || !agentDialog) {
+                    return;
+                }
+                const want = new Set();
+                assigneeHidden.querySelectorAll('input[name="assigneeIds"]').forEach(function (inp) {
+                    want.add(String(inp.value));
+                });
+                agentDialog.querySelectorAll('.tm-assignee-cb').forEach(function (cb) {
+                    const id = cb.getAttribute('data-assignee-id');
+                    cb.checked = id != null && want.has(String(id));
+                });
+            }
+
+            function updateAssigneeSummaryFromDialog() {
+                if (!assigneeSummary || !agentDialog) {
+                    return;
+                }
+                const checked = agentDialog.querySelectorAll('.tm-assignee-cb:checked');
+                if (!checked.length) {
+                    assigneeSummary.textContent = noneAssigneeText || '';
+                    assigneeSummary.classList.add('is-empty');
+                } else {
+                    const parts = [];
+                    checked.forEach(function (cb) {
+                        const lab = cb.closest('label');
+                        const span = lab && lab.querySelector('span');
+                        parts.push(span ? span.textContent.trim() : cb.getAttribute('data-assignee-id'));
+                    });
+                    assigneeSummary.textContent = parts.join(', ');
+                    assigneeSummary.classList.remove('is-empty');
+                }
+            }
+
+            function syncAgentDialogToHidden() {
+                if (!assigneeHidden || !agentDialog) {
+                    return;
+                }
+                assigneeHidden.innerHTML = '';
+                agentDialog.querySelectorAll('.tm-assignee-cb:checked').forEach(function (cb) {
+                    const id = cb.getAttribute('data-assignee-id');
+                    if (!id) {
+                        return;
+                    }
+                    const h = document.createElement('input');
+                    h.type = 'hidden';
+                    h.name = 'assigneeIds';
+                    h.value = id;
+                    assigneeHidden.appendChild(h);
+                });
+                updateAssigneeSummaryFromDialog();
+            }
+
+            function closeAgentDialog() {
+                if (agentDialog && typeof agentDialog.close === 'function') {
+                    agentDialog.close();
+                }
+            }
+
+            if (agentOpenBtn && agentDialog && typeof agentDialog.showModal === 'function') {
+                agentOpenBtn.addEventListener('click', function () {
+                    applyCommittedAgentsToDialog();
+                    if (agentModalFilter) {
+                        agentModalFilter.value = '';
+                    }
+                    agentDialog.showModal();
+                    filterAgentModalList();
+                    if (agentModalFilter) {
+                        agentModalFilter.focus();
+                    }
+                });
+            }
+            if (agentModalFilter) {
+                agentModalFilter.addEventListener('input', filterAgentModalList);
+                agentModalFilter.addEventListener('keyup', filterAgentModalList);
+                agentModalFilter.addEventListener('search', filterAgentModalList);
+                agentModalFilter.addEventListener('paste', function () {
+                    window.requestAnimationFrame(filterAgentModalList);
+                });
+            }
+            if (agentDoneBtn) {
+                agentDoneBtn.addEventListener('click', function () {
+                    syncAgentDialogToHidden();
+                    closeAgentDialog();
+                });
+            }
+            [agentCancelBtn, agentCloseX].forEach(function (b) {
+                if (b) {
+                    b.addEventListener('click', closeAgentDialog);
+                }
+            });
+            if (agentDialog) {
+                agentDialog.addEventListener('close', function () {
+                    applyCommittedAgentsToDialog();
+                });
+            }
+
+            if (!form) return;
+
+            function clearTaskPopupForm() {
+                Array.from(taskPopupForm.querySelectorAll('input[name="assigneeIds"],input[name="taskTitles"],input[name="taskDescriptions"],input[name="taskDueAts"],input[name="reminderMinutes"],input[name="priorities"],input[type="file"]'))
+                    .forEach(function (node) { node.remove(); });
+            }
+
+            function toBackendDue(datetimeLocal) {
+                if (!datetimeLocal) return '';
+                const dt = new Date(datetimeLocal);
+                if (Number.isNaN(dt.getTime())) return '';
+                const pad = n => String(n).padStart(2, '0');
+                return pad(dt.getDate()) + '/' + pad(dt.getMonth() + 1) + '/' + dt.getFullYear() + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+            }
+
+            function tmAssigneeIdFromPickerCb(cb) {
+                if (!cb) {
+                    return '';
+                }
+                var id = cb.getAttribute('data-assignee-id');
+                return id != null && String(id).trim() !== '' ? String(id).trim() : '';
+            }
+
+            function loadWizardStep() {
+                const current = wizardAssignees[wizardIndex];
+                const assigneeId = tmAssigneeIdFromPickerCb(current);
+                const label = (current.parentElement && current.parentElement.innerText)
+                    ? current.parentElement.innerText.trim()
+                    : ('Agent ' + assigneeId);
+                taskStepLabel.textContent = 'Etape ' + (wizardIndex + 1) + '/' + wizardAssignees.length + ' - Remplissez la tache puis cliquez ' + (wizardIndex === wizardAssignees.length - 1 ? 'Valider TASK' : 'Suivant') + '.';
+                taskAgentInput.value = label;
+                taskAssigneeInput.value = assigneeId;
+                taskTitleInput.value = 'Traitement ticket';
+                taskDescInput.value = '';
+                taskDueInput.value = '';
+                taskPriorityInput.value = 'MEDIUM';
+                taskReminderInput.value = '30';
+                taskAttachmentsInput.value = '';
+                taskNextBtn.style.display = wizardIndex === wizardAssignees.length - 1 ? 'none' : 'inline-block';
+                taskSubmitBtn.style.display = wizardIndex === wizardAssignees.length - 1 ? 'inline-block' : 'none';
+            }
+
+            function persistCurrentStep() {
+                const files = Array.from(taskAttachmentsInput.files || []);
+                wizardEntries[wizardIndex] = {
+                    assigneeId: taskAssigneeInput.value,
+                    title: taskTitleInput.value,
+                    description: taskDescInput.value,
+                    dueAt: toBackendDue(taskDueInput.value),
+                    priority: taskPriorityInput.value,
+                    reminder: taskReminderInput.value,
+                    files: files
+                };
+            }
+
+            function openTaskModal(ticketId, assignees) {
+                wizardAssignees = assignees;
+                wizardEntries = [];
+                wizardIndex = 0;
+                document.getElementById('tm-task-ticket-id').value = ticketId;
+                clearTaskPopupForm();
+                loadWizardStep();
+                taskModal.style.display = 'block';
+            }
+
+            document.getElementById('tm-task-cancel').addEventListener('click', function () {
+                taskModal.style.display = 'none';
+                wizardAssignees = [];
+                wizardEntries = [];
+            });
+
+            taskNextBtn.addEventListener('click', function () {
+                persistCurrentStep();
+                wizardIndex += 1;
+                loadWizardStep();
+            });
+
+            taskModalForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                persistCurrentStep();
+                const fd = new FormData();
+                const csrfInput = taskPopupForm.querySelector('input[name]');
+                if (csrfInput) {
+                    fd.append(csrfInput.name, csrfInput.value);
+                }
+                fd.append('ticketId', document.getElementById('tm-task-ticket-id').value);
+                wizardEntries.forEach(function (entry, idx) {
+                    fd.append('assigneeIds', entry.assigneeId);
+                    fd.append('taskTitles', entry.title);
+                    fd.append('taskDescriptions', entry.description);
+                    fd.append('taskDueAts', entry.dueAt);
+                    fd.append('priorities', entry.priority);
+                    fd.append('reminderMinutes', entry.reminder);
+                    entry.files.forEach(function (file) {
+                        fd.append('taskAttachments' + idx, file);
+                    });
+                });
+                taskModal.style.display = 'none';
+                wizardAssignees = [];
+                wizardEntries = [];
+                fetch(taskPopupForm.action, { method: 'POST', body: fd })
+                    .then(function () { window.location.href = '/app/ticket-monitoring'; })
+                    .catch(function () { window.location.href = '/app/ticket-monitoring'; });
+            });
+
+            form.addEventListener('submit', function (e) {
+                syncAgentDialogToHidden();
+                const tickets = Array.from(document.querySelectorAll('.tm-ticket:checked')).filter(function (cb) {
+                    const tr = cb.closest('tr');
+                    return tr && !tr.hidden;
+                });
+                const assignees = Array.from(document.querySelectorAll('#tm-agent-picker-dialog .tm-assignee-cb:checked'));
+                if (tickets.length === 0 || assignees.length === 0) {
+                    e.preventDefault();
+                    alert('Veuillez selectionner au moins un ticket et un agent.');
+                    return;
+                }
+                if (tickets.length === 1 && assignees.length > 1) {
+                    e.preventDefault();
+                    openTaskModal(tickets[0].value, assignees);
+                    return;
+                }
+                const createTasksInput = document.getElementById('tm-create-tasks');
+                if (assignees.length > 1) {
+                    const shouldCreateTasks = window.confirm(/*[[#{ticketMonitoring.taskPrompt}]]*/ 'Vous avez selectionne plusieurs agents. Voulez-vous creer une tache pour chaque agent?');
+                    createTasksInput.value = shouldCreateTasks ? 'true' : 'false';
+                } else {
+                    createTasksInput.value = 'false';
+                }
+                tickets.forEach(function (ticket) {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'ticketIds';
+                    hidden.value = ticket.value;
+                    form.appendChild(hidden);
+                });
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            function norm(s) {
+                return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            }
+
+            function applyLiveFilter(input, table) {
+                if (!input || !table) return;
+                var tbody = table.querySelector('tbody');
+                if (!tbody) return;
+                var dataRows = tbody.querySelectorAll('tr.tm-live-filter-data');
+                var placeholder = tbody.querySelector('tr.tm-live-filter-empty');
+                var noMatch = tbody.querySelector('tr.tm-live-filter-no-match');
+                var q = norm(input.value);
+
+                if (dataRows.length === 0) {
+                    if (placeholder) placeholder.hidden = false;
+                    if (noMatch) noMatch.hidden = true;
+                    return;
+                }
+
+                if (placeholder) placeholder.hidden = true;
+                var visible = 0;
+                for (var i = 0; i < dataRows.length; i++) {
+                    var tr = dataRows[i];
+                    var hay = norm(tr.innerText);
+                    var ok = !q || hay.indexOf(q) !== -1;
+                    tr.hidden = !ok;
+                    if (ok) visible++;
+                }
+                if (noMatch) noMatch.hidden = !(visible === 0);
+            }
+
+            function bind(inputId, tableId) {
+                var input = document.getElementById(inputId);
+                var table = document.getElementById(tableId);
+                if (!input || !table) return;
+                input.addEventListener('input', function () {
+                    applyLiveFilter(input, table);
+                });
+                input.addEventListener('search', function () {
+                    applyLiveFilter(input, table);
+                });
+                applyLiveFilter(input, table);
+            }
+
+            bind('tm-filter-assign', 'tm-table-assign');
+            bind('tm-filter-assigned', 'tm-table-assigned');
+            bind('tm-filter-escalations', 'tm-table-escalations');
+            bind('tm-filter-agent-stats', 'tm-table-agent-stats');
+            bind('tm-filter-tasks', 'tm-table-tasks');
+        })();
+    </script>
+</section>
+</body>
+</html>
+

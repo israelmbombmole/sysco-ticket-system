@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Module</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page module-placeholder-page">
+    <div class="card page-hero">
+        <h1 class="title-large" th:text="#{${pageTitleKey}}">Module</h1>
+        <p class="subtitle" th:text="#{module.hint}">
+            Placeholder — port controllers from the desktop app.
+        </p>
+    </div>
+
+    <div class="card page-panel">
+        <p class="metric-label">Servlet path</p>
+        <code th:text="${currentPath}">/app/…</code>
+    </div>
+</section>
+</body>
+</html>

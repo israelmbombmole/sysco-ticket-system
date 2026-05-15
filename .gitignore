@@ -1,4 +1,7 @@
 /target/
+.env
+# Local DB credentials (use db.properties.example as template)
+db.properties
 *.log
 *.db
 uploads/

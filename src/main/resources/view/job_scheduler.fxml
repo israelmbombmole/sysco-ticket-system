@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.app.controller.JobSchedulerController"
+      spacing="12"
+      style="-fx-padding:16; -fx-background-color:#f5f7fb;">
+
+    <Label text="%jobScheduler" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+
+    <VBox spacing="8" style="-fx-background-color:white; -fx-padding:12; -fx-background-radius:8;">
+        <Label text="%newScheduledJob" style="-fx-font-size:15px; -fx-font-weight:bold;"/>
+        <HBox spacing="16" alignment="TOP_LEFT">
+            <GridPane hgap="8" vgap="8">
+                <columnConstraints>
+                    <ColumnConstraints minWidth="100" prefWidth="140" maxWidth="180" hgrow="NEVER"/>
+                    <ColumnConstraints minWidth="160" prefWidth="240" maxWidth="320" hgrow="NEVER"/>
+                </columnConstraints>
+                <Label text="%title" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <TextField fx:id="txtJobTitle" GridPane.rowIndex="0" GridPane.columnIndex="1" promptText="%jobTitlePrompt"/>
+                <Label text="%dueDate" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <DatePicker fx:id="dpDueDate" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                <Label text="%reminderMinutes" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                <TextField fx:id="txtReminderMinutes" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+            </GridPane>
+            <GridPane hgap="8" vgap="8">
+                <columnConstraints>
+                    <ColumnConstraints minWidth="80" prefWidth="110" maxWidth="140" hgrow="NEVER"/>
+                    <ColumnConstraints minWidth="160" prefWidth="220" maxWidth="280" hgrow="NEVER"/>
+                </columnConstraints>
+                <Label text="%assignees" GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.valignment="TOP"/>
+                <ListView fx:id="listAssignees" prefHeight="96" prefWidth="220" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                <Label text="%dueTime" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <TextField fx:id="txtDueTime" GridPane.rowIndex="1" GridPane.columnIndex="1" promptText="HH:mm"/>
+                <Label text="%recurrence" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                <ComboBox fx:id="cmbRecurrence" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+            </GridPane>
+        </HBox>
+        <GridPane hgap="8" vgap="8">
+            <columnConstraints>
+                <ColumnConstraints minWidth="100" prefWidth="140" maxWidth="180" hgrow="NEVER"/>
+                <ColumnConstraints hgrow="ALWAYS" minWidth="200"/>
+            </columnConstraints>
+            <Label text="%description" GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.valignment="TOP"/>
+            <TextArea fx:id="txtJobDescription" GridPane.rowIndex="0" GridPane.columnIndex="1" prefRowCount="3"/>
+        </GridPane>
+        <HBox spacing="8">
+            <Button text="%save" onAction="#handleSaveJob"/>
+            <Button text="%refresh" onAction="#handleRefresh"/>
+        </HBox>
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Label text="%reportPeriodFrom"/>
+            <DatePicker fx:id="dpReportFrom" prefWidth="140"/>
+            <Label text="%reportPeriodTo"/>
+            <DatePicker fx:id="dpReportTo" prefWidth="140"/>
+            <Button text="%generateReportForPeriod" onAction="#handleGenerateReportForPeriod"/>
+        </HBox>
+    </VBox>
+
+    <VBox spacing="8" style="-fx-background-color:white; -fx-padding:12; -fx-background-radius:8;">
+        <Label text="%scheduledJobs" style="-fx-font-size:15px; -fx-font-weight:bold;"/>
+        <TableView fx:id="tableJobs" prefHeight="210">
+            <columns>
+                <TableColumn fx:id="colJobTitle" text="%title" prefWidth="220"/>
+                <TableColumn fx:id="colJobDueAt" text="%dueDate" prefWidth="180"/>
+                <TableColumn fx:id="colJobAssignee" text="%assignees" prefWidth="200"/>
+                <TableColumn fx:id="colJobRecurrence" text="%recurrence" prefWidth="120"/>
+                <TableColumn fx:id="colJobStatus" text="%status" prefWidth="120"/>
+                <TableColumn fx:id="colJobAction" text="%action" prefWidth="260"/>
+            </columns>
+        </TableView>
+    </VBox>
+
+    <VBox spacing="8" style="-fx-background-color:white; -fx-padding:12; -fx-background-radius:8;">
+        <Label text="%monthlyReports" style="-fx-font-size:15px; -fx-font-weight:bold;"/>
+        <TableView fx:id="tableReports" prefHeight="180">
+            <columns>
+                <TableColumn fx:id="colReportMonth" text="%month" prefWidth="120"/>
+                <TableColumn fx:id="colReportGeneratedAt" text="%generatedAt" prefWidth="190"/>
+                <TableColumn fx:id="colReportTotals" text="%summary" prefWidth="300"/>
+                <TableColumn fx:id="colReportPath" text="%filePath" prefWidth="250"/>
+                <TableColumn fx:id="colReportAction" text="%action" prefWidth="300"/>
+            </columns>
+        </TableView>
+    </VBox>
+</VBox>

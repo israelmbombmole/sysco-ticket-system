@@ -66,7 +66,9 @@ public class TicketEditorRouter {
 
             Stage stage = new Stage();
             stage.setTitle("Edit Ticket - " + TicketUtil.formatTicketRef(fullTicket.getId()));
-            stage.setScene(new Scene(root));
+            Scene editScene = new Scene(root);
+            AppUiStyles.applyToScene(editScene);
+            stage.setScene(editScene);
             stage.setMaximized(true);
             stage.show();
 

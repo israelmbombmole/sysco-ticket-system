@@ -1,14 +1,209 @@
 /* =====================================================
-   DESIGN SYSTEM - TICKET SYSTEM ENTERPRISE THEME
+   DESIGN SYSTEM — INSTITUTIONAL (SYSCO) NEUTRAL THEME
+   Low-chroma, high legibility, suitable for public sector.
+   Avoid bright cyans, electric blues, and neon pastels in main work areas.
 ===================================================== */
 
+/* Solid fills only — JavaFX 17 often rejects linear-gradient(to bottom, …) leaving tiles transparent */
+.clickable-stat-card {
+    -fx-cursor: hand;
+    -fx-spacing: 10;
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px 1px 1px 5px;
+    -fx-border-color: #d8dee9 #d8dee9 #d8dee9 #1e4d7a;
+    -fx-padding: 14px 18px 16px 18px;
+    -fx-min-height: 96px;
+    -fx-pref-height: 100px;
+    -fx-min-width: 160px;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.09), 16, 0.2, 0, 5);
+}
+
+.clickable-stat-card:hover {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #94a3b8 #94a3b8 #94a3b8 #2563eb;
+    -fx-effect: dropshadow(gaussian, rgba(30, 77, 122, 0.18), 22, 0.22, 0, 6);
+}
+
+/* ScrollPane default skin can look cold / blue on Windows — pin neutral grays. */
+.scroll-pane,
+.scroll-pane .viewport,
+.scroll-pane .content,
+.scroll-pane .scroll-pane {
+    -fx-background-color: #e8ebef;
+    -fx-background: #e8ebef;
+}
+
+.border-pane,
+.root {
+    -fx-font-family: "Segoe UI", "Segoe UI Emoji", system-ui, sans-serif;
+    -fx-font-size: 13px;
+    -fx-background-color: #e8ebef;
+}
+
+/* Center column behind loaded pages: subtle frame, no “card” glow */
+.main-center-wrap {
+    -fx-background-color: #e0e4e9;
+    -fx-padding: 8;
+}
+.main-content-surface {
+    -fx-background-color: #f4f5f7;
+    -fx-border-color: #b8c0cc;
+    -fx-border-width: 1;
+    -fx-border-radius: 2;
+    -fx-background-insets: 0;
+    -fx-effect: null;
+}
+
+/* Full-page FXML (My Work, monitoring) */
+.gov-work-page,
+.gov-page-bg {
+    -fx-background-color: #e8ebef;
+}
+.gov-scroll-surface {
+    -fx-background-color: #e8ebef;
+    -fx-background: #e8ebef;
+}
+
+/* My Work: each table in its own horizontal ScrollPane (narrow windows) */
+.my-work-table-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-padding: 0;
+}
+.my-work-table-scroll > .viewport {
+    -fx-background-color: #ffffff;
+}
+
+/* Secondary actions (e.g. courier: delegate, edit) */
+.btn-inst-secondary {
+    -fx-background-color: #2a3550;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
+    -fx-padding: 6 12;
+    -fx-min-height: 30;
+}
+.btn-inst-secondary:hover {
+    -fx-background-color: #1e293b;
+}
+.btn-inst-muted {
+    -fx-background-color: #1b5a73;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
+    -fx-padding: 6 12;
+    -fx-min-height: 30;
+}
+.btn-inst-muted:hover {
+    -fx-background-color: #164558;
+}
+
+.floating-chat {
+    -fx-background-color: #1e4d7a;
+    -fx-text-fill: white;
+    -fx-background-radius: 28;
+    -fx-pref-width: 52;
+    -fx-pref-height: 52;
+    -fx-min-width: 52;
+    -fx-min-height: 52;
+    -fx-padding: 0 0 0 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 6, 0, 0, 2);
+}
+.floating-chat:hover {
+    -fx-background-color: #2c5f8f;
+}
+
 /* =========================
-   ROOT
+   ROOT + GLOBAL READABILITY (all screens / DPI)
 ========================= */
 
-.root {
-    -fx-font-family: "Segoe UI";
-    -fx-background-color: #eef2f7;
+/* Comfortable defaults; cascades across embedded views */
+.text-field,
+.password-field {
+    -fx-font-size: 13px;
+    -fx-min-height: 32px;
+    -fx-padding: 6 10;
+}
+
+.text-area {
+    -fx-font-size: 13px;
+    -fx-padding: 8 10;
+}
+
+.combo-box,
+.combo-box-base {
+    -fx-font-size: 13px;
+    -fx-min-height: 30px;
+}
+
+.combo-box .list-cell {
+    -fx-font-size: 13px;
+}
+
+.date-picker {
+    -fx-font-size: 13px;
+}
+
+.spinner {
+    -fx-font-size: 13px;
+}
+
+.button {
+    -fx-font-size: 13px;
+    -fx-min-height: 32px;
+    -fx-padding: 8 14;
+    -fx-background-radius: 8;
+}
+
+.tab-pane .tab-header-area .tab {
+    -fx-padding: 8 14 8 14;
+}
+
+.tab-pane .tab-header-area .tab .text {
+    -fx-font-size: 13px;
+}
+
+.table-view {
+    -fx-font-size: 13px;
+}
+
+.table-view .table-cell {
+    -fx-padding: 6 8;
+}
+
+.table-view .column-header .text {
+    -fx-font-size: 13px;
+}
+
+.list-view .list-cell {
+    -fx-padding: 6 8;
+    -fx-font-size: 13px;
+}
+
+.tree-cell {
+    -fx-padding: 4 6;
+    -fx-font-size: 13px;
+}
+
+.check-box {
+    -fx-font-size: 13px;
+}
+
+.radio-button {
+    -fx-font-size: 13px;
+}
+
+.titled-pane > .title {
+    -fx-font-size: 13px;
+}
+
+.tooltip {
+    -fx-font-size: 12px;
+}
+
+.scroll-bar {
+    -fx-pref-width: 12px;
+    -fx-pref-height: 12px;
 }
 
 /* =========================
@@ -20,12 +215,12 @@
 }
 
 .title-large {
-    -fx-font-size: 22px;
+    -fx-font-size: 20px;
     -fx-font-weight: bold;
 }
 
 .title-medium {
-    -fx-font-size: 18px;
+    -fx-font-size: 16px;
     -fx-font-weight: bold;
 }
 
@@ -39,7 +234,7 @@
 }
 
 .stat-number {
-    -fx-font-size: 28px;
+    -fx-font-size: 22px;
     -fx-font-weight: bold;
 }
 
@@ -48,13 +243,32 @@
 ========================= */
 
 .top-bar {
-    -fx-background-color: #0b1e3d;
-    -fx-padding: 15;
+    -fx-background-color: #0f1b2d;
+    -fx-padding: 12;
+}
+
+/* Single header notification control (avoids “double bell” from stacked / default chrome) */
+.header-notif-btn {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-insets: 0;
+    -fx-padding: 4 10 4 10;
+    -fx-cursor: hand;
+}
+.header-notif-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.12);
+    -fx-background-radius: 8;
+}
+.header-bell-glyph {
+    -fx-text-fill: #e8edf5;
+    -fx-font-size: 18px;
+    -fx-padding: 0 2 0 0;
 }
 
 .top-bar Label {
     -fx-text-fill: white;
-    -fx-font-size: 20px;
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
 }
 
@@ -63,26 +277,51 @@
 ========================= */
 
 .sidebar {
-    -fx-background-color: #07152b;
-    -fx-padding: 20;
+    -fx-background-color: #0a1624;
+    -fx-padding: 16;
+}
+
+/* Sidebar menu: override global .scroll-pane gray; viewport is taller than VBox, must stay navy */
+.sidebar-scroll,
+.sidebar-scroll .viewport,
+.sidebar-scroll .content,
+.sidebar-scroll .corner {
+    -fx-background-color: #0a1624;
+    -fx-background: #0a1624;
+}
+.sidebar-scroll {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+.sidebar-scroll .scroll-bar:vertical,
+.sidebar-scroll .scroll-bar:horizontal,
+.sidebar-scroll .scroll-bar:vertical .track,
+.sidebar-scroll .scroll-bar:horizontal .track {
+    -fx-background-color: #0a1624;
+}
+.sidebar-scroll .scroll-bar .thumb {
+    -fx-background-color: #1e3a5c;
+    -fx-background-radius: 4;
 }
 
 .sidebar-btn {
     -fx-background-color: transparent;
     -fx-text-fill: #d1d5db;
-    -fx-font-size: 14px;
-    -fx-pref-width: 200px;
+    -fx-font-size: 13px;
+    -fx-pref-width: 220px;
+    -fx-min-height: 34px;
     -fx-alignment: CENTER_LEFT;
     -fx-background-radius: 6;
 }
 
 .sidebar-btn:hover {
-    -fx-background-color: #102a54;
+    -fx-background-color: #152a45;
     -fx-text-fill: white;
 }
 
 .sidebar-btn:focused {
-    -fx-background-color: #2563eb;
+    -fx-background-color: #1e4d7a;
     -fx-text-fill: white;
 }
 
@@ -93,7 +332,7 @@
 .card {
     -fx-background-color: white;
     -fx-background-radius: 14;
-    -fx-padding: 25;
+    -fx-padding: 18;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 18, 0.2, 0, 6);
 }
 
@@ -117,7 +356,7 @@
 }
 
 .table-row-cell:filled:selected {
-    -fx-background-color: #2563eb;
+    -fx-background-color: #1e4d7a;
 }
 
 .table-row-cell:filled:selected .text {
@@ -128,30 +367,34 @@
    BUTTON SYSTEM
 ========================= */
 
-.button {
-    -fx-background-radius: 8;
-}
-
 .primary-btn {
-    -fx-background-color: #2563eb;
+    -fx-background-color: #1e4d7a;
     -fx-text-fill: white;
-    -fx-background-radius: 8;
-    -fx-padding: 8 18;
-    -fx-font-weight: bold;
+    -fx-background-radius: 4;
+    -fx-padding: 8 16;
+    -fx-font-weight: normal;
+    -fx-min-height: 32px;
+    -fx-font-size: 13px;
 }
 
 .primary-btn:hover {
-    -fx-background-color: #1e40af;
+    -fx-background-color: #2c5f8f;
 }
 
 .danger-btn {
-    -fx-background-color: #b91c1c;
+    -fx-background-color: #8b2929;
     -fx-text-fill: white;
+    -fx-background-radius: 4;
+}
+
+.danger-btn:hover {
+    -fx-background-color: #6f2121;
 }
 
 .success-btn {
-    -fx-background-color: #16a34a;
+    -fx-background-color: #166534;
     -fx-text-fill: white;
+    -fx-background-radius: 4;
 }
 
 /* =========================
@@ -167,16 +410,18 @@
 }
 
 .status-open {
-    -fx-background-color: #f59e0b;
-    -fx-text-fill: black;
+    -fx-background-color: #b45309;
+    -fx-text-fill: white;
 }
 
 .status-closed {
-    -fx-background-color: #b91c1c;
+    -fx-background-color: #166534;
+    -fx-text-fill: white;
 }
 
 .status-inprogress {
-    -fx-background-color: #2563eb;
+    -fx-background-color: #1e4d7a;
+    -fx-text-fill: white;
 }
 
 /* =========================
@@ -240,16 +485,18 @@
 }
 
 .status-open {
-    -fx-background-color: #f59e0b;
-    -fx-text-fill: black;
+    -fx-background-color: #b45309;
+    -fx-text-fill: white;
 }
 
 .status-closed {
-    -fx-background-color: #b91c1c;
+    -fx-background-color: #166534;
+    -fx-text-fill: white;
 }
 
 .status-inprogress {
-    -fx-background-color: #2563eb;
+    -fx-background-color: #1e4d7a;
+    -fx-text-fill: white;
 }
 
 .ticket-description {
@@ -425,76 +672,107 @@
     -fx-text-fill: white;
 }
 
-.btn-view{
-    -fx-background-color:#3498db;
-    -fx-text-fill:white;
+.btn-view {
+    -fx-background-color: #1e4d7a;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
 }
 
-.btn-close{
-    -fx-background-color:#27ae60;
-    -fx-text-fill:white;
+.btn-close {
+    -fx-background-color: #166534;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
 }
 
-.btn-delete{
-    -fx-background-color:#e74c3c;
-    -fx-text-fill:white;
+.btn-delete {
+    -fx-background-color: #8b2929;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
 }
 
-.btn-escalate{
-    -fx-background-color:#f39c12;
-    -fx-text-fill:white;
+.btn-escalate {
+    -fx-background-color: #8a4f05;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
 }
 
-.preview-btn{
-    -fx-background-color:#f1c40f;
-    -fx-text-fill:black;
-    -fx-font-weight:bold;
-    -fx-background-radius:6;
+.preview-btn {
+    -fx-background-color: #d4a012;
+    -fx-text-fill: #1f2937;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4;
 }
 
-.download-btn{
-    -fx-background-color:#3498db;
-    -fx-text-fill:white;
-    -fx-font-weight:bold;
-    -fx-background-radius:6;
+.download-btn {
+    -fx-background-color: #1e4d7a;
+    -fx-text-fill: white;
+    -fx-font-weight: normal;
+    -fx-background-radius: 4;
 }
 
-.delete-btn{
-    -fx-background-color:#e74c3c;
-    -fx-text-fill:white;
-    -fx-font-weight:bold;
-    -fx-background-radius:6;
-}
-
-.preview-btn{
-    -fx-background-color:#facc15;
-    -fx-text-fill:black;
-    -fx-font-weight:bold;
-}
-
-.download-btn{
-    -fx-background-color:#3b82f6;
-    -fx-text-fill:white;
-}
-
-.delete-btn{
-    -fx-background-color:#ef4444;
-    -fx-text-fill:white;
+.delete-btn {
+    -fx-background-color: #8b2929;
+    -fx-text-fill: white;
+    -fx-font-weight: normal;
+    -fx-background-radius: 4;
 }
 
 .btn-edit {
-    -fx-background-color: #9b59b6;
+    -fx-background-color: #4a3f69;
     -fx-text-fill: white;
-    -fx-background-radius: 8;
+    -fx-background-radius: 4;
     -fx-padding: 5 12;
-    -fx-font-weight: bold;
+    -fx-font-weight: normal;
 }
 
 .btn-edit:hover {
-    -fx-background-color: #8e44ad;
+    -fx-background-color: #3d3458;
 }
 
 .button:hover {
     -fx-opacity: 0.85;
     -fx-cursor: hand;
+}
+
+/*
+ * Squared dashboard KPI tiles — use compound classes only (VBox type selectors are unreliable on JavaFX 17).
+ * Higher specificity than .clickable-stat-card alone.
+ */
+.clickable-stat-card.dashboard-stat-sq {
+    -fx-background-color: #ffffff;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-width: 2px;
+    -fx-border-color: #64748b;
+    -fx-padding: 14px 16px 16px 16px;
+    -fx-spacing: 10;
+    -fx-min-height: 104px;
+    -fx-pref-height: 108px;
+    -fx-min-width: 188px;
+    -fx-pref-width: 216px;
+    -fx-max-width: 300px;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.14), 16, 0.22, 0, 4);
+    -fx-cursor: hand;
+}
+
+.clickable-stat-card.dashboard-stat-sq:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #1e4d7a;
+    -fx-effect: dropshadow(gaussian, rgba(30, 77, 122, 0.22), 20, 0.24, 0, 5);
+}
+
+.clickable-stat-card.dashboard-stat-sq > .label:first-child {
+    -fx-font-size: 11.5px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #475569;
+    -fx-padding: 0 0 8 0;
+    -fx-border-width: 0 0 2px 0;
+    -fx-border-color: transparent transparent rgba(30, 77, 122, 0.5) transparent;
+}
+
+/* Inline -fx-text-fill on metric values overrides this where set */
+.clickable-stat-card.dashboard-stat-sq > .label:last-child {
+    -fx-padding: 6 0 0 0;
+    -fx-text-fill: #0f172a;
 }

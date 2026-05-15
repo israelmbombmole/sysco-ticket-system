@@ -6,6 +6,8 @@ import com.app.dao.DataShareDAO;
 import com.app.dao.UserDAO;
 import com.app.model.DataShareFile;
 import com.app.model.User;
+import com.app.util.AppUiStyles;
+import com.app.util.I18n;
 
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -86,11 +88,11 @@ private List<File> selectedFiles = new ArrayList<>();
         });
 
         // ================= DOWNLOAD BUTTON =================
-        TableColumn<DataShareFile,Void> colDownload = new TableColumn<>("Télécharger");
+        TableColumn<DataShareFile,Void> colDownload = new TableColumn<>(I18n.t("download", "Download"));
 
         colDownload.setCellFactory(param -> new TableCell<>(){
 
-            private final Button btn = new Button("Télécharger");
+            private final Button btn = new Button(I18n.t("download", "Download"));
 
             {
                 btn.getStyleClass().add("download-btn");
@@ -98,6 +100,7 @@ private List<File> selectedFiles = new ArrayList<>();
                btn.setOnAction(event -> {
 
     DataShareFile file = getTableView().getItems().get(getIndex());
+    if (!ensureOtpAccess(file)) return;
 
     try {
 
@@ -196,7 +199,7 @@ private List<File> selectedFiles = new ArrayList<>();
                     "DOWNLOADED"
             );
 
-            showAlert("Fichier téléchargé avec succès");
+            showAlert(I18n.t("fileDownloadedSuccess", "File downloaded successfully"));
         }
 
     } catch (Exception e) {
@@ -214,11 +217,11 @@ private List<File> selectedFiles = new ArrayList<>();
         });
 
         // ================= PREVIEW BUTTON =================
-        TableColumn<DataShareFile,Void> colPreview = new TableColumn<>("Aperçu");
+        TableColumn<DataShareFile,Void> colPreview = new TableColumn<>(I18n.t("button.preview", "Preview"));
 
         colPreview.setCellFactory(param -> new TableCell<>(){
 
-            private final Button btn = new Button("Aperçu");
+            private final Button btn = new Button(I18n.t("button.preview", "Preview"));
 
             {
                 btn.getStyleClass().add("preview-btn");
@@ -226,13 +229,14 @@ private List<File> selectedFiles = new ArrayList<>();
                 btn.setOnAction(event -> {
 
                     DataShareFile file = getTableView().getItems().get(getIndex());
+                    if (!ensureOtpAccess(file)) return;
 
                     try{
 
                         File f = new File(file.getFilePath());
 
                         if(!f.exists()){
-                            showAlert("Fichier introuvable");
+                            showAlert(I18n.t("fileNotFound", "File not found"));
                             return;
                         }
 
@@ -302,6 +306,14 @@ private void handleBrowse() {
     if (files != null) {
 
         for (File file : files) {
+            if (file == null || !file.exists()) {
+                continue;
+            }
+            if (file.length() > DataShareDAO.MAX_SHARE_FILE_SIZE_BYTES) {
+                showAlert(I18n.t("err.fileTooLarge", "Selected file exceeds 15 MB limit.")
+                        + " (" + file.getName() + ")");
+                continue;
+            }
 
             selectedFiles.add(file);
 
@@ -317,7 +329,7 @@ private void handleBrowse() {
 private void handleShare(){
 
     if(selectedFiles == null || selectedFiles.isEmpty()){
-        showAlert("Veuillez sélectionner un fichier");
+        showAlert(I18n.t("err.selectFileFirst", "Please select a file"));
         return;
     }
 
@@ -330,8 +342,20 @@ private void handleShare(){
     }
 
     if(selectedUsers.isEmpty()){
-        showAlert("Veuillez sélectionner au moins un destinataire.");
+        showAlert(I18n.t("err.selectAtLeastOneRecipient", "Please select at least one recipient."));
         return;
+    }
+
+    for (File file : selectedFiles) {
+        if (file == null || !file.exists()) {
+            showAlert(I18n.t("err.selectedFileMissing", "One selected file does not exist anymore."));
+            return;
+        }
+        if (file.length() > DataShareDAO.MAX_SHARE_FILE_SIZE_BYTES) {
+            showAlert(I18n.t("err.fileTooLarge", "Selected file exceeds 15 MB limit.")
+                    + " (" + file.getName() + ")");
+            return;
+        }
     }
 
     final String expiration =
@@ -366,7 +390,7 @@ private void handleShare(){
 
                 loading.close();
 
-                showAlert("Fichier(s) partagé(s) avec succès");
+                showAlert(I18n.t("filesSharedSuccess", "File(s) shared successfully"));
 
                 fileList.getItems().clear();
                 selectedFiles.clear();
@@ -380,7 +404,7 @@ private void handleShare(){
 
             Platform.runLater(() -> {
                 loading.close();
-                showAlert("Erreur lors du partage du fichier.");
+                showAlert(I18n.t("err.shareFile", "Error while sharing file."));
             });
 
             ex.printStackTrace();
@@ -409,9 +433,11 @@ private void handleDownload(){
     DataShareFile file = tableInbox.getSelectionModel().getSelectedItem();
 
     if(file == null){
-        showAlert("Veuillez sélectionner un fichier à télécharger.");
+        showAlert(I18n.t("err.selectFileToDownload", "Please select a file to download."));
         return;
     }
+
+    if (!ensureOtpAccess(file)) return;
 
     try{
 
@@ -448,7 +474,7 @@ private void handleDownload(){
 
     }catch(Exception e){
         e.printStackTrace();
-        showAlert("Erreur lors du téléchargement.");
+        showAlert(I18n.t("err.downloadFile", "Error while downloading file."));
     }
 }
 
@@ -461,6 +487,23 @@ private void handleDownload(){
         tableInbox.setItems(
                 FXCollections.observableArrayList(inboxFiles)
         );
+    }
+
+    public void focusFileById(int fileId) {
+        if (inboxFiles == null || inboxFiles.isEmpty()) {
+            loadInbox();
+        }
+        DataShareFile target = null;
+        for (DataShareFile f : inboxFiles) {
+            if (f.getId() == fileId) {
+                target = f;
+                break;
+            }
+        }
+        if (target != null) {
+            tableInbox.getSelectionModel().select(target);
+            tableInbox.scrollTo(target);
+        }
     }
 
     // ================= FILTER FILES =================
@@ -506,10 +549,10 @@ private ProgressBar progressBar;
 
 private Stage showLoadingDialog(){
 
-    Label title = new Label("Message");
+    Label title = new Label(I18n.t("loading", "Loading"));
     title.setStyle("-fx-font-size:16px; -fx-font-weight:bold;");
 
-    Label msg = new Label("Please wait while the file is being shared...");
+    Label msg = new Label(I18n.t("shareInProgress", "Please wait while the file is being shared..."));
     msg.setStyle("-fx-font-size:13px;");
 
     progressBar = new ProgressBar(0);
@@ -520,15 +563,44 @@ private Stage showLoadingDialog(){
     layout.setStyle("-fx-padding:20; -fx-background-color:white;");
 
     Scene scene = new Scene(layout);
+    AppUiStyles.applyToScene(scene);
 
     Stage dialog = new Stage();
-    dialog.setTitle("Chargement");
+    dialog.setTitle(I18n.t("loading", "Loading"));
     dialog.setScene(scene);
     dialog.setWidth(380);
     dialog.setHeight(160);
     dialog.setResizable(false);
 
     return dialog;
+}
+
+private boolean ensureOtpAccess(DataShareFile file) {
+    if (file == null) return false;
+    int recipientId = Session.getUserId();
+
+    if (DataShareDAO.isOtpVerifiedForRecipient(file.getId(), recipientId)) {
+        return true;
+    }
+
+    TextInputDialog dialog = new TextInputDialog();
+    dialog.setTitle(I18n.t("otpRequiredTitle", "OTP Required"));
+    dialog.setHeaderText(I18n.t("otpRequiredHeader", "Enter the OTP sent with the share notification"));
+    dialog.setContentText(I18n.t("otpLabel", "OTP") + ":");
+
+    String entered = dialog.showAndWait().orElse("").trim();
+    if (entered.isBlank()) {
+        showAlert(I18n.t("err.otpRequired", "OTP is required to access this file."));
+        return false;
+    }
+
+    boolean valid = DataShareDAO.verifyOtpForRecipient(file.getId(), recipientId, entered);
+    if (!valid) {
+        showAlert(I18n.t("err.invalidOrExpiredOtp", "Invalid or expired OTP."));
+        return false;
+    }
+
+    return true;
 }
     
     

@@ -1,0 +1,112 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 80MB
+  application:
+    name: sysco-web
+  thymeleaf:
+    cache: false
+  messages:
+    basename: messages
+    encoding: UTF-8
+  # Avoid an extra JDBC probe during servlet startup (can race with Hikari on file-based embedded H2).
+  h2:
+    console:
+      enabled: false
+  datasource:
+    # Outside the repo by default so antivirus / IDE / stray JVM on workspace ./data does not wedge MVStore locks.
+    # Use repo-local DB: SYSCO_H2_FILE=./data/sysco-web-db (relative paths resolve from JVM working directory).
+    url: jdbc:h2:file:${SYSCO_H2_FILE:${user.home}/.sysco-web/h2/sysco-web-db};MODE=LEGACY;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  # Optional SMTP — leave host empty to disable outbound mail (ticket e-mails are skipped).
+  # Example: SPRING_MAIL_HOST=smtp.office365.com SPRING_MAIL_USERNAME=… SPRING_MAIL_PASSWORD=…
+  mail:
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 15000
+      mail.smtp.timeout: 15000
+      mail.smtp.writetimeout: 15000
+
+sysco:
+  flyway:
+    # H2 dev only: if the file DB has SYSCO tables but no successful Flyway row, or a failed V1 row, drop all objects once then re-migrate. Set false to keep a broken DB and fix manually (delete the DB files under your H2 path, see spring.datasource.url).
+    repair-orphan-h2: ${SYSCO_FLYWAY_REPAIR_ORPHAN_H2:true}
+  assistant:
+    # Optional OpenAI-compatible chat: create-ticket assistant + closure briefing on ticket detail when status is CLOSE_REQUESTED.
+    # Leave blank for scripted / deterministic summaries only.
+    # Local dev: copy sysco-web/.env.example to sysco-web/.env and set SYSCO_OPENAI_API_KEY (loaded automatically at startup).
+    openai-api-key: ${SYSCO_OPENAI_API_KEY:}
+    openai-base-url: ${SYSCO_OPENAI_BASE_URL:https://api.openai.com}
+    openai-model: ${SYSCO_OPENAI_MODEL:gpt-4o-mini}
+  mail:
+    from: ${SYSCO_MAIL_FROM:noreply@localhost}
+    public-base-url: ${SYSCO_PUBLIC_BASE_URL:http://localhost:8080}
+    # Used when a user has no e-mail or only a placeholder (e.g. *.local). Ticket notifications go here instead.
+    default-notify-email: ${SYSCO_MAIL_DEFAULT_NOTIFY_EMAIL:sysco.ticketing@gmail.com}
+    # Inbound alert when a new ticket is logged (handling direction); override per deployment.
+    direction-new-ticket-inbox: ${SYSCO_MAIL_DIRECTION_NEW_TICKET_INBOX:sysco.ticketing@gmail.com}
+  scheduler:
+    # Task planner: poll automated_jobs for reminders and due notifications (ms between runs).
+    jobs-poll-ms: ${SYSCO_JOBS_POLL_MS:60000}
+  uploads:
+    directory: ${SYSCO_UPLOAD_DIR:${user.home}/.sysco-web/uploads}
+  data-entry:
+    audit-csv: ${SYSCO_DATA_ENTRY_AUDIT_CSV:data/data_entry_audit.csv}
+  excel:
+    # Overrides JavaFX defaults: -Dsysco.excel.data=… or env SYSCO_EXCEL_DATA; else ./data/user_records.xlsx
+    data: ${SYSCO_EXCEL_DATA:}
+
+server:
+  # Bind on all interfaces so other PCs can reach this app over LAN.
+  address: ${SERVER_ADDRESS:0.0.0.0}
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        name: SYSCOSESSION
+
+# Logging: periodic WebSocket broker stats (INFO every ~30m) are noisy in dev.
+# AsyncRequestNotUsableException WARN = client closed the connection (tab close, refresh, VPN, SockJS)
+# before the server finished writing — normal for browsers; not an application bug.
+logging:
+  level:
+    org.springframework.web.socket.messaging.WebSocketMessageBrokerStats: WARN
+
+---
+# Example production profile: point at your Oracle instance used by the JavaFX client.
+spring:
+  config:
+    activate:
+      on-profile: oracle
+  flyway:
+    enabled: false
+  datasource:
+    url: ${SYSCO_JDBC_URL:jdbc:oracle:thin:@localhost:1521/FREEPDB1}
+    username: ${SYSCO_DB_USER:sysco}
+    password: ${SYSCO_DB_PASSWORD:}
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: ${SYSCO_DB_SCHEMA:}

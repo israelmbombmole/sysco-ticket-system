@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Ma garde</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page my-shift-page">
+    <div class="card myshift-banner myshift-hero-dashboard">
+        <div class="myshift-hero-main">
+            <div class="myshift-hero-copy">
+                <p class="myshift-banner-kicker" th:text="#{myShift.hero.kicker}">PRÉSENCE</p>
+                <h1 class="title-large" th:text="#{myShift.hero.title}">Ma garde</h1>
+                <p class="subtitle muted myshift-hero-sub"
+                   th:if="${view.ui.agentFocusLayout()}"
+                   th:text="#{myShift.hero.subtitleAgent}">
+                    Personal attendance only.
+                </p>
+                <p class="subtitle muted myshift-hero-sub"
+                   th:unless="${view.ui.agentFocusLayout()}"
+                   th:text="#{myShift.hero.subtitle}">
+                    Pointage, présence en direct et rapports par direction.
+                </p>
+                <div class="myshift-live-strip" th:unless="${view.ui.agentFocusLayout()}">
+                    <span class="myshift-live-dot" aria-hidden="true"></span>
+                    <span th:text="#{myShift.live.presenceStrip(${view.presentCount})}">0 on site</span>
+                </div>
+                <p class="muted myshift-live-strip"
+                   th:if="${view.ui.agentFocusLayout()}"
+                   th:text="#{myShift.live.agentHint}">
+                    Only your own punches appear here.
+                </p>
+            </div>
+            <div class="myshift-clock-stack">
+                <div class="myshift-clock-widget" id="myshift-clock-widget" aria-live="polite">
+                    <div class="myshift-clock-ring" id="myshift-clock-ring" aria-hidden="true"></div>
+                    <div class="myshift-clock-face">
+                        <time id="myshift-live-time" class="myshift-live-time-digit">--:--:--</time>
+                        <span id="myshift-live-date" class="myshift-live-date-line"></span>
+                        <span class="myshift-clock-caption" th:text="#{myShift.clock.caption}">Local time</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-alerts">
+        <p class="success-banner" th:if="${successKey != null}" th:text="#{${successKey}}">OK</p>
+        <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Err</p>
+    </div>
+
+    <div class="myshift-stats-grid" th:unless="${view.ui.agentFocusLayout()}">
+        <div class="myshift-stat-card myshift-stat-card--present">
+            <p class="myshift-stat-value" th:text="${view.stats.presentNowCount()}">0</p>
+            <p class="myshift-stat-label" th:text="#{myShift.stat.presentNow}">Present now</p>
+        </div>
+        <div class="myshift-stat-card myshift-stat-card--sessions">
+            <p class="myshift-stat-value" th:text="${view.stats.sessionsInPeriod()}">0</p>
+            <p class="myshift-stat-label" th:text="#{myShift.stat.sessionsPeriod}">Sessions (period)</p>
+        </div>
+        <div class="myshift-stat-card myshift-stat-card--done">
+            <p class="myshift-stat-value" th:text="${view.stats.completedSessions()}">0</p>
+            <p class="myshift-stat-label" th:text="#{myShift.stat.completed}">Completed intervals</p>
+        </div>
+        <div class="myshift-stat-card myshift-stat-card--open">
+            <p class="myshift-stat-value" th:text="${view.stats.openSessionsInPeriod()}">0</p>
+            <p class="myshift-stat-label" th:text="#{myShift.stat.openInReport}">Open in report range</p>
+        </div>
+    </div>
+
+    <div class="card page-panel myshift-panel myshift-supervisor-card"
+         th:if="${view.ui.showWeeklyPolicyForm() && view.ui.weeklyPolicy() != null}">
+        <h3 class="courier-subheading" th:text="#{myShift.policy.title}">Weekly punch windows</h3>
+        <p class="muted myshift-panel-lead" th:text="#{myShift.policy.hint}">Configure arrival grace and departure windows.</p>
+
+        <div class="myshift-form-stack">
+            <form th:if="${view.ui.policySousDirectionChoices() != null && view.ui.policySousDirectionChoices().size() > 1}"
+                  method="get" class="myshift-scope-picker" th:action="@{/app/my-shift}">
+                <input type="hidden" name="direction" th:value="${view.direction}" />
+                <input type="hidden" name="from" th:value="${view.from}" />
+                <input type="hidden" name="to" th:value="${view.to}" />
+                <input type="hidden" name="q" th:value="${view.q}" />
+                <div class="myshift-field-full">
+                    <label class="form-label" for="policy-sd-select" th:text="#{myShift.policy.scopeLabel}">Sous-direction</label>
+                    <select id="policy-sd-select"
+                            class="form-input myshift-input-comfortable"
+                            name="policySd"
+                            onchange="this.form.submit()">
+                        <option th:each="opt : ${view.ui.policySousDirectionChoices()}"
+                                th:value="${opt.id()}"
+                                th:text="${opt.label()}"
+                                th:selected="${view.ui.weeklyPolicy().sousDirectionId() != null && opt.id() == view.ui.weeklyPolicy().sousDirectionId()}">—</option>
+                    </select>
+                </div>
+            </form>
+
+            <div class="myshift-field-full myshift-scope-static"
+                 th:if="${view.ui.policySousDirectionChoices() != null && view.ui.policySousDirectionChoices().size() == 1}">
+                <span class="form-label" th:text="#{myShift.policy.scopeLabel}">Sous-direction</span>
+                <p class="myshift-scope-readonly"
+                   th:text="${view.ui.policySousDirectionChoices().get(0).label()}">—</p>
+            </div>
+
+            <form method="post" th:action="@{/app/my-shift/policy}" class="myshift-policy-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="direction" th:value="${view.direction}" />
+                <input type="hidden" name="weekMonday" th:value="${view.ui.weeklyPolicy().weekMonday()}" />
+                <input type="hidden" name="sousDirectionId" th:value="${view.ui.weeklyPolicy().sousDirectionId()}" />
+
+                <div class="myshift-policy-times-grid">
+                    <div class="myshift-policy-time-row myshift-policy-time-row--arrival">
+                        <div class="myshift-time-field">
+                            <label class="form-label" for="policy-arrival-from" th:text="#{myShift.policy.arrivalFrom}">Arrival opens</label>
+                            <input id="policy-arrival-from" class="form-input myshift-input-comfortable" type="time" name="arrivalAllowedFrom" required
+                                   th:value="${#temporals.format(view.ui.weeklyPolicy().arrivalAllowedFrom(), 'HH:mm')}" />
+                        </div>
+                        <div class="myshift-time-field">
+                            <label class="form-label" for="policy-arrival-ontime" th:text="#{myShift.policy.arrivalOnTimeUntil}">On-time until</label>
+                            <input id="policy-arrival-ontime" class="form-input myshift-input-comfortable" type="time" name="arrivalOnTimeUntil" required
+                                   th:value="${#temporals.format(view.ui.weeklyPolicy().arrivalOnTimeUntil(), 'HH:mm')}" />
+                        </div>
+                        <div class="myshift-time-field">
+                            <label class="form-label" for="policy-arrival-late" th:text="#{myShift.policy.arrivalLateUntil}">Late until</label>
+                            <input id="policy-arrival-late" class="form-input myshift-input-comfortable" type="time" name="arrivalLateUntil" required
+                                   th:value="${#temporals.format(view.ui.weeklyPolicy().arrivalLateUntil(), 'HH:mm')}" />
+                        </div>
+                    </div>
+                    <div class="myshift-policy-time-row myshift-policy-time-row--departure">
+                        <div class="myshift-time-field">
+                            <label class="form-label" for="policy-dep-from" th:text="#{myShift.policy.departureFrom}">Departure opens</label>
+                            <input id="policy-dep-from" class="form-input myshift-input-comfortable" type="time" name="departureAllowedFrom" required
+                                   th:value="${#temporals.format(view.ui.weeklyPolicy().departureAllowedFrom(), 'HH:mm')}" />
+                        </div>
+                        <div class="myshift-time-field">
+                            <label class="form-label" for="policy-dep-until" th:text="#{myShift.policy.departureUntil}">Departure closes</label>
+                            <input id="policy-dep-until" class="form-input myshift-input-comfortable" type="time" name="departureAllowedUntil" required
+                                   th:value="${#temporals.format(view.ui.weeklyPolicy().departureAllowedUntil(), 'HH:mm')}" />
+                        </div>
+                    </div>
+                </div>
+                <div class="myshift-form-actions">
+                    <button type="submit" class="success-btn myshift-form-primary-btn" th:text="#{myShift.policy.save}">Save</button>
+                    <span class="muted myshift-saved-hint" th:if="${view.ui.weeklyPolicy().existsInDb()}" th:text="#{myShift.policy.savedHint}">Saved.</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card page-panel myshift-panel myshift-supervisor-card myshift-override-panel"
+         th:if="${view.ui.showWeeklyPolicyForm() && view.ui.hasManagedTeam()}">
+        <h3 class="courier-subheading" th:text="#{myShift.override.title}">Grant punch access</h3>
+        <p class="muted myshift-panel-lead" th:text="#{myShift.override.hint}">After the late window closes, authorise one agent for today.</p>
+        <form method="post" th:action="@{/app/my-shift/override}" class="myshift-override-form">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="direction" th:value="${view.direction}" />
+            <div class="myshift-field-full">
+                <label class="form-label" for="override-target" th:text="#{myShift.override.targetLabel}">Agent</label>
+                <input id="override-target"
+                       class="form-input myshift-input-comfortable"
+                       type="text"
+                       name="target"
+                       required
+                       maxlength="120"
+                       autocomplete="off"
+                       th:placeholder="#{myShift.override.targetPlaceholder}"/>
+            </div>
+            <div class="myshift-field-full">
+                <label class="form-label" for="override-scope" th:text="#{myShift.override.scopeLabel}">Scope</label>
+                <select id="override-scope"
+                        name="grantScope"
+                        class="form-input myshift-input-comfortable">
+                    <option value="both" th:text="#{myShift.override.scope.both}">Both</option>
+                    <option value="arrival" th:text="#{myShift.override.scope.arrival}">Arrival</option>
+                    <option value="departure" th:text="#{myShift.override.scope.departure}">Departure</option>
+                </select>
+            </div>
+            <div class="myshift-form-actions">
+                <button type="submit"
+                        class="success-btn myshift-form-primary-btn"
+                        th:attr="formaction=@{/app/my-shift/override}"
+                        th:text="#{myShift.override.submit}">Grant</button>
+                <button type="submit"
+                        class="secondary-btn myshift-form-primary-btn"
+                        th:attr="formaction=@{/app/my-shift/override/revoke}"
+                        th:text="#{myShift.override.revoke}">Revoke</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card page-panel myshift-panel myshift-personal-card"
+         id="myshift-session-board"
+         th:data-in-office="${view.mySession.inOffice()}">
+        <h3 class="courier-subheading" th:text="#{myShift.personal.title}">Your session today</h3>
+        <div class="myshift-personal-grid">
+            <div class="myshift-status-column">
+                <div class="myshift-status-row">
+                    <span class="myshift-presence-dot"
+                          th:classappend="${view.mySession.inOffice()} ? ' myshift-presence-dot--on' : ' myshift-presence-dot--off'"
+                          aria-hidden="true"></span>
+                    <p class="myshift-pill"
+                       th:classappend="${view.mySession.inOffice()} ? ' myshift-pill-on' : ' myshift-pill-off'">
+                        <span th:if="${view.mySession.inOffice()}" th:text="#{myShift.session.inOffice}">On site</span>
+                        <span th:unless="${view.mySession.inOffice()}" th:text="#{myShift.session.outOffice}">Off site</span>
+                    </p>
+                </div>
+                <p class="muted myshift-personal-hint" th:text="#{myShift.personal.hint}">
+                    Press the button below to check in or check out for today.
+                </p>
+                <p class="login-error"
+                   th:if="${view.ui.punchBlockedReasonKey() != null && !#strings.isEmpty(view.ui.punchBlockedReasonKey())}"
+                   th:text="#{${view.ui.punchBlockedReasonKey()}}">Blocked.</p>
+                <p class="muted myshift-live-elapsed-note" th:if="${view.mySession.inOffice()}"
+                   th:text="#{myShift.session.elapsedLiveHint}">Updates automatically.</p>
+                <div class="myshift-week-meter-wrap">
+                    <div class="myshift-week-meter-head">
+                        <span th:text="#{myShift.personal.weekMeter}">Week rhythm</span>
+                        <span class="myshift-week-meter-val"
+                              th:text="|${view.mySession.weekDaysPresent()} / 7|">0 / 7</span>
+                    </div>
+                    <div class="myshift-week-meter" role="progressbar"
+                         th:attr="aria-valuemin=0, aria-valuemax=7, aria-valuenow=${view.mySession.weekDaysPresent()}">
+                        <div class="myshift-week-meter-fill"
+                             th:style="|width: ${T(java.lang.Math).min(100.0, view.mySession.weekDaysPresent() * (100.0 / 7.0))}%;|"></div>
+                    </div>
+                </div>
+            </div>
+            <dl class="myshift-dl">
+                <dt th:text="#{myShift.personal.firstIn}">First arrival</dt>
+                <dd th:text="${#strings.isEmpty(view.mySession.todayFirstArrivalFormatted()) ? '—' : view.mySession.todayFirstArrivalFormatted()}">—</dd>
+                <dt th:text="#{myShift.personal.elapsed}">Time on site</dt>
+                <dd>
+                    <span th:if="${view.mySession.inOffice()}"
+                          id="myshift-live-elapsed"
+                          th:attr="data-arrival-ms=${view.mySession.openArrivalEpochMs()}"
+                          th:text="${!#strings.isEmpty(view.mySession.elapsedInOfficeLabel()) ? view.mySession.elapsedInOfficeLabel() : '—'}">—</span>
+                    <span th:unless="${view.mySession.inOffice()}">—</span>
+                </dd>
+                <dt th:text="#{myShift.personal.weekDays}">Days present (this week)</dt>
+                <dd th:text="${view.mySession.weekDaysPresent()}">0</dd>
+            </dl>
+        </div>
+        <form id="punch-form" method="post" th:action="@{/app/my-shift/punch}" class="myshift-punch-actions">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="direction" th:value="${view.direction}" />
+            <button type="submit" class="success-btn myshift-punch-btn myshift-punch-btn--out"
+                    th:if="${view.mySession.inOffice() && view.ui.canPunchDeparture()}"
+                    th:text="#{myShift.punch.checkOut}">Check out</button>
+            <button type="submit" class="success-btn myshift-punch-btn myshift-punch-btn--in"
+                    th:if="${!view.mySession.inOffice() && view.ui.canPunchArrival()}"
+                    th:text="#{myShift.punch.checkIn}">Check in</button>
+        </form>
+    </div>
+
+    <div class="card page-panel myshift-panel"
+         id="myshift-director-today-panel"
+         th:if="${view.ui.showDirectorSummary() && view.ui.hasManagedTeam()}">
+        <button type="button"
+                id="myshift-director-today-toggle"
+                class="myshift-director-today-toggle"
+                aria-expanded="false"
+                aria-controls="myshift-director-today-collapsible"
+                th:aria-label="#{myShift.director.toggleAgentsTable}">
+            <h3 class="courier-subheading myshift-director-title" th:text="#{myShift.director.todayTitle}">Agents today</h3>
+            <span class="myshift-director-today-toggle-icon" aria-hidden="true"></span>
+        </button>
+        <div id="myshift-director-today-collapsible" class="myshift-director-today-collapsible" hidden>
+            <div class="myshift-director-search-wrap">
+                <label class="sr-only" for="myshift-director-search" th:text="#{myShift.director.searchLabel}">Filter</label>
+                <input type="search"
+                       id="myshift-director-search"
+                       class="form-input myshift-director-search-input"
+                       autocomplete="off"
+                       spellcheck="false"
+                       th:placeholder="#{myShift.director.searchPlaceholder}"/>
+            </div>
+            <p id="myshift-director-no-match"
+               class="muted myshift-director-no-match"
+               hidden
+               th:text="#{myShift.director.searchNoMatch}">No matches.</p>
+            <table id="myshift-director-today-table" class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{myShift.director.col.agent}">Agent</th>
+                <th th:text="#{myShift.director.col.matricule}">Matricule</th>
+                <th th:text="#{myShift.director.col.role}">Role</th>
+                <th th:text="#{myShift.director.col.arrival}">Arrival</th>
+                <th th:text="#{myShift.director.col.overrideAccess}">Today&apos;s exception</th>
+                <th th:text="#{myShift.director.col.status}">Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${view.ui.directorTodayRows()}"
+                th:data-search="|${row.username()} ${row.matricule()} ${row.roleLabel()}|">
+                <td th:text="${row.username()}">—</td>
+                <td th:text="${row.matricule()}">—</td>
+                <td th:text="${row.roleLabel()}">—</td>
+                <td th:text="${row.arrivalFormatted()}">—</td>
+                <td th:text="#{${row.overrideAccessKey()}}">—</td>
+                <td th:text="#{${row.statusMessageKey()}}">—</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card page-panel myshift-panel"
+         th:if="${view.ui.showSupervisorPanels() && view.ui.hasManagedTeam() && view.ui.todayOverrideGrants() != null && !view.ui.todayOverrideGrants().isEmpty()}">
+        <h3 class="courier-subheading" th:text="#{myShift.director.overrideTitle}">Today's access grants</h3>
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{myShift.director.col.agent}">Agent</th>
+                <th th:text="#{myShift.director.col.matricule}">Matricule</th>
+                <th th:text="#{myShift.override.scope.arrivalShort}">Arr.</th>
+                <th th:text="#{myShift.override.scope.departureShort}">Dep.</th>
+                <th th:text="#{myShift.override.grantedBy}">Granted by</th>
+                <th th:text="#{myShift.override.grantedAt}">When</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="g : ${view.ui.todayOverrideGrants()}">
+                <td th:text="${g.granteeUsername()}">—</td>
+                <td th:text="${g.matricule()}">—</td>
+                <td>
+                    <span th:if="${g.arrivalBypass()}" th:text="#{myShift.director.access.yes}">Yes</span>
+                    <span th:unless="${g.arrivalBypass()}" th:text="#{myShift.director.access.no}">No</span>
+                </td>
+                <td>
+                    <span th:if="${g.departureBypass()}" th:text="#{myShift.director.access.yes}">Yes</span>
+                    <span th:unless="${g.departureBypass()}" th:text="#{myShift.director.access.no}">No</span>
+                </td>
+                <td th:text="${g.granterUsername()}">—</td>
+                <td th:text="${g.grantedAt()}">—</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card page-panel myshift-panel" th:if="${view.ui.showSupervisorPanels()}">
+        <div class="myshift-row-head">
+            <h3 class="courier-subheading" th:text="#{myShift.present.title}">Currently present</h3>
+            <form class="myshift-top-actions" method="get" th:action="@{/app/my-shift}">
+                <input type="hidden" name="from" th:value="${view.from}" />
+                <input type="hidden" name="to" th:value="${view.to}" />
+                <input class="form-input" type="text" name="q" th:value="${view.q}" th:placeholder="#{myShift.filter.searchPlaceholder}"/>
+                <label class="form-label" th:text="#{myShift.filter.direction}">Direction</label>
+                <select class="form-input" name="direction">
+                    <option value="" th:text="#{myShift.filter.allDirections}">All</option>
+                    <option th:each="d : ${directions}" th:value="${d}" th:text="${d}" th:selected="${d == view.direction}">—</option>
+                </select>
+                <button type="submit" class="secondary-btn btn-sm" th:text="#{myShift.filter.refresh}">Refresh</button>
+            </form>
+        </div>
+
+        <table class="sysco-table myshift-presence-table">
+            <thead>
+            <tr>
+                <th th:text="#{myShift.col.name}">Name</th>
+                <th th:text="#{myShift.col.matricule}">ID</th>
+                <th th:text="#{myShift.col.role}">Role</th>
+                <th th:text="#{myShift.col.arrival}">Arrival</th>
+                <th th:text="#{myShift.col.signature}">Signature</th>
+                <th th:text="#{myShift.col.departure}">Departure</th>
+                <th th:text="#{myShift.col.site}">Site</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${view.presentRows}">
+                <td th:text="${r.fullName}">—</td>
+                <td th:text="${r.matricule}">—</td>
+                <td th:text="${r.functionName}">—</td>
+                <td th:text="${#temporals.format(r.arrivalAt, 'HH:mm')}">—</td>
+                <td th:text="${r.signature}">—</td>
+                <td th:text="${r.departureAt == null ? '' : #temporals.format(r.departureAt, 'HH:mm')}"></td>
+                <td th:text="${r.direction}">—</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(view.presentRows)}">
+                <td colspan="7" class="muted myshift-empty" th:text="#{myShift.present.empty}">Nobody checked in.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card page-panel myshift-panel" th:if="${view.ui.showSupervisorPanels()}">
+        <h3 class="courier-subheading" th:text="#{myShift.report.title}">Attendance report</h3>
+        <form class="myshift-report-filter" method="get" th:action="@{/app/my-shift}">
+            <label class="form-label" th:text="#{myShift.report.from}">From</label>
+            <input class="form-input" type="date" name="from" th:value="${view.from}" />
+            <label class="form-label" th:text="#{myShift.report.to}">To</label>
+            <input class="form-input" type="date" name="to" th:value="${view.to}" />
+            <input type="hidden" name="direction" th:value="${view.direction}" />
+            <input type="hidden" name="q" th:value="${view.q}" />
+            <button class="success-btn btn-sm" type="submit" th:text="#{myShift.report.load}">Load</button>
+            <a class="secondary-btn btn-sm"
+               th:href="@{/app/my-shift/report.csv(from=${view.from},to=${view.to},direction=${view.direction},q=${view.q})}"
+               th:text="#{myShift.report.exportCsv}">
+                CSV
+            </a>
+        </form>
+
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{myShift.col.name}">Name</th>
+                <th th:text="#{myShift.col.matricule}">ID</th>
+                <th th:text="#{myShift.col.role}">Role</th>
+                <th th:text="#{myShift.col.arrivalFull}">Arrival</th>
+                <th th:text="#{myShift.col.signature}">Signature</th>
+                <th th:text="#{myShift.col.departureFull}">Departure</th>
+                <th th:text="#{myShift.col.site}">Site</th>
+                <th th:text="#{myShift.col.late}">Late</th>
+                <th th:text="#{myShift.col.override}">Override</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${view.reportRows}">
+                <td th:text="${r.fullName}">—</td>
+                <td th:text="${r.matricule}">—</td>
+                <td th:text="${r.functionName}">—</td>
+                <td th:text="${#temporals.format(r.arrivalAt, 'yyyy-MM-dd HH:mm')}">—</td>
+                <td th:text="${r.signature}">—</td>
+                <td>
+                    <span th:if="${r.departureAt == null}" class="myshift-badge-open" th:text="#{myShift.badge.open}">Open</span>
+                    <span th:if="${r.departureAt != null}" th:text="${#temporals.format(r.departureAt, 'yyyy-MM-dd HH:mm')}">—</span>
+                </td>
+                <td th:text="${r.direction}">—</td>
+                <td th:text="${r.lateArrival()} ? #{myShift.yes} : #{myShift.no}">—</td>
+                <td th:text="${r.outsideWindowOverride()} ? #{myShift.yes} : #{myShift.no}">—</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(view.reportRows)}">
+                <td colspan="9" class="muted myshift-empty" th:text="#{myShift.report.empty}">No rows.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        (function () {
+            var ring = document.getElementById('myshift-clock-ring');
+            var timeEl = document.getElementById('myshift-live-time');
+            var dateEl = document.getElementById('myshift-live-date');
+            var elapsedEl = document.getElementById('myshift-live-elapsed');
+
+            function pad(n) {
+                return String(n).padStart(2, '0');
+            }
+
+            function tickClock() {
+                var now = new Date();
+                var locale = document.documentElement.lang || navigator.language || 'fr-FR';
+                timeEl.textContent = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+                try {
+                    dateEl.textContent = now.toLocaleDateString(locale, {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                } catch (e) {
+                    dateEl.textContent = now.toDateString();
+                }
+                var secFrac = (now.getSeconds() + now.getMilliseconds() / 1000) / 60;
+                var pct = Math.round(secFrac * 1000) / 10;
+                if (ring) {
+                    ring.style.background =
+                        'conic-gradient(from -90deg, rgba(125, 211, 252, 0.95) ' +
+                        pct +
+                        '%, rgba(255,255,255,0.12) ' +
+                        pct +
+                        '%)';
+                }
+            }
+
+            function formatElapsed(arrivalMs) {
+                var mins = Math.floor((Date.now() - arrivalMs) / 60000);
+                if (mins < 0) mins = 0;
+                var h = Math.floor(mins / 60);
+                var m = mins % 60;
+                return h + 'h ' + m + 'min';
+            }
+
+            function tickElapsed() {
+                if (!elapsedEl) return;
+                var ms = elapsedEl.getAttribute('data-arrival-ms');
+                if (!ms || ms === '') return;
+                var n = parseInt(ms, 10);
+                if (Number.isNaN(n)) return;
+                elapsedEl.textContent = formatElapsed(n);
+            }
+
+            tickClock();
+            tickElapsed();
+            setInterval(tickClock, 250);
+            setInterval(tickElapsed, 15000);
+        })();
+
+        (function () {
+            var toggle = document.getElementById('myshift-director-today-toggle');
+            var region = document.getElementById('myshift-director-today-collapsible');
+            if (toggle && region) {
+                toggle.addEventListener('click', function () {
+                    var willOpen = region.hidden;
+                    region.hidden = !willOpen;
+                    toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                    toggle.classList.toggle('is-open', willOpen);
+                });
+            }
+
+            var panel = document.getElementById('myshift-director-today-panel');
+            var input = document.getElementById('myshift-director-search');
+            var table = document.getElementById('myshift-director-today-table');
+            if (!panel || !input || !table) {
+                return;
+            }
+            var tbody = table.querySelector('tbody');
+            if (!tbody) {
+                return;
+            }
+            var rows = tbody.querySelectorAll('tr[data-search]');
+            var emptyMsg = document.getElementById('myshift-director-no-match');
+
+            function applyFilter() {
+                var q = (input.value || '').trim().toLowerCase();
+                var visible = 0;
+                for (var i = 0; i < rows.length; i++) {
+                    var tr = rows[i];
+                    var hay = (tr.getAttribute('data-search') || '').toLowerCase();
+                    var show = !q || hay.indexOf(q) !== -1;
+                    tr.style.display = show ? '' : 'none';
+                    if (show) {
+                        visible++;
+                    }
+                }
+                if (emptyMsg) {
+                    emptyMsg.hidden = !(q.length > 0 && visible === 0);
+                }
+            }
+
+            input.addEventListener('input', applyFilter);
+            input.addEventListener('search', applyFilter);
+        })();
+    </script>
+</section>
+</body>
+</html>

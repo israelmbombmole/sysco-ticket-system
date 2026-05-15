@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="#{login.title}">Login</title>
+    <link rel="stylesheet" th:href="@{/css/sysco-theme.css}"/>
+</head>
+<body class="sysco-body">
+<div class="login-wrap">
+    <div class="login-shell">
+        <div class="login-card login-card-left">
+            <h1 class="login-brand">SYSCO</h1>
+            <p class="muted login-subtitle" th:text="#{login.subtitle}">Sign in to your account</p>
+            <p class="muted login-ident-hint" th:text="#{login.identHint}">How to sign in.</p>
+
+            <div th:if="${param.sessionInvalid}" class="login-error">Session expirée ou utilisateur introuvable. Veuillez vous reconnecter.</div>
+            <div th:if="${param.inactive}" class="login-error" th:text="#{login.inactive}">Compte désactivé.</div>
+            <div th:if="${param.locked}" class="login-error">
+                <span th:if="${param.fresh != null}"
+                      th:text="#{login.locked.fresh(${param.minutes[0]})}">Verrouillage après tentatives.</span>
+                <span th:if="${param.fresh == null}"
+                      th:text="#{login.locked.wait(${param.minutes[0]})}">Réessayez plus tard.</span>
+            </div>
+            <div th:if="${param.attempts}" class="login-error">
+                Tentative <strong th:text="${param.attempts[0]}">1</strong>
+                sur <strong>5</strong> :
+                identifiant ou mot de passe incorrect.
+            </div>
+            <div th:if="${param.error != null && param.attempts == null}" class="login-error" th:text="#{login.error}">Error</div>
+            <div th:if="${param.logout}" class="muted login-info" th:text="#{login.logoutSuccess}">Déconnexion effectuée.</div>
+            <div th:if="${forgotPasswordOk}" class="muted login-info" th:text="|Mot de passe temporaire: ${forgotPasswordTemp}|"></div>
+            <div th:if="${forgotPasswordError}" class="login-error" th:text="#{login.forgot.error}">Utilisateur introuvable.</div>
+
+            <form th:action="@{/login}" method="post">
+                <div class="login-field">
+                    <input id="username" name="username" type="text" autocomplete="username" required
+                           th:placeholder="#{login.username.placeholder}"/>
+                </div>
+                <div class="login-field">
+                    <input id="password" name="password" type="password" autocomplete="current-password" required
+                           placeholder="Mot de passe"/>
+                </div>
+                <div class="login-actions">
+                    <button type="submit" class="primary-btn btn-block" th:text="#{login.submit}">Sign in</button>
+                </div>
+            </form>
+            <button type="button" id="forgotToggle" class="login-forgot-toggle">Mot de passe oublié ?</button>
+
+            <form id="forgotForm" class="login-forgot-form" th:action="@{/login/forgot-password}" method="post">
+                <div class="login-field">
+                    <input id="usernameOrEmail" name="usernameOrEmail" type="text" required
+                           th:placeholder="#{login.forgot.placeholder}"/>
+                </div>
+                <div class="login-actions">
+                    <button type="submit" class="secondary-btn btn-block" th:text="#{login.forgot.submit}">Forgot password</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="login-branding-right">
+            <img class="login-dgda-logo" th:src="@{/images/dgda-logo.png}" alt="DGDA Logo"/>
+            <h2 class="login-main-title">Direction Générale des Douanes et Accises</h2>
+            <p class="login-rdc-sub">Direction des Systèmes et Technologies d'Information</p>
+            <p class="login-rdc-sub2">sous-direction de developpement et maintenance des applications (sdma)</p>
+            <p class="login-rdc-note">
+                Ce système est réservé aux utilisateurs autorisés. Toutes les activités sont surveillées et enregistrées.
+                Tout accès non autorisé ou toute utilisation abusive peut entraîner des sanctions disciplinaires, voire des poursuites judiciaires.
+                En vous connectant, vous consentez à cette surveillance.
+            </p>
+        </div>
+    </div>
+</div>
+<script>
+    (function () {
+        const btn = document.getElementById("forgotToggle");
+        const form = document.getElementById("forgotForm");
+        if (!btn || !form) return;
+        btn.addEventListener("click", function () {
+            form.classList.toggle("show");
+        });
+    })();
+</script>
+</body>
+</html>

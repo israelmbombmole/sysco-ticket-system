@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.controller.MyShiftPlanMonthController"
+            styleClass="myshift-teams-page" stylesheets="@../style/myshift-teams.css"
+            prefWidth="480" minHeight="320">
+    <top>
+        <VBox spacing="6" style="-fx-padding: 16 20 8 20;">
+            <Label styleClass="myshift-teams-card-title" text="%myshiftPlanMonthTitle"/>
+            <Label text="%myshiftPlanMonthIntro" wrapText="true" maxWidth="440" styleClass="myshift-teams-muted"/>
+        </VBox>
+    </top>
+    <center>
+        <VBox spacing="12" style="-fx-padding: 0 20 0 20;">
+            <Label text="%myshiftPlanUser"/>
+            <ComboBox fx:id="cmbUser" prefWidth="420" maxWidth="Infinity"/>
+            <Label text="%myshiftPlanMonth"/>
+            <DatePicker fx:id="dpMonth" prefWidth="200" showWeekNumbers="false"/>
+            <Button text="%myshiftPlanApply57" onAction="#onApply57" styleClass="myshift-teams-btn-primary"/>
+            <Label fx:id="lblResult" wrapText="true" maxWidth="420" styleClass="myshift-teams-muted"/>
+        </VBox>
+    </center>
+    <bottom>
+        <HBox alignment="CENTER_RIGHT" spacing="8" style="-fx-padding: 12 20 16 20;">
+            <Button text="%myshiftPlanClose" onAction="#onClose" styleClass="myshift-teams-btn-secondary" cancelButton="true"/>
+        </HBox>
+    </bottom>
+</BorderPane>

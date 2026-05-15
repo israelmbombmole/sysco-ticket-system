@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">File share management</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page file-share-management-page">
+    <div class="card page-panel file-share-mgmt-shell">
+        <h1 class="title-large" th:text="#{${pageTitleKey}}">Gestion du partage de fichiers</h1>
+        <div class="page-alerts" th:if="${successKey != null or errorKey != null}">
+            <p class="success-banner" th:text="#{${successKey}}">Action effectuée.</p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Erreur.</p>
+        </div>
+
+        <div class="success-banner" th:if="${page.otpGrantActive}">
+            <span th:text="#{fileShareMgmt.grantActive}">Temporary access active.</span>
+            <form method="post" th:action="@{/app/file-share-management/access/leave}" class="inline-form" style="margin-left:.75rem;">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="secondary-btn btn-sm" th:text="#{fileShareMgmt.grantLeave}">End session</button>
+            </form>
+        </div>
+
+        <form class="file-share-mgmt-top-row" method="get" th:action="@{/app/file-share-management}">
+            <div>
+                <label class="form-label" for="fsmQuery" th:text="#{fileShareMgmt.search}">Recherche</label>
+                <input id="fsmQuery" class="form-input" type="text" autocomplete="off"
+                       name="q" th:value="${page.q}"
+                       th:placeholder="#{fileShareMgmt.searchPlaceholder}"/>
+                <input type="hidden" name="otpQ" th:value="${page.otpQ}"/>
+            </div>
+        </form>
+
+        <th:block th:if="${page.showAdminPanels}">
+            <form class="file-share-mgmt-otp-row" method="post" th:action="@{/app/file-share-management/otp-duration}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <label class="form-label" for="otpDuration" th:text="#{fileShareMgmt.otpDuration}">Durée de session OTP (minutes)</label>
+                <select id="otpDuration" class="form-input" name="minutes">
+                    <option value="5" th:selected="${page.otpDurationMinutes == 5}">5</option>
+                    <option value="10" th:selected="${page.otpDurationMinutes == 10}">10</option>
+                    <option value="15" th:selected="${page.otpDurationMinutes == 15}">15</option>
+                    <option value="20" th:selected="${page.otpDurationMinutes == 20}">20</option>
+                    <option value="30" th:selected="${page.otpDurationMinutes == 30}">30</option>
+                    <option value="45" th:selected="${page.otpDurationMinutes == 45}">45</option>
+                    <option value="60" th:selected="${page.otpDurationMinutes == 60}">60</option>
+                </select>
+                <button type="submit" class="secondary-btn" th:text="#{fileShareMgmt.save}">Enregistrer</button>
+            </form>
+
+            <div class="file-share-mgmt-otp-requests">
+                <div class="file-share-mgmt-section-head">
+                    <h3 class="courier-subheading" th:text="#{fileShareMgmt.otpRequests}">Demande d'accès OTP</h3>
+                    <a class="secondary-btn btn-sm" th:href="@{/app/file-share-management}" th:text="#{fileShareMgmt.refresh}">Actualiser</a>
+                </div>
+                <form class="file-share-mgmt-top-row" method="get" th:action="@{/app/file-share-management}">
+                    <div>
+                        <label class="form-label" for="otpQuery" th:text="#{fileShareMgmt.search}">Recherche</label>
+                        <input id="otpQuery" class="form-input" type="text"
+                               name="otpQ" th:value="${page.otpQ}"
+                               th:placeholder="#{fileShareMgmt.otpSearchPlaceholder}"/>
+                        <input type="hidden" name="q" th:value="${page.q}"/>
+                    </div>
+                </form>
+                <table class="sysco-table">
+                    <thead>
+                    <tr>
+                        <th th:text="#{fileShareMgmt.col.requestedBy}">Demandé par</th>
+                        <th th:text="#{fileShareMgmt.col.requestedAt}">Demandé le</th>
+                        <th th:text="#{fileShareMgmt.col.status}">Statut</th>
+                        <th th:text="#{fileShareMgmt.col.actions}">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="r : ${page.otpRequests}">
+                        <td th:text="${r.requestedBy}">jordan-paul</td>
+                        <td th:text="${r.requestedAtFmt()}">2026-04-27 14:15:29</td>
+                        <td>
+                            <span th:text="${r.status}">Traité</span>
+                            <span th:if="${r.otpCode != null and !#strings.isEmpty(r.otpCode)}"
+                                  th:text="' (' + ${r.otpCode} + ')'"></span>
+                        </td>
+                        <td>
+                            <form method="post" th:action="@{/app/file-share-management/otp-request/{id}/generate(id=${r.id})}" class="inline-form">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="my-work-pill my-work-pill-alloc user-pill-btn" th:text="#{fileShareMgmt.btn.generateOtp}">Générer OTP</button>
+                            </form>
+                            <form method="post" th:action="@{/app/file-share-management/otp-request/{id}/delete(id=${r.id})}" class="inline-form">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="my-work-pill my-work-pill-esca user-pill-btn" th:text="#{fileShareMgmt.btn.deleteRequest}">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(page.otpRequests)}"><td colspan="4" class="muted">No content in table</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="muted form-hint file-share-mgmt-recipient-hint" th:text="#{fileShareMgmt.recipientHint}">
+                Recipients open files from Data share; OTP is sent by notification.
+            </p>
+        </th:block>
+
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{fileShareMgmt.col.fileName}">Nom du fichier</th>
+                <th th:text="#{fileShareMgmt.col.sharedBy}">Partagé par</th>
+                <th th:text="#{fileShareMgmt.col.role}">Rôle</th>
+                <th th:text="#{fileShareMgmt.col.date}">Date</th>
+                <th th:text="#{fileShareMgmt.col.time}">Heure</th>
+                <th th:text="#{fileShareMgmt.col.preview}">Aperçu</th>
+                <th th:text="#{fileShareMgmt.col.download}">Télécharger</th>
+                <th th:if="${page.showAdminPanels}" th:text="#{fileShareMgmt.col.delete}">Supprimer</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="f : ${page.sharedFiles}">
+                <td th:text="${f.fileName}">Invoice-S3DLJRT-0002.pdf</td>
+                <td th:text="${f.sharedBy}">israel</td>
+                <td th:text="${f.role}">DIRECTEUR</td>
+                <td th:text="${f.date}">2026-04-27</td>
+                <td th:text="${f.time}">14:12:19</td>
+                <td><span class="my-work-pill my-work-pill-alloc">Aperçu</span></td>
+                <td><span class="my-work-pill my-work-pill-view">Télécharger</span></td>
+                <td th:if="${page.showAdminPanels}">
+                    <form method="post" th:action="@{/app/file-share-management/file/{id}/delete(id=${f.id})}" class="inline-form">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="my-work-pill my-work-pill-esca user-pill-btn" th:text="#{fileShareMgmt.col.delete}">Supprimer</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.sharedFiles)}">
+                <td colspan="8" class="muted" th:if="${page.showAdminPanels}">No content in table</td>
+                <td colspan="7" class="muted" th:if="${!page.showAdminPanels}">No content in table</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <th:block th:if="${page.grantExpiresAtEpochMillis != null}">
+            <script th:inline="javascript">
+                /*<![CDATA[*/
+                (function () {
+                    var until = /*[[${page.grantExpiresAtEpochMillis}]]*/ 0;
+                    function tick() {
+                        if (!until || Date.now() >= until) {
+                            window.location.href = /*[[@{/app/file-share-management/access(expired=1)}]]*/ '/app/file-share-management/access?expired=1';
+                            return;
+                        }
+                        setTimeout(tick, 5000);
+                    }
+                    setTimeout(tick, 5000);
+                })();
+                /*]]>*/
+            </script>
+        </th:block>
+    </div>
+</section>
+</body>
+</html>

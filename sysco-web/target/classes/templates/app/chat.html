@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">Chat</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page chat-page">
+    <div class="card page-panel">
+        <h1 class="title-large">Chat</h1>
+        <div class="chat-wa-layout" id="chatWaRoot"
+             th:attr="data-sous-direction-id=${page.selectedSousDirectionId()},data-direction-id=${page.selectedDirectionId()},data-user-id=${page.selectedUserId()},data-conversation-id=${page.selectedConversationId()},data-peer-username=${page.selectedPeerUsername()},data-me=${#authentication.name},data-all-users=${page.allUsersMode()}">
+            <aside class="chat-wa-sidebar">
+                <div class="chat-assistant-unread-strip" th:if="${page.hasUnreadPeerInSidebar()}" role="status">
+                    <span class="chat-ai-mini-label">Assistant</span>
+                    Vous avez au moins une conversation avec un
+                    <strong>nouveau message d’un collègue</strong>.
+                    Les lignes concernées sont <strong>mises en évidence</strong> dans la liste ci-dessous.
+                </div>
+                <div class="chat-assistant-live">
+                    <label class="form-label" for="chatTargetMatricule">Assistant chat IA (matricule ou nom)</label>
+                    <input id="chatTargetMatricule" class="form-input chat-live-search-input" type="text"
+                           autocomplete="off" placeholder="Entrez un matricule ou un nom…"/>
+                    <div id="chatAssistantLivePanel" class="chat-live-panel" hidden>
+                        <p id="chatLiveSearchStatus" class="chat-live-status muted"></p>
+                        <div id="chatLiveCandidatePick" class="chat-live-picks" hidden></div>
+                        <dl id="chatLiveTargetDetails" class="chat-live-details"></dl>
+                        <button type="button" class="primary-btn btn-sm chat-start-conv-btn" id="chatStartBtn" hidden>
+                            Commencer la conversation
+                        </button>
+                    </div>
+                </div>
+                <div class="chat-all-users-toolbar muted">
+                    <a th:if="${!page.allUsersMode()}" class="chat-all-users-link" th:href="@{/app/chat(allUsers=true)}">
+                        Liste complète — tous les utilisateurs actifs
+                    </a>
+                    <a th:if="${page.allUsersMode()}" class="chat-all-users-link" th:href="@{/app/chat}">
+                        Filtrer par sous-direction
+                    </a>
+                </div>
+                <div class="chat-all-users-picker" th:if="${page.allUsersMode()}" id="chatAllUsersPickerWrap">
+                    <label class="form-label" for="chatAllUsersSelect">Choisir un collègue</label>
+                    <select id="chatAllUsersSelect" class="form-input chat-all-users-select">
+                        <option value="">— Sélectionnez un utilisateur —</option>
+                        <option th:each="u : ${page.usersInDirection()}"
+                                th:value="${u.id()}"
+                                th:attr="data-direction-id=${u.directionId()},data-sous-direction-id=${u.sousDirectionId()}"
+                                th:selected="${page.selectedUserId() != null && page.selectedUserId().equals(u.id())}"
+                                th:text="${u.label()}">user</option>
+                    </select>
+                </div>
+                <div class="chat-wa-conversations">
+                    <a th:each="c : ${page.conversations()}"
+                       class="chat-wa-conv"
+                       th:attr="data-conversation-id=${c.id()}"
+                       th:classappend="${(page.selectedConversationId() == c.id() ? ' active' : '') + (c.unreadFromPeer() ? ' chat-wa-conv--unread' : '')}"
+                       th:href="@{/app/chat(sousDirectionId=${c.sousDirectionId()},directionId=${c.directionId()},userId=${c.peerUserId()},conversationId=${c.id()})}">
+                        <div class="chat-avatar" th:text="${#strings.substring(c.peerUsername(),0,1).toUpperCase()}">U</div>
+                        <div class="chat-wa-conv-text">
+                            <div class="chat-wa-conv-title-row">
+                                <strong class="chat-wa-conv-peer-name" th:text="${c.peerUsername()}">User</strong>
+                                <span class="chat-wa-conv-unread-pill" th:if="${c.unreadFromPeer()}">Nouveau</span>
+                            </div>
+                            <p class="chat-wa-conv-assistant-line"
+                               th:classappend="${c.unreadFromPeer()} ? ' chat-wa-conv-assistant-line--fresh' : ''"
+                               th:if="${c.lastMessagePreview() != null && !#strings.isEmpty(#strings.trim(c.lastMessagePreview()))}">
+                                <span class="chat-ai-mini-label">Assistant</span>
+                                <th:block th:if="${c.lastMessageFromPeer()}">
+                                    <th:block th:if="${c.unreadFromPeer()}">Nouveau message de </th:block>
+                                    <th:block th:if="${!c.unreadFromPeer()}">Dernier message de </th:block>
+                                    <strong class="chat-conv-last-sender" th:text="${c.lastSenderUsername()}">x</strong>
+                                </th:block>
+                                <th:block th:if="${!c.lastMessageFromPeer()}">
+                                    Dernier message : <strong class="chat-conv-last-you">vous</strong>
+                                </th:block>
+                                <span class="chat-conv-em-dash"> — </span>
+                                <span class="chat-conv-preview" th:text="${c.lastMessagePreview()}">…</span>
+                            </p>
+                            <p class="chat-wa-conv-assistant-line muted"
+                               th:if="${c.lastMessagePreview() == null || #strings.isEmpty(#strings.trim(c.lastMessagePreview()))}">
+                                <span class="chat-ai-mini-label">Assistant</span>
+                                Pas encore de message — ouvrez pour écrire à
+                                <strong class="chat-wa-conv-peer-inline" th:text="${c.peerUsername()}">…</strong>.
+                            </p>
+                            <p class="muted chat-wa-conv-dir" th:text="${c.directionLabel()}">Direction</p>
+                        </div>
+                    </a>
+                    <p class="muted chat-empty" th:if="${#lists.isEmpty(page.conversations())}">Aucune conversation.</p>
+                </div>
+            </aside>
+            <div class="chat-wa-main">
+                <div class="chat-thread-context" th:if="${page.selectedConversationId() != null}">
+                    <div class="chat-thread-assistant-banner">
+                        <span class="chat-ai-hint-label">Assistant</span>
+                        —
+                        Vous discutez avec
+                        <strong class="chat-thread-peer-highlight" th:text="${page.selectedPeerUsername()}">contact</strong>.
+                        Dans le fil, le nom de celui ou celle qui envoie est affiché en
+                        <strong class="chat-thread-sender-note">bleu</strong> (messages reçus) ou en
+                        <strong class="chat-thread-you-note">vert</strong> (vos messages).
+                    </div>
+                </div>
+                <div id="chatIncomingHint" class="chat-ai-hint" role="status" aria-live="polite" hidden></div>
+                <div class="chat-thread" id="chatThread">
+                    <div th:each="m : ${page.messages()}" class="chat-msg"
+                         th:classappend="${m.senderUsername() == #authentication.name ? ' mine' : ''}"
+                         th:attr="data-mid=${m.id()},data-conv=${m.conversationId()}">
+                        <div class="chat-msg-head">
+                            <div class="chat-avatar" th:text="${#strings.substring(m.senderUsername(),0,1).toUpperCase()}">U</div>
+                            <strong class="chat-msg-sender-name" th:text="${m.senderUsername()}">user</strong>
+                            <span class="muted chat-msg-time" th:text="${m.createdAt()}">time</span>
+                            <span class="muted" th:if="${m.edited()}">(modifié)</span>
+                        </div>
+                        <p th:if="${m.text() != null && !#strings.isEmpty(#strings.trim(m.text()))}" th:text="${m.text()}">msg</p>
+                        <div class="chat-attachment" th:if="${!#strings.isEmpty(m.attachmentPath())}">
+                            <a th:if="${m.attachmentImage()}" class="chat-attachment-image-frame"
+                               th:href="@{/app/chat/attachment/{id}(id=${m.id()})}" target="_blank" rel="noopener noreferrer">
+                                <img class="chat-attachment-thumb" loading="lazy"
+                                     th:src="@{/app/chat/attachment/{id}(id=${m.id()})}"
+                                     th:alt="${m.attachmentName()}"/>
+                            </a>
+                            <div class="chat-attachment-actions">
+                                <a th:href="@{/app/chat/attachment/{id}(id=${m.id()})}" target="_blank" class="secondary-btn btn-sm"
+                                   th:text="${m.attachmentName()}">Attachment</a>
+                                <a th:href="@{/app/chat/attachment/{id}(id=${m.id()},download=true)}" class="secondary-btn btn-sm">Télécharger</a>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="muted chat-empty" th:if="${#lists.isEmpty(page.messages())}">Sélectionnez une conversation.</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" th:action="@{/app/chat/send-ajax}" class="chat-compose" id="chatCompose">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="sousDirectionId" id="chatSousDirectionId" th:value="${page.selectedSousDirectionId()}"/>
+            <input type="hidden" name="directionId" id="chatDirectionId" th:value="${page.selectedDirectionId()}"/>
+            <input type="hidden" name="toUserId" id="chatToUserId" th:value="${page.selectedUserId()}"/>
+            <div class="chat-compose-frame">
+                <button type="button" class="chat-plus-btn" id="chatPlusBtn">+</button>
+                <textarea name="text" class="form-input chat-compose-text" rows="1" placeholder="Type a message"></textarea>
+                <input type="file" name="attachment" class="chat-hidden-file" id="chatAttachmentInput"/>
+                <button type="submit" class="primary-btn">Envoyer</button>
+            </div>
+            <div class="chat-attachment-draft" id="chatAttachmentDraft"></div>
+        </form>
+    </div>
+    <script th:inline="javascript">
+        (function () {
+            const root = document.getElementById('chatWaRoot');
+            const compose = document.getElementById('chatCompose');
+            const thread = document.getElementById('chatThread');
+            const plusBtn = document.getElementById('chatPlusBtn');
+            const attachmentInput = document.getElementById('chatAttachmentInput');
+            const attachmentDraft = document.getElementById('chatAttachmentDraft');
+            const matriculeInput = document.getElementById('chatTargetMatricule');
+            const livePanel = document.getElementById('chatAssistantLivePanel');
+            const liveStatus = document.getElementById('chatLiveSearchStatus');
+            const livePicks = document.getElementById('chatLiveCandidatePick');
+            const liveDetails = document.getElementById('chatLiveTargetDetails');
+            const startBtn = document.getElementById('chatStartBtn');
+            const toUserIdInput = document.getElementById('chatToUserId');
+            const directionIdInput = document.getElementById('chatDirectionId');
+            const sousDirectionIdInput = document.getElementById('chatSousDirectionId');
+            if (!root || !compose || !thread) return;
+            const me = root.dataset.me || '';
+            const allUsersMode = String(root.dataset.allUsers || '') === 'true';
+            let selectedConv = root.dataset.conversationId || '';
+            const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+            const incomingHint = document.getElementById('chatIncomingHint');
+            let incomingHintTimer = null;
+
+            const showIncomingAssistantHint = function (senderUsername) {
+                if (!incomingHint || !senderUsername) return;
+                const name = esc(senderUsername);
+                incomingHint.innerHTML =
+                    '<span class="chat-ai-hint-label">Assistant</span> — ' +
+                    '<strong class="chat-ai-hint-sender">' + name + '</strong> vous a envoyé un message. ' +
+                    '<span class="chat-ai-hint-action">Consultez ci-dessous.</span>';
+                incomingHint.hidden = false;
+                if (incomingHintTimer) clearTimeout(incomingHintTimer);
+                incomingHintTimer = setTimeout(function () {
+                    incomingHint.hidden = true;
+                    incomingHint.innerHTML = '';
+                    incomingHintTimer = null;
+                }, 14000);
+            };
+
+            const looksLikeImageAttachment = function (name) {
+                if (!name) return false;
+                return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(String(name));
+            };
+
+            const renderMessage = (payload) => {
+                if (!payload) return;
+                const payloadConv = String(payload.conversationId || '');
+                if (!selectedConv && payloadConv) {
+                    selectedConv = payloadConv;
+                    root.dataset.conversationId = payloadConv;
+                }
+                if (String(payloadConv) !== String(selectedConv || '')) return;
+                const mine = payload.senderUsername === me;
+                const div = document.createElement('div');
+                div.className = 'chat-msg' + (mine ? ' mine' : '');
+                div.setAttribute('data-mid', payload.id || '');
+                div.setAttribute('data-conv', payload.conversationId || '');
+                let html =
+                    "<div class='chat-msg-head'><div class='chat-avatar'>" + esc((payload.senderUsername || 'U').substring(0,1).toUpperCase()) +
+                    "</div><strong class='chat-msg-sender-name'>" + esc(payload.senderUsername || 'user') + "</strong>" +
+                    "<span class='muted chat-msg-time'>" + esc(payload.createdAt || '') + "</span></div>";
+                const txt = (payload.text || '').trim();
+                if (txt) {
+                    html += "<p>" + esc(txt) + "</p>";
+                }
+                div.innerHTML = html;
+                if (payload.attachmentPath) {
+                    const att = document.createElement('div');
+                    att.className = 'chat-attachment';
+                    const showImg = payload.attachmentImage === true || looksLikeImageAttachment(payload.attachmentName);
+                    let inner = '';
+                    if (showImg) {
+                        inner +=
+                            "<a class='chat-attachment-image-frame' href='/app/chat/attachment/" + payload.id + "' target='_blank' rel='noopener noreferrer'>" +
+                            "<img class='chat-attachment-thumb' loading='lazy' src='/app/chat/attachment/" + payload.id + "' alt='" + esc(payload.attachmentName || '') + "'/></a>";
+                    }
+                    inner +=
+                        "<div class='chat-attachment-actions'>" +
+                        "<a class='secondary-btn btn-sm' target='_blank' href='/app/chat/attachment/" + payload.id + "'>" + esc(payload.attachmentName || 'Pièce jointe') + "</a>" +
+                        "<a class='secondary-btn btn-sm' href='/app/chat/attachment/" + payload.id + "?download=true'>Télécharger</a></div>";
+                    att.innerHTML = inner;
+                    div.appendChild(att);
+                }
+                thread.appendChild(div);
+                thread.scrollTop = thread.scrollHeight;
+                if (!mine && payload.senderUsername) {
+                    showIncomingAssistantHint(payload.senderUsername);
+                }
+            };
+
+            const syncSidebarUnreadClass = function (payload) {
+                if (!payload) return;
+                const payloadConv = String(payload.conversationId || '');
+                if (!payloadConv) return;
+                const row = document.querySelector('.chat-wa-conv[data-conversation-id="' + payloadConv + '"]');
+                if (!row) return;
+                const mine = payload.senderUsername === me;
+                if (mine) {
+                    row.classList.remove('chat-wa-conv--unread');
+                    return;
+                }
+                const viewingThis = String(selectedConv || '') === payloadConv;
+                if (viewingThis) {
+                    row.classList.remove('chat-wa-conv--unread');
+                } else {
+                    row.classList.add('chat-wa-conv--unread');
+                }
+            };
+
+            window.addEventListener('sysco:chat-message', function (e) {
+                const detail = e.detail || {};
+                syncSidebarUnreadClass(detail);
+                renderMessage(detail);
+            });
+
+            compose.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const fd = new FormData(compose);
+                const directionId = fd.get('directionId');
+                const toUserId = fd.get('toUserId');
+                if (!toUserId) {
+                    alert('Entrez un matricule ou un nom puis validez l’assistant IA.');
+                    return;
+                }
+                try {
+                    const res = await fetch(compose.action, {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin',
+                        headers: { Accept: 'application/json' }
+                    });
+                    if (!res.ok) throw new Error('send');
+                    const payload = await res.json();
+                    if (!selectedConv && payload && payload.conversationId) {
+                        const qs = new URLSearchParams();
+                        qs.set('conversationId', String(payload.conversationId));
+                        if (directionId) qs.set('directionId', String(directionId));
+                        if (toUserId) qs.set('userId', String(toUserId));
+                        const sousDirectionId = fd.get('sousDirectionId');
+                        if (sousDirectionId) qs.set('sousDirectionId', String(sousDirectionId));
+                        if (allUsersMode) qs.set('allUsers', 'true');
+                        window.location.href = '/app/chat?' + qs.toString();
+                        return;
+                    }
+                    renderMessage(payload);
+                    compose.reset();
+                    if (attachmentDraft) attachmentDraft.innerHTML = '';
+                    // reset() restores defaults; keep thread routing fields aligned with this conversation
+                    if (directionIdInput && root.dataset.directionId) directionIdInput.value = root.dataset.directionId;
+                    if (toUserIdInput && root.dataset.userId) toUserIdInput.value = root.dataset.userId;
+                    if (sousDirectionIdInput && root.dataset.sousDirectionId) sousDirectionIdInput.value = root.dataset.sousDirectionId;
+                } catch (err) {
+                    alert('Envoi impossible.');
+                }
+            });
+
+            if (plusBtn && attachmentInput && attachmentDraft) {
+                plusBtn.addEventListener('click', function () {
+                    attachmentInput.click();
+                });
+                attachmentInput.addEventListener('change', function () {
+                    attachmentDraft.innerHTML = '';
+                    const file = (attachmentInput.files || [])[0];
+                    if (!file) return;
+                    const card = document.createElement('div');
+                    card.className = 'chat-draft-card';
+                    if (file.type && file.type.startsWith('image/')) {
+                        const img = document.createElement('img');
+                        img.className = 'chat-draft-preview';
+                        img.src = URL.createObjectURL(file);
+                        card.appendChild(img);
+                    } else {
+                        const icon = document.createElement('div');
+                        icon.className = 'chat-draft-file-icon';
+                        icon.textContent = 'FILE';
+                        card.appendChild(icon);
+                    }
+                    const meta = document.createElement('div');
+                    meta.className = 'chat-draft-meta';
+                    meta.textContent = file.name;
+                    card.appendChild(meta);
+                    attachmentDraft.appendChild(card);
+                });
+            }
+
+            if (matriculeInput && livePanel && liveStatus && liveDetails && livePicks) {
+                let liveAbort = null;
+                let liveTimer = null;
+                /** @type {object|null} */
+                let selectedLiveTarget = null;
+
+                const MIN_LIVE_QUERY = 2;
+                const DEBOUNCE_MS = 320;
+
+                const restoreComposeFromPage = function () {
+                    selectedLiveTarget = null;
+                    if (directionIdInput && root.dataset.directionId !== undefined) {
+                        directionIdInput.value = root.dataset.directionId || '';
+                    }
+                    if (toUserIdInput && root.dataset.userId !== undefined) {
+                        toUserIdInput.value = root.dataset.userId || '';
+                    }
+                    if (sousDirectionIdInput && root.dataset.sousDirectionId !== undefined) {
+                        sousDirectionIdInput.value = root.dataset.sousDirectionId || '';
+                    }
+                };
+
+                const applyCandidate = function (target) {
+                    selectedLiveTarget = target || null;
+                    if (!target) {
+                        restoreComposeFromPage();
+                        return;
+                    }
+                    if (toUserIdInput) toUserIdInput.value = target.userId || '';
+                    if (directionIdInput) directionIdInput.value = target.directionId || '';
+                    if (sousDirectionIdInput) sousDirectionIdInput.value = target.sousDirectionId || '';
+                };
+
+                const renderDetails = function (target) {
+                    liveDetails.innerHTML = '';
+                    if (!target) return;
+                    const rows = [
+                        ['Utilisateur', target.username || '—'],
+                        ['Matricule', target.matricule || '—'],
+                        ['Direction', target.directionName || '—'],
+                        ['Sous-direction', target.sousDirectionName || '—']
+                    ];
+                    rows.forEach(function (pair) {
+                        const dt = document.createElement('dt');
+                        dt.textContent = pair[0];
+                        const dd = document.createElement('dd');
+                        dd.textContent = pair[1];
+                        liveDetails.appendChild(dt);
+                        liveDetails.appendChild(dd);
+                    });
+                };
+
+                const startChatForCandidate = function (target) {
+                    if (!target || !target.userId) return;
+                    const params = new URLSearchParams();
+                    if (target.conversationId) params.set('conversationId', String(target.conversationId));
+                    if (target.directionId != null && target.directionId !== '') {
+                        params.set('directionId', String(target.directionId));
+                    }
+                    params.set('userId', String(target.userId));
+                    if (target.sousDirectionId) params.set('sousDirectionId', String(target.sousDirectionId));
+                    window.location.href = '/app/chat?' + params.toString();
+                };
+
+                const hideLiveResults = function () {
+                    livePanel.hidden = true;
+                    liveStatus.textContent = '';
+                    livePicks.hidden = true;
+                    livePicks.innerHTML = '';
+                    liveDetails.innerHTML = '';
+                    if (startBtn) startBtn.hidden = true;
+                    restoreComposeFromPage();
+                };
+
+                const runLiveSearch = async function (query) {
+                    if (liveAbort) liveAbort.abort();
+                    liveAbort = new AbortController();
+                    const ac = liveAbort;
+                    try {
+                        livePanel.hidden = false;
+                        liveStatus.textContent = 'Recherche…';
+                        livePicks.hidden = true;
+                        livePicks.innerHTML = '';
+                        liveDetails.innerHTML = '';
+                        if (startBtn) startBtn.hidden = true;
+
+                        const url = '/app/chat/search-suggestions?q=' + encodeURIComponent(query);
+                        const res = await fetch(url, {
+                            method: 'GET',
+                            credentials: 'same-origin',
+                            headers: { Accept: 'application/json' },
+                            signal: ac.signal
+                        });
+                        if (!res.ok) throw new Error('search');
+                        const payload = await res.json();
+                        if (ac.signal.aborted) return;
+
+                        const candidates = Array.isArray(payload.candidates) ? payload.candidates : [];
+                        const selected = payload.selected || (candidates.length ? candidates[0] : null);
+
+                        if (!candidates.length || !selected) {
+                            liveStatus.textContent =
+                                'Aucun utilisateur actif ne correspond à cette recherche dans la base.';
+                            livePicks.hidden = true;
+                            renderDetails(null);
+                            if (startBtn) startBtn.hidden = true;
+                            restoreComposeFromPage();
+                            return;
+                        }
+
+                        liveStatus.textContent = candidates.length > 1
+                            ? 'Plusieurs correspondances — choisissez un utilisateur :'
+                            : 'Utilisateur trouvé :';
+
+                        if (candidates.length > 1) {
+                            livePicks.hidden = false;
+                            candidates.forEach(function (c) {
+                                const b = document.createElement('button');
+                                b.type = 'button';
+                                b.className = 'chat-live-pick-btn';
+                                const isSel = selected && c.userId === selected.userId;
+                                if (isSel) b.classList.add('is-selected');
+                                b.textContent =
+                                    (c.username || 'Utilisateur') + ' · ' + (c.matricule || 'N/A');
+                                b.addEventListener('click', function () {
+                                    livePicks.querySelectorAll('.chat-live-pick-btn').forEach(function (x) {
+                                        x.classList.toggle('is-selected', x === b);
+                                    });
+                                    applyCandidate(c);
+                                    renderDetails(c);
+                                    if (startBtn) startBtn.hidden = false;
+                                });
+                                livePicks.appendChild(b);
+                            });
+                        } else {
+                            livePicks.hidden = true;
+                        }
+
+                        applyCandidate(selected);
+                        renderDetails(selected);
+                        if (startBtn) startBtn.hidden = false;
+                    } catch (e) {
+                        if (e.name === 'AbortError') return;
+                        livePanel.hidden = false;
+                        liveStatus.textContent = 'Impossible de lancer la recherche pour le moment.';
+                        renderDetails(null);
+                        if (startBtn) startBtn.hidden = true;
+                        restoreComposeFromPage();
+                    }
+                };
+
+                matriculeInput.addEventListener('input', function () {
+                    const q = (matriculeInput.value || '').trim();
+                    if (liveTimer) clearTimeout(liveTimer);
+                    if (q.length < MIN_LIVE_QUERY) {
+                        if (liveAbort) liveAbort.abort();
+                        hideLiveResults();
+                        return;
+                    }
+                    liveTimer = setTimeout(function () {
+                        runLiveSearch(q);
+                    }, DEBOUNCE_MS);
+                });
+
+                if (startBtn) {
+                    startBtn.addEventListener('click', function () {
+                        startChatForCandidate(selectedLiveTarget);
+                    });
+                }
+            }
+
+            const allUsersSelect = document.getElementById('chatAllUsersSelect');
+            if (allUsersSelect) {
+                allUsersSelect.addEventListener('change', function () {
+                    const opt = allUsersSelect.selectedOptions[0];
+                    const qs = new URLSearchParams();
+                    qs.set('allUsers', 'true');
+                    if (!opt || !opt.value) {
+                        window.location.href = '/app/chat?' + qs.toString();
+                        return;
+                    }
+                    qs.set('userId', opt.value);
+                    const di = opt.getAttribute('data-direction-id');
+                    const sd = opt.getAttribute('data-sous-direction-id');
+                    if (di && di !== '') qs.set('directionId', di);
+                    if (sd && sd !== '') qs.set('sousDirectionId', sd);
+                    window.location.href = '/app/chat?' + qs.toString();
+                });
+            }
+        })();
+    </script>
+</section>
+</body>
+</html>

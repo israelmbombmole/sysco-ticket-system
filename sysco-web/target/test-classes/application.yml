@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:sysco-web-test;MODE=LEGACY;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: none

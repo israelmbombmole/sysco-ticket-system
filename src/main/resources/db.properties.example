@@ -1,0 +1,51 @@
+# =============================================================================
+# SYSCO database configuration (copy this file to db.properties)
+# =============================================================================
+# Search order:
+#   1)  <sysco.data.dir>/db.properties  (or user.dir if sysco.data.dir is not set)
+#   2)  Classpath /db.properties (optional packaged fallback)
+#
+# Multi-PC + one Oracle server:
+#   - Install and run Oracle on ONE machine (or use Oracle Cloud). Open TCP port 1521
+#     to your LAN (firewall / security group).
+#   - Create an application schema user (example below) and run the app once on any PC
+#     with db.vendor=oracle so tables are created (OracleBootstrap).
+#   - On EVERY client PC: use the SERVER hostname or IP in oracle.url — not "localhost"
+#     unless Oracle runs on that same PC.
+#
+# Optional overrides (override db.properties without editing the file):
+#   JVM:  -Dsysco.oracle.url=jdbc:oracle:thin:@//dbserver:1521/XEPDB1
+#   Env:  SYSCO_ORACLE_URL, SYSCO_ORACLE_USER, SYSCO_ORACLE_PASSWORD, SYSCO_DB_VENDOR
+#
+# Shared data folder (optional):
+#   -Dsysco.data.dir=C:\ProgramData\SYSCO
+#   Puts db.properties, SQLite app.db (if used), uploads, etc. under that path.
+# =============================================================================
+
+# sqlite | oracle
+db.vendor=oracle
+
+# Oracle JDBC — replace HOST_OR_IP with the machine where Oracle listens (multi-PC).
+# 21c XE pluggable DB example:
+oracle.url=jdbc:oracle:thin:@//HOST_OR_IP:1521/XEPDB1
+
+oracle.user=SYSCO_APP
+oracle.password=ChangeMe_Strong1
+
+# -----------------------------------------------------------------------------
+# Oracle server (run as DBA / SYS in SQL*Plus or SQL Developer), one-time setup:
+#
+#   CREATE USER SYSCO_APP IDENTIFIED BY "your_password_here"
+#     DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS;
+#   GRANT CREATE SESSION, CREATE TABLE, CREATE SEQUENCE, CREATE TRIGGER TO SYSCO_APP;
+#
+# Adjust grants to match your security policy; the app creates its own tables on first run.
+# -----------------------------------------------------------------------------
+
+# MyShift — optional face verification API (JSON POST, see FaceAuthClient)
+# If myshift.face.api.url is empty, the agent screen shows a dev warning and uses a non-secure
+# placeholder check. Set a real URL (and key if required) for production.
+# myshift.face.api.url=https://your-server/api/face/verify
+# myshift.face.api.key=
+# myshift.face.minConfidencePercent=60
+# JVM override: -Dmyshift.face.api.url=...  | env: MYSHIFT_FACE_API_URL

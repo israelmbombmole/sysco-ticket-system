@@ -4,14 +4,56 @@ import com.app.auth.Session;
 import com.app.model.DataShareFile;
 import com.app.model.User;
 import com.app.util.DB;
+import com.app.util.DbConfig;
 
+import java.io.File;
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
 
 public class DataShareDAO {
+    public static final long MAX_SHARE_FILE_SIZE_BYTES = 15L * 1024L * 1024L; // 15 MB
+
+    private static void validateShareFileSize(String fileName, String filePath) {
+        if (filePath == null || filePath.isBlank()) {
+            throw new RuntimeException("Invalid file path.");
+        }
+        File file = new File(filePath);
+        if (!file.exists() || !file.isFile()) {
+            throw new RuntimeException("Selected file does not exist.");
+        }
+        long size = file.length();
+        if (size > MAX_SHARE_FILE_SIZE_BYTES) {
+            throw new RuntimeException(
+                    "File \"" + fileName + "\" exceeds 15 MB limit."
+            );
+        }
+    }
+
+    private static String generateOtp() {
+        int n = ThreadLocalRandom.current().nextInt(100000, 1_000_000);
+        return String.valueOf(n);
+    }
+
+    private static String sha256(String raw) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(raw.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("OTP hashing failed", e);
+        }
+    }
 
     // =====================================================
     // SHARE FILE
@@ -22,6 +64,7 @@ public class DataShareDAO {
                             String expirationDate) {
 
     int fileId = 0;
+    validateShareFileSize(fileName, filePath);
 
     String insertFileSQL = """
             INSERT INTO datashare_files
@@ -37,8 +80,9 @@ public class DataShareDAO {
         // =====================================
         // INSERT FILE
         // =====================================
-        try (PreparedStatement fileStmt =
-                     conn.prepareStatement(insertFileSQL, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement fileStmt = DbConfig.isOracle()
+                ? conn.prepareStatement(insertFileSQL, new String[] { "ID" })
+                : conn.prepareStatement(insertFileSQL, Statement.RETURN_GENERATED_KEYS)) {
 
             fileStmt.setString(1, fileName);
             fileStmt.setString(2, filePath);
@@ -57,7 +101,11 @@ public class DataShareDAO {
                 throw new SQLException("Failed to retrieve file ID.");
             }
 
-            fileId = rs.getInt(1);
+            Number generatedId = (Number) rs.getObject(1);
+            if (generatedId == null) {
+                throw new SQLException("Failed to retrieve numeric file ID.");
+            }
+            fileId = generatedId.intValue();
         }
 
         // =====================================
@@ -65,21 +113,28 @@ public class DataShareDAO {
         // =====================================
         String insertRecipientSQL = """
                 INSERT INTO datashare_recipients
-                (file_id, recipient_id, recipient_name, recipient_role)
-                VALUES (?, ?, ?, ?)
+                (file_id, recipient_id, recipient_name, recipient_role, otp_hash, otp_expires_at, otp_verified_at)
+                VALUES (?, ?, ?, ?, ?, ?, NULL)
                 """;
 
+        List<String> recipientOtps = new ArrayList<>();
         try (PreparedStatement recipientStmt =
                      conn.prepareStatement(insertRecipientSQL)) {
 
             for (User user : recipients) {
+                String otp = generateOtp();
+                String otpHash = sha256(otp);
+                String otpExpiresAt = LocalDateTime.now().plusHours(24).toString();
 
                 recipientStmt.setInt(1, fileId);
                 recipientStmt.setInt(2, user.getId());
                 recipientStmt.setString(3, user.getUsername());
                 recipientStmt.setString(4, user.getRole());
+                recipientStmt.setString(5, otpHash);
+                recipientStmt.setString(6, otpExpiresAt);
 
                 recipientStmt.addBatch();
+                recipientOtps.add(otp);
             }
 
             recipientStmt.executeBatch();
@@ -94,14 +149,19 @@ public class DataShareDAO {
         // CREATE NOTIFICATIONS + AUDIT
         // (done after commit for safety)
         // =====================================
-        for (User user : recipients) {
+        for (int i = 0; i < recipients.size(); i++) {
+            User user = recipients.get(i);
+            String otp = i < recipientOtps.size() ? recipientOtps.get(i) : "";
 
-            // 🔔 Notification
+            // 🔔 Notification includes OTP so receiver can unlock access.
             NotificationDAO.create(
                     user.getId(),
                     "New File Shared",
-                    Session.getUsername() + " shared \"" + fileName + "\" with you.",
-                    "DATASHARE"
+                    Session.getUsername() + " shared \"" + fileName + "\" with you. OTP: " + otp,
+                    "DATASHARE",
+                    "DATASHARE_FILE",
+                    fileId,
+                    fileName
             );
 
             // 📜 Audit log
@@ -329,8 +389,8 @@ DataShareFile file = new DataShareFile(
             expiration_date,
             shared_by_name AS shared_by,
             shared_role AS role,
-            date_shared AS date,
-            time_shared AS time
+            date_shared AS shared_date,
+            time_shared AS shared_time
         FROM datashare_files
         ORDER BY id DESC
     """;
@@ -342,7 +402,7 @@ DataShareFile file = new DataShareFile(
         while(rs.next()){
 
             // GET TIME
-            String time = rs.getString("time");
+            String time = rs.getString("shared_time");
 
             // FORMAT TIME (remove milliseconds/nanoseconds)
             if(time != null && time.contains(".")){
@@ -355,7 +415,7 @@ DataShareFile file = new DataShareFile(
                     rs.getString("file_path"),
                     rs.getString("shared_by"),
                     rs.getString("role"),
-                    rs.getString("date"),
+                    rs.getString("shared_date"),
                     time
             );
 
@@ -372,6 +432,82 @@ DataShareFile file = new DataShareFile(
 
     return files;
 }
+
+    public static boolean isOtpVerifiedForRecipient(int fileId, int recipientId) {
+        String sql = """
+            SELECT otp_hash, otp_verified_at
+            FROM datashare_recipients
+            WHERE file_id = ?
+              AND recipient_id = ?
+            LIMIT 1
+        """;
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, fileId);
+            ps.setInt(2, recipientId);
+            ResultSet rs = ps.executeQuery();
+            if (!rs.next()) return false;
+            String otpHash = rs.getString("otp_hash");
+            if (otpHash == null || otpHash.isBlank()) {
+                // Legacy shares before OTP rollout remain accessible.
+                return true;
+            }
+            String verified = rs.getString("otp_verified_at");
+            return verified != null && !verified.isBlank();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean verifyOtpForRecipient(int fileId, int recipientId, String otpInput) {
+        if (otpInput == null || otpInput.isBlank()) return false;
+        String sql = """
+            SELECT otp_hash, otp_expires_at
+            FROM datashare_recipients
+            WHERE file_id = ?
+              AND recipient_id = ?
+            LIMIT 1
+        """;
+        String updateSql = """
+            UPDATE datashare_recipients
+            SET otp_verified_at = ?
+            WHERE file_id = ?
+              AND recipient_id = ?
+        """;
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, fileId);
+            ps.setInt(2, recipientId);
+            ResultSet rs = ps.executeQuery();
+            if (!rs.next()) return false;
+
+            String otpHash = rs.getString("otp_hash");
+            String otpExpiresAt = rs.getString("otp_expires_at");
+            if (otpHash == null || otpHash.isBlank()) return false;
+
+            if (otpExpiresAt != null && !otpExpiresAt.isBlank()) {
+                LocalDateTime exp = LocalDateTime.parse(otpExpiresAt);
+                if (LocalDateTime.now().isAfter(exp)) {
+                    return false;
+                }
+            }
+
+            boolean ok = otpHash.equalsIgnoreCase(sha256(otpInput.trim()));
+            if (!ok) return false;
+
+            try (PreparedStatement up = conn.prepareStatement(updateSql)) {
+                up.setString(1, LocalDateTime.now().toString());
+                up.setInt(2, fileId);
+                up.setInt(3, recipientId);
+                up.executeUpdate();
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
     
     
     public static void increaseDownloadCount(int fileId){

@@ -8,53 +8,48 @@
 
 <StackPane xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1"
+           maxWidth="Infinity"
+           maxHeight="Infinity"
            fx:controller="com.app.controller.MainController"
            stylesheets="@../style/app.css">
 
-    <BorderPane fx:id="rootPane">
+    <BorderPane fx:id="rootPane" maxWidth="Infinity" maxHeight="Infinity">
 
         <!-- HEADER -->
         <top>
             <HBox styleClass="top-bar" alignment="CENTER_LEFT">
+                <ImageView fitWidth="34" fitHeight="34" preserveRatio="true">
+                    <image>
+                        <Image url="file:/C:/Users/Israe/.cursor/projects/c-sqlite-javafx-audit-system/assets/c__Users_Israe_AppData_Roaming_Cursor_User_workspaceStorage_7305834def579094771d21ca3ae571c5_images_Gemini_Generated_Image_rqnoiarqnoiarqno-a954d1ba-756d-40e2-a967-e7455c751e2e.png"/>
+                    </image>
+                </ImageView>
                 <Label text="%appTitle"/>
                 <Pane HBox.hgrow="ALWAYS"/>
 
                 <Label fx:id="lblUser"
                        style="-fx-text-fill:white; -fx-font-size:14px;"/>
-                
-                <StackPane>
-
-    <Button fx:id="btnNotifications"
-            onAction="#openNotifications"
-            style="-fx-background-color:transparent;">
-
-        <graphic>
-            <Label text="🔔" style="-fx-font-size:18px;"/>
-        </graphic>
-
-    </Button>
-
-    <Label fx:id="badgeNotifications"
-       text=""
-       visible="false"
-       style="-fx-background-color:red;
-              -fx-text-fill:white;
-              -fx-padding:2 6 2 6;
-              -fx-background-radius:10;
-              -fx-font-size:10px;"
-       StackPane.alignment="TOP_RIGHT">
-
-    <StackPane.margin>
-        <Insets top="-3" right="-3"/>
-    </StackPane.margin>
-
-</Label>
-
-</StackPane>
-                
-                
-                
-
+                <Button fx:id="btnNotifications"
+                        onAction="#openNotifications"
+                        contentDisplay="GRAPHIC_ONLY"
+                        styleClass="header-notif-btn"
+                        focusTraversable="false"
+                        minWidth="36" minHeight="36" prefWidth="40" prefHeight="36">
+                    <graphic>
+                        <StackPane>
+                            <Label text="&#128276;" styleClass="header-bell-glyph" mouseTransparent="true"/>
+                            <Label fx:id="badgeNotifications"
+                                   text=""
+                                   visible="false"
+                                   mouseTransparent="true"
+                                   StackPane.alignment="TOP_RIGHT"
+                                   style="-fx-background-color:#c42b2b; -fx-text-fill:white; -fx-padding:0 5 0 5; -fx-min-width:16; -fx-alignment:center; -fx-background-radius:8; -fx-font-size:9px;">
+                                <StackPane.margin>
+                                    <Insets top="-4" right="-2"/>
+                                </StackPane.margin>
+                            </Label>
+                        </StackPane>
+                    </graphic>
+                </Button>
                 <!-- LANGUAGE FLAGS -->
                <Button onAction="#switchToEnglish"
         style="-fx-background-color:transparent; -fx-cursor:hand;">
@@ -86,12 +81,22 @@
             </HBox>
         </top>
 
-        <!-- SIDEBAR -->
+        <!-- SIDEBAR: scroll menu + fixed logout (no giant empty filler above Déconnexion) -->
         <left>
+            <BorderPane minWidth="170" maxWidth="280" prefWidth="220" style="-fx-background-color:#0a1624;">
+            <center>
+            <ScrollPane fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        vbarPolicy="AS_NEEDED"
+                        styleClass="sidebar-scroll"
+                        maxWidth="Infinity"
+                        maxHeight="Infinity"
+                        BorderPane.alignment="TOP_LEFT">
+
             <VBox fx:id="sidebar"
                   styleClass="sidebar"
                   spacing="12"
-                  minWidth="180"
+                  minWidth="170"
                   prefWidth="220"
                   maxWidth="260">
 
@@ -103,6 +108,16 @@
                 <Button fx:id="btnDataEntry"
                         text="%dataEntry"
                         onAction="#loadDataEntry"
+                        styleClass="sidebar-btn"/>
+
+                <Button fx:id="btnCouriers"
+                        text="%courierModule"
+                        onAction="#openCouriers"
+                        styleClass="sidebar-btn"/>
+
+                <Button fx:id="btnCourierManagement"
+                        text="%courierManagementModule"
+                        onAction="#openCourierManagement"
                         styleClass="sidebar-btn"/>
 
                 <Button fx:id="btnDataManagement"
@@ -121,7 +136,7 @@
                         styleClass="sidebar-btn"/>
                 
                 <Button fx:id="btnMyWork"
-                        text="My Work"
+                        text="%myWork"
                         onAction="#loadMyWork"
                         styleClass="sidebar-btn"/>
                 
@@ -147,6 +162,11 @@
                         onAction="#loadUserManagement"
                         styleClass="sidebar-btn"/>
 
+                <Button fx:id="btnLeaveManagement"
+                        text="%leaveManagement"
+                        onAction="#openLeaveManagement"
+                        styleClass="sidebar-btn"/>
+
                 <Button fx:id="btnLoginAudit"
                         text="%loginAudit"
                         onAction="#loadLoginAudit"
@@ -161,24 +181,44 @@
                 text="%createTicket"
                 onAction="#openCreateTicket"
                 styleClass="sidebar-btn"/>
-                
-                
-                
-                <Pane VBox.vgrow="ALWAYS"/>
 
-                <Button fx:id="btnLogout"
-                        text="%logout"
-                        onAction="#handleLogout"
-                        styleClass="danger-btn"/>
+                <Button fx:id="btnJobScheduler"
+                        text="%jobScheduler"
+                        onAction="#openJobScheduler"
+                        styleClass="sidebar-btn"/>
+
+                <Button fx:id="btnMissions"
+                        text="%missions"
+                        onAction="#openMissions"
+                        styleClass="sidebar-btn"/>
+
+                <Button fx:id="btnMyShift"
+                        text="%myshiftModule"
+                        onAction="#openMyShift"
+                        styleClass="sidebar-btn"/>
+
             </VBox>
+            </ScrollPane>
+            </center>
+            <bottom>
+                <VBox styleClass="sidebar" alignment="CENTER" minWidth="170" prefWidth="220" maxWidth="260" style="-fx-padding:0 16 16 16;">
+                    <Button fx:id="btnLogout"
+                            text="%logout"
+                            onAction="#handleLogout"
+                            maxWidth="Infinity"
+                            styleClass="danger-btn"/>
+                </VBox>
+            </bottom>
+            </BorderPane>
         </left>
 
         <!-- CONTENT -->
         <center>
-            <StackPane style="-fx-padding:20;">
+            <StackPane styleClass="main-center-wrap" maxWidth="Infinity" maxHeight="Infinity">
                 <StackPane fx:id="contentArea"
-                           styleClass="card"
-                           maxWidth="1200"
+                           styleClass="main-content-surface"
+                           maxWidth="Infinity"
+                           maxHeight="Infinity"
                            StackPane.alignment="CENTER"/>
             </StackPane>
         </center>

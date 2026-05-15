@@ -8,7 +8,7 @@ import javafx.beans.property.SimpleObjectProperty;
 public class LanguageManager {
 
     private static final ObjectProperty<Locale> locale =
-            new SimpleObjectProperty<>(Locale.ENGLISH);
+            new SimpleObjectProperty<>(Locale.FRENCH);
 
     public static void setLocale(Locale newLocale) {
         locale.set(newLocale);
@@ -22,7 +22,9 @@ public class LanguageManager {
         return locale;
     }
 
+    private static final Utf8ResourceBundleControl UTF8_CONTROL = new Utf8ResourceBundleControl();
+
     public static ResourceBundle getBundle() {
-        return ResourceBundle.getBundle("lang.messages", locale.get());
+        return ResourceBundle.getBundle("lang.messages", locale.get(), UTF8_CONTROL);
     }
 }

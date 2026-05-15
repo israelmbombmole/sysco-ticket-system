@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.controller.CourierManagementController"
+            styleClass="gov-work-page"
+            style="-fx-background-color:transparent;">
+    <top>
+        <VBox spacing="8" style="-fx-padding:12;">
+            <Label text="%courierManagementTitle" style="-fx-font-size:20px; -fx-font-weight:bold;"/>
+            <Label text="%courierManagementHint" wrapText="true" maxWidth="920" style="-fx-text-fill:#4b5563;"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="%filterDirection"/>
+                <ComboBox fx:id="cmbFilterDirection" prefWidth="220"/>
+                <Label text="%filterStatus"/>
+                <ComboBox fx:id="cmbFilterStatus" prefWidth="140"/>
+                <Button text="%refresh" onAction="#refresh" styleClass="primary-btn"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnEdit" text="%courierMgmtEdit" onAction="#handleEditSelected" disable="true" styleClass="btn-inst-secondary"/>
+                <Button fx:id="btnRedirect" text="%courierMgmtRedirect" onAction="#handleRedirectSelected" disable="true" styleClass="btn-inst-secondary"/>
+                <Button fx:id="btnExtraDirs" text="%courierMgmtExtraDirs" onAction="#handleExtraDirsSelected" disable="true" styleClass="btn-inst-secondary"/>
+                <Button fx:id="btnDelete" text="%delete" onAction="#handleDeleteSelected" disable="true" styleClass="danger-btn"/>
+            </HBox>
+        </VBox>
+    </top>
+    <center>
+        <TableView fx:id="table" BorderPane.alignment="CENTER" minHeight="280" minWidth="0">
+            <columns>
+                <TableColumn fx:id="colRef" text="%ref" prefWidth="100"/>
+                <TableColumn fx:id="colTitle" text="%title" prefWidth="180"/>
+                <TableColumn fx:id="colSender" text="%courierFieldSender" prefWidth="120"/>
+                <TableColumn fx:id="colPri" text="%priority" prefWidth="80"/>
+                <TableColumn fx:id="colStatus" text="%status" prefWidth="160"/>
+                <TableColumn fx:id="colDir" text="%direction" prefWidth="140"/>
+                <TableColumn fx:id="colExtraDirs" text="%courierExtraDirectionsShort" prefWidth="140"/>
+                <TableColumn fx:id="colSous" text="%sousDirection" prefWidth="140"/>
+                <TableColumn fx:id="colTicket" text="%courierLinkedTicket" prefWidth="90"/>
+                <TableColumn fx:id="colCreated" text="%created" prefWidth="120"/>
+            </columns>
+        </TableView>
+    </center>
+</BorderPane>

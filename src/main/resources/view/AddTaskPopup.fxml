@@ -11,24 +11,28 @@
       style="-fx-padding: 20; -fx-background-color: white;">
 
     <!-- TITLE -->
-    <Label text="Add Task"
+    <Label text="%addTask"
            style="-fx-font-size: 18px; -fx-font-weight: bold;" />
 
     <!-- TASK TITLE -->
     <TextField fx:id="txtTaskTitle"
-               promptText="Enter task title..."
+               promptText="%enterTaskTitle"
                prefWidth="300"/>
 
     <!-- DESCRIPTION -->
     <TextArea fx:id="txtDescription"
-              promptText="Enter description..."
+              promptText="%enterDescription"
               prefWidth="300"
               prefHeight="80"
               wrapText="true"/>
 
+    <TextField fx:id="txtAgentSearch"
+               promptText="Search user..."
+               prefWidth="300"/>
+
     <!-- AGENT -->
     <ComboBox fx:id="cmbAgents"
-              promptText="Select Agent"
+              promptText="%selectAgent"
               prefWidth="300"/>
 
     <!-- ATTACHMENTS FRAME (🔥 IMPORTANT FIX) -->
@@ -36,13 +40,13 @@
           spacing="8"
           style="-fx-background-color:#f8fafc; -fx-padding:10; -fx-background-radius:8;">
 
-        <Label text="Attachments"
+        <Label text="%attachments"
                style="-fx-font-weight:bold;" />
 
         <HBox spacing="15" alignment="CENTER_LEFT">
 
     <!-- LABEL -->
-    <Label text="Attachment"
+    <Label text="%attachment"
            prefWidth="90"/>
 
     <!-- LIST -->
@@ -53,11 +57,11 @@
     <!-- BUTTONS -->
     <VBox spacing="10">
 
-        <Button text="Browse"
+        <Button text="%browse"
                 onAction="#handleBrowseFiles"
                 style="-fx-background-color:#2f80ed; -fx-text-fill:white; -fx-background-radius:8;"/>
 
-        <Button text="Remove"
+        <Button text="%remove"
                 onAction="#handleRemoveFile"
                 style="-fx-background-color:#ef4444; -fx-text-fill:white; -fx-background-radius:8;"/>
 
@@ -70,12 +74,12 @@
     <!-- ACTION BUTTONS -->
     <HBox spacing="12" alignment="CENTER">
 
-        <Button text="Save"
+        <Button text="%save"
                 onAction="#handleSave"
                 prefWidth="100"
                 style="-fx-background-color:#2ecc71; -fx-text-fill:white;" />
 
-        <Button text="Cancel"
+        <Button text="%cancel"
                 onAction="#handleCancel"
                 prefWidth="100"
                 style="-fx-background-color:#e74c3c; -fx-text-fill:white;" />

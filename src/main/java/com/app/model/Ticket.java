@@ -114,18 +114,19 @@ public void setObject(String object) {
         this.closedAt = closedAt;
     }
 
+    /**
+     * Prefer value loaded from {@code resolution_minutes} in the database;
+     * if unset, derive minutes from {@code startedAt} / {@code closedAt}.
+     */
     public Integer getResolutionMinutes() {
-
-    if (startedAt == null || closedAt == null) {
+        if (resolutionMinutes != null) {
+            return resolutionMinutes;
+        }
+        if (startedAt != null && closedAt != null) {
+            return (int) java.time.Duration.between(startedAt, closedAt).toMinutes();
+        }
         return null;
     }
-
-    
-    
-    return (int) java.time.Duration
-            .between(startedAt, closedAt)
-            .toMinutes();
-}
 
 
 public void setResolutionMinutes(Integer resolutionMinutes) {

@@ -10,9 +10,14 @@ public class SecurityUtil {
         int userId = Session.getUserId();
         String role = Session.getRole();
 
-        // 🔓 High level override
-        if (RoleFlowUtil.isHighLevel(role)) {
+        // ADMIN is unrestricted across the system.
+        if ("ADMIN".equalsIgnoreCase(role)) {
             return true;
+        }
+
+        // DIRECTEUR / SOUS-DIRECTEUR must be restricted to their own department.
+        if ("DIRECTEUR".equalsIgnoreCase(role) || "SOUS-DIRECTEUR".equalsIgnoreCase(role)) {
+            return TicketDAO.isTicketInCurrentUserDirection(ticketId);
         }
 
         // 🔐 Only current owner

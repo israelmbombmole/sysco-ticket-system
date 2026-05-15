@@ -1,616 +1,302 @@
 package com.app.controller;
 
 import com.app.auth.Session;
-import com.app.dao.NotificationDAO;
-import com.app.dao.TicketAssignmentDAO;
+import com.app.dao.CourierPacketDAO;
 import com.app.dao.TicketDAO;
-import com.app.model.Ticket;
-import com.app.service.TicketService;
-import com.app.dao.TicketTaskDAO;
 import com.app.dao.UserDAO;
-import com.app.model.TicketTask;
-import com.app.model.User;
+import com.app.model.Ticket;
+import com.app.util.DashboardDetailDialog;
+import com.app.util.I18n;
 
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.ObservableList;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.stage.Stage;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.Label;
-
-import java.time.format.DateTimeFormatter;
-import java.util.Map;
-import java.util.ResourceBundle;
-import javafx.scene.Parent;
+import javafx.scene.Cursor;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.Region;
-import javafx.stage.StageStyle;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.VBox;
+import javafx.stage.Window;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Dashboard for SOUS-DIRECTEUR (agent dashboard). Assigned tasks are managed in Mon travail ({@link MyWorkController}).
+ */
 public class AgentDashboardController {
 
     @FXML
-private TableView<TicketTask> tableTickets;
-    
-@FXML private TableColumn<TicketTask, String> colResolution;
+    private Label lblTotal;
+    @FXML
+    private Label lblOpen;
+    @FXML
+    private Label lblClosed;
+    @FXML
+    private PieChart pieChart;
+    @FXML
+    private Label lblInProgress;
+    @FXML
+    private Label lblMerged;
+    @FXML
+    private LineChart<String, Number> performanceChart;
+    @FXML
+    private Label lblSlaBreaches;
+    @FXML
+    private Label lblEscalations;
+    @FXML
+    private Label lblSlaCompliance;
+    @FXML
+    private Label lblCourierSTotal;
+    @FXML
+    private Label lblCourierSOpen;
+    @FXML
+    private Label lblCourierSPipe;
+    @FXML
+    private Label lblCourierSResolved;
 
-    @FXML private TableColumn<TicketTask, String> colTicketId;
-    @FXML private TableColumn<TicketTask, String> colTitle;
-    @FXML private TableColumn<TicketTask, String> colStatus;
-    @FXML private TableColumn<TicketTask, String> colStarted;
-    @FXML private TableColumn<TicketTask, String> colClosed;
-    @FXML private Label lblTotal;
-    @FXML private Label lblOpen;
-    @FXML private Label lblClosed;
-    @FXML private PieChart pieChart;
-    @FXML private TextField txtSearch;
-    @FXML private Label lblInProgress;
-    @FXML private Label lblMerged;
-    @FXML private LineChart<String, Number> performanceChart;
-    @FXML private Label lblSlaBreaches;
-    @FXML private Label lblNotifCount;
-    
-    
-    
-    
-    
-   @FXML private TableColumn<TicketTask, String> colType;
+    @FXML private VBox cardAgentTotal;
+    @FXML private VBox cardAgentOpen;
+    @FXML private VBox cardAgentInProgress;
+    @FXML private VBox cardAgentMerged;
+    @FXML private VBox cardAgentClosed;
+    @FXML private VBox cardAgentSlaBreaches;
+    @FXML private VBox cardAgentEscalations;
+    @FXML private VBox cardAgentSlaCompliance;
+    @FXML private VBox cardAgentCourierTotal;
+    @FXML private VBox cardAgentCourierOpen;
+    @FXML private VBox cardAgentCourierPipe;
+    @FXML private VBox cardAgentCourierResolved;
 
-    private final DateTimeFormatter formatter =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private volatile boolean dashboardCardHandlersInstalled;
 
     @FXML
     public void initialize() {
-        
-        tableTickets.setRowFactory(tv -> {
 
-    TableRow<TicketTask> row = new TableRow<>();
+        int agentId = Session.getUserId();
 
-    ContextMenu menu = new ContextMenu();
+        int total = TicketDAO.countTicketsByUserAssignments(agentId);
 
-    MenuItem view = new MenuItem("View Details");
-    view.setOnAction(e -> openTaskDetails(row.getItem()));
+        int open =
+                TicketDAO.countAssignedTicketsByStatus(agentId, "ASSIGNED")
+                        + TicketDAO.countAssignedTicketsByStatus(agentId, "ESCALATED");
 
-    MenuItem reassign = new MenuItem("Reassign Task");
-    reassign.setOnAction(e -> reassignTask(row.getItem()));
+        int inProgress =
+                TicketDAO.countAssignedTicketsByStatus(agentId, "IN_PROGRESS");
 
-    menu.getItems().addAll(view, reassign);
+        int merged =
+                TicketDAO.countAssignedTicketsByStatus(agentId, "MERGED");
 
-    row.setContextMenu(menu);
-    
+        int closed =
+                TicketDAO.countAssignedTicketsByStatus(agentId, "CLOSED");
 
-    return row;
-});
-        
-        
- tableTickets.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        
-        int notifCount = NotificationDAO.getUnreadCount(Session.getUserId());
-lblNotifCount.setText(String.valueOf(notifCount));
-       int agentId = Session.getUserId();
+        lblTotal.setText(String.valueOf(total));
+        lblOpen.setText(String.valueOf(open));
+        lblInProgress.setText(String.valueOf(inProgress));
+        lblMerged.setText(String.valueOf(merged));
+        lblClosed.setText(String.valueOf(closed));
 
-int total = TicketDAO.countTicketsByUserAssignments(agentId);
+        int breaches = TicketDAO.countAgentSlaBreaches(agentId);
+        lblSlaBreaches.setText(String.valueOf(breaches));
 
-int open =
-        TicketDAO.countAssignedTicketsByStatus(agentId,"ASSIGNED")
-      + TicketDAO.countAssignedTicketsByStatus(agentId,"ESCALATED");
+        lblEscalations.setText(String.valueOf(TicketDAO.countEscalations()));
+        lblSlaCompliance.setText("—");
 
-int inProgress =
-        TicketDAO.countAssignedTicketsByStatus(agentId,"IN_PROGRESS");
-
-int merged =
-        TicketDAO.countAssignedTicketsByStatus(agentId,"MERGED");
-
-int closed =
-        TicketDAO.countAssignedTicketsByStatus(agentId,"CLOSED");
-
-lblTotal.setText(String.valueOf(total));
-lblOpen.setText(String.valueOf(open));
-lblInProgress.setText(String.valueOf(inProgress));
-lblMerged.setText(String.valueOf(merged));
-lblClosed.setText(String.valueOf(closed));
-
-int breaches = TicketDAO.countAgentSlaBreaches(agentId);
-lblSlaBreaches.setText(String.valueOf(breaches));
-
-pieChart.getData().addAll(
-        new PieChart.Data("Open", open),
-        new PieChart.Data("In Progress", inProgress),
-        new PieChart.Data("Merged", merged),
-        new PieChart.Data("Closed", closed)
-);
-        
-        
-
-        colTicketId.setCellValueFactory(data ->
-    new SimpleStringProperty("TSK-" + data.getValue().getId())
-);
-
-       colTitle.setCellValueFactory(data ->
-    new SimpleStringProperty(data.getValue().getTitle()));
-
-        colStatus.setCellValueFactory(data ->
-    new SimpleStringProperty(data.getValue().getStatus()));
-
-        
-        
-        colStarted.setCellValueFactory(data ->
-    new SimpleStringProperty(
-        data.getValue().getStartedAt() != null
-            ? data.getValue().getStartedAt().format(formatter)
-            : "-"
-    )
-);
-
-colClosed.setCellValueFactory(data ->
-    new SimpleStringProperty(
-        data.getValue().getClosedAt() != null
-            ? data.getValue().getClosedAt().format(formatter)
-            : "-"
-    )
-);
-
-colResolution.setCellValueFactory(data ->
-    new SimpleStringProperty(
-        data.getValue().getResolutionMinutes() != null
-            ? data.getValue().getResolutionMinutes() + " min"
-            : "-"
-    )
-);
-
-      
-
-        // ✅ Double-click to view details
-        tableTickets.setRowFactory(tv -> {
-
-    TableRow<TicketTask> row = new TableRow<>();
-
-    row.setOnMouseClicked(event -> {
-        if (event.getClickCount() == 2 && !row.isEmpty()) {
-            openTaskDetails(row.getItem());
-        }
-    });
-
-    return row;
-});
-
-        loadTasks();
-        
-        
-        colType.setCellValueFactory(data ->
-    new SimpleStringProperty(data.getValue().getTicketTitle()));
-        
-        colStatus.setCellFactory(column -> new TableCell<>() {
-
-    @Override
-    protected void updateItem(String status, boolean empty) {
-
-        super.updateItem(status, empty);
-
-        if (empty || status == null) {
-            setText(null);
-            setStyle("");
-            return;
-        }
-
-        setText(status);
-
-        switch (status) {
-
-            case "PENDING":
-                setStyle("-fx-background-color:#f39c12; -fx-text-fill:white;");
-                break;
-
-            case "IN_PROGRESS":
-                setStyle("-fx-background-color:#3498db; -fx-text-fill:white;");
-                break;
-
-            case "COMPLETED":
-                setStyle("-fx-background-color:#2ecc71; -fx-text-fill:white;");
-                break;
-
-            default:
-                setStyle("");
-        }
-    }
-});
-        
-        
-        
-        
-        
-        
-        
-        colType.setCellFactory(column -> new TableCell<>() {
-    @Override
-    protected void updateItem(String type, boolean empty) {
-        super.updateItem(type, empty);
-
-        if (empty || type == null) {
-            setText(null);
-            setStyle("");
-            return;
-        }
-
-        setText(type);
-
-        if (type.equalsIgnoreCase("EXTERNAL")) {
-            setStyle("-fx-background-color: #dc3545; -fx-text-fill: white;");
-        } else {
-            setStyle("-fx-background-color: #28a745; -fx-text-fill: white;");
-        }
-    }
-});
-    
-    }
-
-  
-    
-    private void reassignTask(TicketTask task) {
-
-    ChoiceDialog<User> dialog = new ChoiceDialog<>();
-    dialog.setTitle("Reassign Task");
-    dialog.setHeaderText("Select new agent");
-
-    dialog.getItems().addAll(UserDAO.getAllAgents());
-
-    dialog.showAndWait().ifPresent(user -> {
-
-        TicketTaskDAO.reassignTask(task.getId(), user.getId());
-
-        loadTasks();
-    });
-}
-    
-    
-    
-    
-    
-    
-   
-   
-    // ============================
-    // START WORK
-    // ============================
-       
-@FXML
-private void handleStart() {
-
-    TicketTask task = tableTickets.getSelectionModel().getSelectedItem();
-
-    if (task == null) {
-        showWarning("Please select a task.");
-        return;
-    }
-
-    try {
-
-        // ✅ CORRECT METHOD
-        TicketTaskDAO.startTask(task.getId());
-
-        // 🔔 notification
-        NotificationDAO.create(
-                Session.getUserId(),
-                "Task Started",
-                "You started task: " + task.getTitle(),
-                "TASK"
+        pieChart.getData().addAll(
+                new PieChart.Data(I18n.t("dashboardChart.open", "Open"), open),
+                new PieChart.Data(I18n.t("dashboardChart.inProgress", "In Progress"), inProgress),
+                new PieChart.Data(I18n.t("dashboardChart.merged", "Merged"), merged),
+                new PieChart.Data(I18n.t("dashboardChart.closed", "Closed"), closed)
         );
 
-        // 🔄 refresh
-        loadTasks();
-
-        showInfo("Task started successfully");
-
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-
-    
-    private void showWarning(String message) {
-
-    Alert alert = new Alert(Alert.AlertType.WARNING);
-    alert.setTitle("Ticket System");
-    alert.setHeaderText("Warning");
-    alert.setContentText(message);
-
-    alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
-
-    alert.showAndWait();
-}
-    
-    
- @FXML
-private void handleClose() {
-
-    TicketTask task = tableTickets.getSelectionModel().getSelectedItem();
-
-    if (task == null) {
-        showError("Please select a task.");
-        return;
+        performanceChart.setTitle(I18n.t("dashboardChart.ticketsClosedPerDay", "Tickets closed per day"));
+        loadPerformanceChart();
+        loadCourierBlock();
+        attachAgentDashboardClicksWhenSceneReady(agentId);
     }
 
-    try {
+    private void attachAgentDashboardClicksWhenSceneReady(int agentId) {
+        javafx.scene.Node anchor = lblTotal != null ? lblTotal : cardAgentTotal;
+        if (anchor == null) {
+            return;
+        }
+        Runnable install = () -> {
+            if (dashboardCardHandlersInstalled) {
+                return;
+            }
+            if (agentDashboardWindow() == null) {
+                return;
+            }
+            dashboardCardHandlersInstalled = true;
+            wireAgentDashboardCards(agentId);
+        };
+        Platform.runLater(() -> {
+            install.run();
+            if (!dashboardCardHandlersInstalled) {
+                anchor.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                    if (newScene != null) {
+                        Platform.runLater(install);
+                    }
+                });
+            }
+        });
+    }
 
-        // 🚨 IMPORTANT CHECK
-        if (task.getStartedAt() == null) {
-            showError("You must START the task before closing it.");
+    private Window agentDashboardWindow() {
+        return lblTotal != null && lblTotal.getScene() != null ? lblTotal.getScene().getWindow() : null;
+    }
+
+    private Integer agentSousDirectionId() {
+        Integer[] ds = UserDAO.getDirectionSousForUser(Session.getUserId());
+        return ds != null && ds.length > 1 ? ds[1] : null;
+    }
+
+    private void wireCard(VBox card, Runnable action) {
+        if (card == null || action == null) {
+            return;
+        }
+        card.setCursor(Cursor.HAND);
+        Tooltip.install(card, new Tooltip(I18n.t("dashboardCardClickHint", "Click to view details")));
+        card.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> action.run());
+    }
+
+    private void wireAgentDashboardCards(int agentId) {
+        Window w = agentDashboardWindow();
+        if (w == null) {
             return;
         }
 
-        TicketTaskDAO.completeTask(task.getId());
+        wireCard(cardAgentTotal, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("total"), TicketDAO.listTicketsForUserAssignmentsDashboard(agentId)));
 
-        loadTasks();
-
-        showInfo("Task completed successfully");
-
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-
-    // ============================
-    // OPEN DETAILS WINDOW
-    // ============================
-
-    private void openTicketDetails(Ticket ticket) {
-
-        try {
-
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/view/TicketDetails.fxml")
-            );
-
-            Stage stage = new Stage();
-            stage.setScene(new Scene(loader.load()));
-
-            TicketDetailsController controller = loader.getController();
-            controller.setTicket(ticket);
-
-            stage.setTitle("Ticket Details");
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void showError(String message) {
-
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-    
-    @FXML
-private void handleViewDetails() {
-
-    TicketTask selectedTask = tableTickets.getSelectionModel().getSelectedItem();
-
-    if (selectedTask == null) {
-        System.out.println("⚠ No task selected");
-        return;
-    }
-
-    try {
-        // 🔥 Get the ticket from the task
-        Ticket ticket = TicketDAO.getTicketById(selectedTask.getTicketId());
-
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/TicketDetails.fxml"),
-                ResourceBundle.getBundle("lang.messages")
-        );
-
-        Parent root = loader.load();
-
-        TicketDetailsController controller = loader.getController();
-        controller.setTicket(ticket);
-
-        Stage stage = new Stage();
-        stage.setTitle("Détail du ticket - TCK-" + ticket.getId());
-
-        stage.setScene(new Scene(root));
-        stage.setMaximized(true);
-        stage.show();
-
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-  
- private void showTicketDetails(Ticket ticket) {
-
-    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-    alert.setTitle("Ticket Details");
-    alert.setHeaderText("Ticket ID: " + ticket.getId());
-
-    String content =
-            "Title: " + ticket.getTitle() + "\n\n" +
-            "Status: " + ticket.getStatus() + "\n\n" +
-            "Object / Instructions:\n" + ticket.getObject() + "\n\n" +
-            "Started At: " + ticket.getStartedAt() + "\n\n" +
-            "Closed At: " + ticket.getClosedAt() + "\n\n" +
-            "Resolution Time: " + ticket.getResolutionMinutes() + " minutes";
-
-    alert.setContentText(content);
-    alert.getDialogPane().setPrefWidth(500); // wider popup
-    alert.showAndWait();
-}
- 
- 
- @FXML
-private void openChat() {
-
-    try {
-
-        FXMLLoader loader =
-                new FXMLLoader(getClass().getResource("/view/ChatPopup.fxml"));
-
-        Scene scene = new Scene(loader.load());
-
-        Stage stage = new Stage();
-        stage.setScene(scene);
-        stage.setTitle("Chat");
-        stage.setWidth(450);
-        stage.setHeight(600);
-        stage.show();
-
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-     
-
-@FXML
-private void handleMerge() {
-    showAlert("Merge is not applicable to tasks.");
-}  
-
-private void showAlert(String msg) {
-
-    Alert alert = new Alert(Alert.AlertType.WARNING);
-    alert.setHeaderText(null);
-    alert.setContentText(msg);
-    alert.showAndWait();
-}
-
-private void showInfo(String msg) {
-
-    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-    alert.setHeaderText(null);
-    alert.setContentText(msg);
-    alert.showAndWait();
-}
-    
-    
-private void loadTasks() {
-
-    try {
-
-        int userId = Session.getUserId();
-
-        ObservableList<TicketTask> tasks =
-                TicketTaskDAO.getTasksForAgent(userId);
-
-        // FILTER
-        javafx.collections.transformation.FilteredList<TicketTask> filtered =
-                new javafx.collections.transformation.FilteredList<>(tasks, p -> true);
-
-        txtSearch.textProperty().addListener((obs, oldVal, newVal) -> {
-
-            filtered.setPredicate(task -> {
-
-                if (newVal == null || newVal.isEmpty()) return true;
-
-                String search = newVal.toLowerCase();
-
-                if (String.valueOf(task.getId()).contains(search)) return true;
-                if (task.getTitle() != null && task.getTitle().toLowerCase().contains(search)) return true;
-                if (task.getStatus() != null && task.getStatus().toLowerCase().contains(search)) return true;
-                if (task.getTicketTitle() != null && task.getTicketTitle().toLowerCase().contains(search)) return true;
-
-                return false;
-            });
+        wireCard(cardAgentOpen, () -> {
+            List<Ticket> rows = new ArrayList<>(TicketDAO.listAssignedTicketsByStatusForDashboardAgent(agentId, "ASSIGNED"));
+            rows.addAll(TicketDAO.listAssignedTicketsByStatusForDashboardAgent(agentId, "ESCALATED"));
+            DashboardDetailDialog.showTickets(w, I18n.t("open"), rows);
         });
 
-        javafx.collections.transformation.SortedList<TicketTask> sorted =
-                new javafx.collections.transformation.SortedList<>(filtered);
+        wireCard(cardAgentInProgress, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("inProgress"),
+                TicketDAO.listAssignedTicketsByStatusForDashboardAgent(agentId, "IN_PROGRESS")));
 
-        sorted.comparatorProperty().bind(tableTickets.comparatorProperty());
+        wireCard(cardAgentMerged, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("MergeTicket"),
+                TicketDAO.listAssignedTicketsByStatusForDashboardAgent(agentId, "MERGED")));
 
-        tableTickets.setItems(sorted);
+        wireCard(cardAgentClosed, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("closed"),
+                TicketDAO.listAssignedTicketsByStatusForDashboardAgent(agentId, "CLOSED")));
 
-    } catch (Exception e) {
+        wireCard(cardAgentSlaBreaches, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("SLABreaches"), TicketDAO.listAgentSlaBreachesDashboard(agentId)));
 
-        e.printStackTrace();
+        wireCard(cardAgentEscalations, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("escalations"), TicketDAO.listDashboardTicketsWithEscalations()));
 
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setHeaderText("Error loading tasks");
-        alert.setContentText(e.getMessage());
-        alert.showAndWait();
+        wireCard(cardAgentSlaCompliance, () -> DashboardDetailDialog.showMessage(w,
+                I18n.t("slaCompliance"),
+                I18n.t("dashboardAgentSlaComplianceHint",
+                        "SLA compliance rate for your scope is summarized on the administrator dashboard.")));
+
+        Integer sous = agentSousDirectionId();
+        wireCard(cardAgentCourierTotal, () -> {
+            if (sous != null && sous > 0) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("courierDashSousTotal"),
+                        CourierPacketDAO.listPacketsSousDashboardBucket(sous, "total"));
+            }
+        });
+        wireCard(cardAgentCourierOpen, () -> {
+            if (sous != null && sous > 0) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("courierDashSousOpen"),
+                        CourierPacketDAO.listPacketsSousDashboardBucket(sous, "open"));
+            }
+        });
+        wireCard(cardAgentCourierPipe, () -> {
+            if (sous != null && sous > 0) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("courierDashSousPipeline"),
+                        CourierPacketDAO.listPacketsSousDashboardBucket(sous, "pipeline"));
+            }
+        });
+        wireCard(cardAgentCourierResolved, () -> {
+            if (sous != null && sous > 0) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("resolved"),
+                        CourierPacketDAO.listPacketsSousDashboardBucket(sous, "resolved"));
+            }
+        });
+
+        applyAgentDashboardTileFallbackStyles();
     }
-}
 
-private void loadPerformanceChart(){
+    private static final String AGENT_DASH_TILE_FALLBACK_STYLE =
+            "-fx-background-color:#ffffff;"
+                    + "-fx-border-color:#64748b;"
+                    + "-fx-border-width:2px;"
+                    + "-fx-border-radius:8px;"
+                    + "-fx-background-radius:8px;"
+                    + "-fx-padding:14px 16px;"
+                    + "-fx-min-height:104px;"
+                    + "-fx-min-width:188px;"
+                    + "-fx-effect:dropshadow(gaussian,rgba(15,23,42,0.14),14,0.22,0,4);";
 
-    int agentId = Session.getUserId();
-
-    Map<String,Integer> stats =
-            TicketDAO.getAgentDailyPerformance(agentId);
-
-    XYChart.Series<String,Number> series =
-            new XYChart.Series<>();
-
-    series.setName("Closed Tickets");
-
-    for(String date : stats.keySet()){
-
-        series.getData().add(
-                new XYChart.Data<>(date, stats.get(date))
-        );
+    private void applyAgentDashboardTileFallbackStyles() {
+        VBox[] tiles = {
+                cardAgentTotal, cardAgentOpen, cardAgentInProgress, cardAgentMerged, cardAgentClosed,
+                cardAgentSlaBreaches, cardAgentEscalations, cardAgentSlaCompliance,
+                cardAgentCourierTotal, cardAgentCourierOpen, cardAgentCourierPipe, cardAgentCourierResolved
+        };
+        for (VBox v : tiles) {
+            if (v != null) {
+                v.setStyle(AGENT_DASH_TILE_FALLBACK_STYLE);
+            }
+        }
     }
 
-    performanceChart.getData().clear();
-    performanceChart.getData().add(series);
-}
+    private void loadPerformanceChart() {
 
+        int agentId = Session.getUserId();
 
-private void openTaskDetails(TicketTask task) {
+        Map<String, Integer> stats =
+                TicketDAO.getAgentDailyPerformance(agentId);
 
-    try {
+        XYChart.Series<String, Number> series =
+                new XYChart.Series<>();
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/TaskDetails.fxml")
-        );
+        series.setName(I18n.t("dashboardChart.seriesClosedTickets", "Closed tickets"));
 
-        Parent root = loader.load();
+        for (String date : stats.keySet()) {
+            series.getData().add(
+                    new XYChart.Data<>(date, stats.get(date))
+            );
+        }
 
-        TaskDetailsController controller = loader.getController();
-        controller.setTask(task);
-
-        Stage stage = new Stage();
-        stage.setScene(new Scene(root));
-        stage.setTitle("Task Details - TSK-" + task.getId());
-        stage.setWidth(600);
-        stage.setHeight(500);
-        stage.show();
-
-    } catch (Exception e) {
-        e.printStackTrace();
+        performanceChart.getData().clear();
+        performanceChart.getData().add(series);
     }
-}
 
-
-@FXML
-private void openNotifications() {
-
-    try {
-
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/NotificationPopup.fxml")
-        );
-
-        Parent root = loader.load();
-
-        Stage stage = new Stage();
-        stage.setScene(new Scene(root));
-        stage.setTitle("Notifications");
-        stage.setWidth(400);
-        stage.setHeight(500);
-        stage.show();
-
-    } catch (Exception e) {
-        e.printStackTrace();
+    private void loadCourierBlock() {
+        if (lblCourierSTotal == null) {
+            return;
+        }
+        Integer[] ds = UserDAO.getDirectionSousForUser(Session.getUserId());
+        Integer sous = ds != null && ds.length > 1 ? ds[1] : null;
+        if (sous == null || sous <= 0) {
+            lblCourierSTotal.setText("0");
+            lblCourierSOpen.setText("0");
+            lblCourierSPipe.setText("0");
+            lblCourierSResolved.setText("0");
+            return;
+        }
+        CourierPacketDAO.HomeCourierStats st = CourierPacketDAO.statsForSous(sous);
+        lblCourierSTotal.setText(String.valueOf(st.total()));
+        lblCourierSOpen.setText(String.valueOf(st.notResolved()));
+        lblCourierSPipe.setText(String.valueOf(st.directedAwaitingSous()));
+        lblCourierSResolved.setText(String.valueOf(st.resolved()));
     }
-}
-
-
 }

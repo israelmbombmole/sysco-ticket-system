@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{missions.detail.pageTitle(${detail.code})}">Mission</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page ticket-management-page mission-detail-page">
+    <div class="card page-panel ticket-management-shell mission-detail-shell">
+        <div class="page-alerts" th:if="${successKey != null or errorKey != null}">
+            <p class="success-banner" th:if="${successKey != null}" th:text="#{${successKey}}">Enregistré.</p>
+            <p class="login-error" th:if="${errorKey != null}" th:text="#{${errorKey}}">Erreur.</p>
+        </div>
+
+        <div class="ticket-fx-head-actions mission-detail-head-actions">
+            <a class="secondary-btn btn-sm" th:href="${missionDetailBackHref}" th:text="#{missions.detail.back}">Retour</a>
+            <a class="secondary-btn btn-sm" th:if="${canManageMission}"
+               th:href="@{/app/missions(selected=${detail.code},tab='mission')}"
+               th:text="#{missions.detail.edit}">Modifier</a>
+            <a class="primary-btn btn-sm"
+               th:href="@{/app/missions/{code}/order.docx(code=${detail.code})}"
+               th:text="#{missions.btn.downloadOrder}">Télécharger</a>
+            <form th:if="${canManageMission}" method="post" th:action="@{/app/missions/delete}" class="mission-detail-inline-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <input type="hidden" name="code" th:value="${detail.code}" />
+                <button type="submit" class="danger-btn btn-sm"
+                        th:data-confirm-msg="#{missions.confirmDelete}"
+                        onclick="return confirm(this.dataset.confirmMsg);"
+                        th:text="#{missions.btn.delete}">Supprimer</button>
+            </form>
+        </div>
+
+        <div class="missions-tabs mission-detail-tabs">
+            <a class="missions-tab" th:classappend="${activeTab == 'mission'} ? ' active' : ''"
+               th:href="@{/app/missions/{c}(c=${detail.code})}"
+               th:text="#{missions.tab.mission}">Mission</a>
+            <a class="missions-tab" th:classappend="${activeTab == 'report'} ? ' active' : ''"
+               th:href="@{/app/missions/{c}(c=${detail.code},tab='report')}"
+               th:text="#{missions.tab.report}">Compte rendu</a>
+        </div>
+
+        <th:block th:if="${activeTab == 'mission'}">
+            <div class="ticket-fx-hero">
+                <p class="ticket-fx-status" th:text="${@uiLabels.missionStatus(detail.status, #locale)}">Planifiée</p>
+                <p class="ticket-fx-ref" th:text="|REF: ${detail.code}|">REF: M-2026-0001</p>
+                <h1 class="ticket-fx-title" th:text="${#strings.isEmpty(detail.title) ? '—' : detail.title}">Titre</h1>
+                <p class="ticket-fx-meta">
+                    <span th:text="#{missions.col.site}">Lieu</span>:
+                    <span th:text="${#strings.isEmpty(detail.site) ? '—' : detail.site}">—</span>
+                    <span class="ticket-fx-meta-sep">|</span>
+                    <span th:text="#{missions.col.lead}">Responsable</span>:
+                    <span th:text="${#strings.isEmpty(detail.responsible) ? '—' : detail.responsible}">—</span>
+                </p>
+            </div>
+
+            <div class="ticket-fx-section">
+                <h3 class="courier-subheading" th:text="#{missions.section.detail}">Détail</h3>
+                <div class="ticket-fx-info-grid">
+                    <div class="ticket-fx-label" th:text="#{missions.field.start}">Début</div>
+                    <div th:text="${detail.startDate != null ? #temporals.format(detail.startDate, 'dd/MM/yyyy') : '—'}">—</div>
+                    <div class="ticket-fx-label" th:text="#{missions.field.end}">Fin</div>
+                    <div th:text="${detail.endDate != null ? #temporals.format(detail.endDate, 'dd/MM/yyyy') : '—'}">—</div>
+                    <div class="ticket-fx-label" th:text="#{missions.col.status}">Statut</div>
+                    <div th:text="${@uiLabels.missionStatus(detail.status, #locale)}">—</div>
+                </div>
+            </div>
+
+            <div class="ticket-fx-section" th:if="${!#strings.isEmpty(detail.objectives)}">
+                <h3 class="courier-subheading" th:text="#{missions.field.objectives}">Objectifs</h3>
+                <div class="ticket-fx-description" th:text="${detail.objectives}">—</div>
+            </div>
+
+            <div class="ticket-fx-section">
+                <h3 class="courier-subheading" th:text="#{missions.section.logistics}">Logistique</h3>
+                <div class="ticket-fx-info-grid">
+                    <div class="ticket-fx-label" th:text="#{missions.field.durationNote}">Durée</div>
+                    <div th:text="${#strings.isEmpty(detail.durationNote) ? '—' : detail.durationNote}">—</div>
+                    <div class="ticket-fx-label" th:text="#{missions.field.departureNote}">Départ</div>
+                    <div th:text="${#strings.isEmpty(detail.departureNote) ? '—' : detail.departureNote}">—</div>
+                    <div class="ticket-fx-label" th:text="#{missions.field.returnNote}">Retour</div>
+                    <div th:text="${#strings.isEmpty(detail.returnNote) ? '—' : detail.returnNote}">—</div>
+                    <div class="ticket-fx-label" th:text="#{missions.field.transportDetail}">Transport</div>
+                    <div th:text="${#strings.isEmpty(detail.transportDetail) ? '—' : detail.transportDetail}">—</div>
+                    <div class="ticket-fx-label" th:text="#{missions.field.expensesNote}">Frais</div>
+                    <div th:text="${#strings.isEmpty(detail.expensesNote) ? '—' : detail.expensesNote}">—</div>
+                </div>
+            </div>
+
+            <div class="ticket-fx-section" th:if="${!#lists.isEmpty(detail.participantLabels)}">
+                <h3 class="courier-subheading" th:text="#{missions.section.participantsOfficial}">Agents</h3>
+                <ul class="mission-detail-participant-list">
+                    <li th:each="label : ${detail.participantLabels}" th:text="${label}">agent</li>
+                </ul>
+            </div>
+
+            <div class="ticket-fx-section"
+                 th:if="${!#strings.isEmpty(detail.description) or !#strings.isEmpty(detail.observationsNote)}">
+                <h3 class="courier-subheading" th:text="#{missions.section.advancedInternal}">Notes</h3>
+                <p class="ticket-fx-label" th:if="${!#strings.isEmpty(detail.description)}" th:text="#{missions.field.description}">Description</p>
+                <div class="ticket-fx-description" th:if="${!#strings.isEmpty(detail.description)}" th:text="${detail.description}">—</div>
+                <p class="ticket-fx-label mission-detail-notes-spacer" th:if="${!#strings.isEmpty(detail.observationsNote)}"
+                   th:text="#{missions.field.observationsNote}">Observations</p>
+                <div class="ticket-fx-description" th:if="${!#strings.isEmpty(detail.observationsNote)}"
+                     th:text="${detail.observationsNote}">—</div>
+            </div>
+
+            <div class="ticket-fx-section">
+                <h3 class="courier-subheading" th:text="#{missions.section.advancedOrder}">Ordre</h3>
+                <div class="ticket-fx-info-grid">
+                    <div class="ticket-fx-label" th:text="#{missions.field.orderRef}">Réf.</div>
+                    <div th:text="${#strings.isEmpty(detail.orderReference) ? '—' : detail.orderReference}">—</div>
+                    <div class="ticket-fx-label" th:text="#{missions.field.orderDate}">Date</div>
+                    <div th:text="${detail.orderIssueDate != null ? #temporals.format(detail.orderIssueDate, 'dd/MM/yyyy') : '—'}">—</div>
+                    <div class="ticket-fx-label" th:text="#{missions.field.orderBy}">Signataire</div>
+                    <div th:text="${#strings.isEmpty(detail.orderIssuedBy) ? '—' : detail.orderIssuedBy}">—</div>
+                </div>
+                <th:block th:if="${!#strings.isEmpty(detail.orderBody)}">
+                    <p class="ticket-fx-label" th:text="#{missions.field.orderBody}">Texte</p>
+                    <div class="ticket-fx-description" th:text="${detail.orderBody}">—</div>
+                </th:block>
+            </div>
+
+            <div class="ticket-fx-section">
+                <h3 class="courier-subheading" th:text="#{missions.section.orderPreview}">Aperçu</h3>
+                <pre class="missions-order-preview mission-detail-order-preview" th:text="${#strings.isEmpty(detail.orderDocument) ? '—' : detail.orderDocument}">—</pre>
+            </div>
+        </th:block>
+
+        <th:block th:if="${activeTab == 'report'}">
+            <div class="ticket-fx-hero">
+                <p class="ticket-fx-ref" th:text="|REF: ${detail.code}|">REF</p>
+                <h1 class="ticket-fx-title" th:text="#{missions.section.report}">Compte rendu</h1>
+            </div>
+            <div class="ticket-fx-section">
+                <p class="muted">
+                    <span th:text="#{missions.report.submittedLabel}">Soumis</span> :
+                    <span th:text="${detail.reportSubmittedDisplay != null ? detail.reportSubmittedDisplay : '—'}">—</span>
+                </p>
+                <p class="muted" th:if="${!#strings.isEmpty(detail.reportAssigneeLabel)}">
+                    <span th:text="#{missions.report.assigneeCurrent}">Rédacteur désigné</span> :
+                    <span th:text="${detail.reportAssigneeLabel}">—</span>
+                </p>
+                <p class="muted" th:if="${!detail.canEditReport and !detail.canAssignReport}"
+                   th:text="#{missions.report.readOnlyHint}">Lecture seule.</p>
+
+                <div class="missions-report-attachments-columns missions-report-fields-columns">
+                    <div class="missions-report-attachments-label missions-report-fields-label-spacer" aria-hidden="true"></div>
+                    <div class="missions-report-attachments-main missions-report-fields-main">
+                        <form th:if="${detail.canAssignReport}" method="post" th:action="@{/app/missions/report/assign}" class="missions-report-assign-form">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <input type="hidden" name="code" th:value="${detail.code}" />
+                            <input type="hidden" name="returnTo" value="detail" />
+                            <label class="form-label" th:text="#{missions.report.assign.label}">Désigner un rédacteur</label>
+                            <select class="form-input" name="assigneeUserId" id="mission-report-assignee">
+                                <option value="" th:selected="${detail.reportAssigneeUserId == null}"
+                                        th:text="#{missions.report.assign.selfLead}">Je rédige (responsable)</option>
+                                <option th:each="ch : ${detail.reportDelegateChoices}"
+                                        th:value="${ch.id}"
+                                        th:selected="${detail.reportAssigneeUserId != null and detail.reportAssigneeUserId == ch.id}"
+                                        th:text="${ch.label}">Agent</option>
+                            </select>
+                            <p class="muted form-hint" th:if="${#lists.isEmpty(detail.reportDelegateChoices)}"
+                               th:text="#{missions.report.assign.noDelegates}">Aucun agent.</p>
+                            <div class="missions-detail-actions missions-report-assign-actions">
+                                <button type="submit" class="secondary-btn btn-sm" th:text="#{missions.report.assign.submit}">Mettre à jour</button>
+                            </div>
+                        </form>
+
+                        <form id="mission-detail-report-save-form" method="post" th:action="@{/app/missions/report}" class="missions-report-save-form">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <input type="hidden" name="code" th:value="${detail.code}" />
+                            <input type="hidden" name="returnTo" value="detail" />
+                            <label class="form-label" th:text="#{missions.field.reportText}">Rapport</label>
+                            <textarea class="form-textarea missions-report-area" name="reportText"
+                                      th:disabled="${!detail.canEditReport}"
+                                      th:text="${detail.reportText}"></textarea>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="ticket-fx-section missions-report-attachments-block">
+                    <div class="missions-report-attachments-columns">
+                        <div class="missions-report-attachments-label" th:text="#{missions.report.attachmentsTitle}">Pièces jointes</div>
+                        <div class="missions-report-attachments-main">
+                            <ul class="missions-report-attachment-list" th:if="${!#lists.isEmpty(detail.reportAttachments)}">
+                                <li th:each="a : ${detail.reportAttachments}" class="missions-report-attachment-row">
+                                    <a class="courier-ref-link"
+                                       th:href="@{/app/missions/{c}/report/attachment/{id}(c=${detail.code},id=${a.id})}"
+                                       th:text="${a.fileName}">fichier.pdf</a>
+                                    <span class="muted" th:text="' · ' + ${a.uploadedAtDisplay} + ' · ' + ${a.uploadedByUsername}">meta</span>
+                                    <form th:if="${detail.canEditReport}" method="post" th:action="@{/app/missions/report/attachment/delete}"
+                                          class="missions-report-attachment-delete-form" style="display:inline;">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                        <input type="hidden" name="code" th:value="${detail.code}" />
+                                        <input type="hidden" name="attachmentId" th:value="${a.id}" />
+                                        <input type="hidden" name="returnTo" value="detail" />
+                                        <button type="submit" class="secondary-btn btn-sm" th:text="#{missions.report.attachmentRemove}">Retirer</button>
+                                    </form>
+                                </li>
+                            </ul>
+                            <p class="muted missions-report-attachments-empty" th:if="${#lists.isEmpty(detail.reportAttachments)}"
+                               th:text="#{missions.report.attachmentsEmpty}">—</p>
+                            <form th:if="${detail.canEditReport}" method="post" enctype="multipart/form-data"
+                                  th:action="@{/app/missions/report/attachment}" class="missions-report-upload-form"
+                                  data-upload-enhanced="true" data-upload-native-submit="true">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                <input type="hidden" name="code" th:value="${detail.code}" />
+                                <input type="hidden" name="returnTo" value="detail" />
+                                <input id="mission-report-attachment-file" type="file" name="file"
+                                       accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx,.txt,application/pdf,image/png,image/jpeg"
+                                       data-dnd-uploader="true" data-upload-single="true" />
+                                <p class="missions-report-attachments-hint muted" th:text="#{missions.report.attachmentsStorageHint}">Formats</p>
+                                <div class="missions-detail-actions missions-report-upload-actions">
+                                    <button type="submit" class="primary-btn btn-sm" th:text="#{missions.report.attachmentUploadBtn}">Téléverser</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="missions-detail-actions">
+                    <button type="submit" class="primary-btn btn-sm" form="mission-detail-report-save-form"
+                            th:disabled="${!detail.canEditReport}"
+                            th:text="#{missions.btn.saveReport}">Enregistrer</button>
+                </div>
+            </div>
+        </th:block>
+    </div>
+</section>
+</body>
+</html>

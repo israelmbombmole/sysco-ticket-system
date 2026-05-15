@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <!-- Fixed nav key: avoids empty dynamic #{${pageTitleKey}} if model attribute is missing -->
+    <title th:fragment="title" th:text="#{nav.myWork}">My work</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page my-work-page">
+    <div class="card page-panel my-work-shell">
+        <h1 class="title-large" th:text="#{nav.myWork}">Mon Travail</h1>
+        <div class="page-alerts"
+             th:with="sk=${successKey != null ? #strings.trim(successKey) : ''}, ek=${errorKey != null ? #strings.trim(errorKey) : ''}"
+             th:if="${!#strings.isEmpty(sk) || !#strings.isEmpty(ek)}">
+            <th:block th:if="${!#strings.isEmpty(sk)}">
+                <p class="success-banner" th:text="#{__${sk}__}">Succès</p>
+            </th:block>
+            <th:block th:if="${!#strings.isEmpty(ek)}">
+                <p class="login-error" th:text="#{__${ek}__}">Erreur</p>
+            </th:block>
+        </div>
+
+        <th:block th:if="${!#lists.isEmpty(page.closureReviews)}">
+            <h3 class="courier-subheading" th:text="#{myWork.closureReview.heading}">Closure reviews</h3>
+            <table class="sysco-table">
+                <thead>
+                <tr>
+                    <th th:text="#{myWork.closureReview.colTicket}">Ticket</th>
+                    <th th:text="#{myWork.closureReview.colTitle}">Title</th>
+                    <th th:text="#{myWork.closureReview.colRequestedBy}">Requested by</th>
+                    <th th:text="#{myWork.closureReview.colRole}">Reviewer role</th>
+                    <th th:text="#{myWork.closureReview.colAction}">Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="cr : ${page.closureReviews}">
+                    <td th:text="${cr.ticketNumber}">TCK-1</td>
+                    <td th:text="${cr.title}">Title</td>
+                    <td th:text="${#strings.isEmpty(cr.closeRequestedByUsername) ? '-' : cr.closeRequestedByUsername}">user</td>
+                    <td th:switch="${cr.closeReviewRoleKey}">
+                        <span th:case="'CLOSURE_SENIOR'" th:text="#{myWork.closureReview.role.closureSenior}">Senior pool</span>
+                        <span th:case="*" th:text="${#strings.isEmpty(cr.closeReviewRoleKey) ? '-' : cr.closeReviewRoleKey}">INSPECTEUR</span>
+                    </td>
+                    <td>
+                        <a class="my-work-pill my-work-pill-view"
+                           th:href="@{/app/ticket-management/{id}(id=${cr.id},returnTo='/app/my-work')}"
+                           th:text="#{myWork.closureReview.open}">Open</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </th:block>
+
+        <h3 class="courier-subheading">Mes tickets</h3>
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th th:text="#{myWork.col.status}">Status</th>
+                <th th:text="#{myWork.col.priority}">Priority</th>
+                <th>Début</th>
+                <th>Fermer</th>
+                <th>Durée</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${page.myTickets}"
+                th:classappend="${t.status == 'CLOSE_REQUESTED'} ? ' my-work-ticket-close-requested' : ''">
+                <td th:text="${t.ticketNumber}">8</td>
+                <td th:text="${t.title}">[AUTO JOB] TEST1</td>
+                <td>
+                    <span th:if="${t.status == 'CLOSE_REQUESTED'}" class="my-work-status-close-requested"
+                          th:text="#{ticketMgmt.status.closeRequested}">Closure pending</span>
+                    <span th:if="${t.status != 'CLOSE_REQUESTED'}"
+                          th:text="${@uiLabels.ticketStatus(t.status, #locale)}">OPEN</span>
+                </td>
+                <td th:text="${@uiLabels.ticketPriority(t.priority, #locale)}">MEDIUM</td>
+                <td th:text="${#strings.isEmpty(t.startAt) ? '-' : t.startAt}">-</td>
+                <td th:text="${#strings.isEmpty(t.closeAt) ? '-' : t.closeAt}">-</td>
+                <td th:text="${#strings.isEmpty(t.duration) ? '-' : t.duration}">-</td>
+                <td>
+                    <p class="muted my-work-ticket-close-hint"
+                       th:if="${t.status != 'CLOSED' && t.status != 'CLOSE_REQUESTED' && t.status != 'MERGED' && t.hasOpenTicketTasks}"
+                       th:text="#{myWork.ticket.closeBlockedOpenTasksHint}">Hint</p>
+                    <div class="my-work-actions">
+                        <a class="my-work-pill my-work-pill-view"
+                           th:href="@{/app/ticket-management/{id}(id=${t.id},returnTo='/app/my-work')}">Voir</a>
+                        <form method="post" th:action="@{/app/my-work/ticket/{id}/start(id=${t.id})}" class="inline-form">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="my-work-pill my-work-pill-alloc user-pill-btn">Démarrer</button>
+                        </form>
+                        <form method="post" th:action="@{/app/my-work/ticket/{id}/close(id=${t.id})}" class="inline-form"
+                              th:if="${t.status != 'CLOSED' && t.status != 'CLOSE_REQUESTED' && t.directTicketCloseAvailable}">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="my-work-pill my-work-pill-close user-pill-btn"
+                                    th:text="#{myWork.ticket.closeDirectButton}">Fermer</button>
+                        </form>
+                        <button type="button"
+                                class="my-work-pill my-work-pill-esca user-pill-btn js-sysco-escalate-open"
+                                th:if="${t.status != 'CLOSED' && t.status != 'CLOSE_REQUESTED' && t.closureEscalationAvailable}"
+                                th:attr="data-sysco-escalate-dialog-id=${'sysco-close-request-mw-' + t.id}"
+                                th:text="#{myWork.ticket.requestClosureEscalateButton}">Escalader pour fermeture</button>
+                        <a class="my-work-pill my-work-pill-gray"
+                           th:href="@{/app/my-work/ticket/{id}/merge(id=${t.id})}"
+                           th:if="${t.status != 'MERGED' && t.status != 'CLOSED' && t.status != 'CLOSE_REQUESTED'}">Fusionner</a>
+                        <button type="button"
+                                class="my-work-pill my-work-pill-esca user-pill-btn js-sysco-escalate-open"
+                                th:attr="data-sysco-escalate-dialog-id=${'sysco-escalate-mw-' + t.id}"
+                                th:text="#{myWork.escalate.menuSummary}">Transfer</button>
+                        <dialog class="sysco-escalate-dialog" th:id="${'sysco-escalate-mw-' + t.id}">
+                            <div class="sysco-escalate-dialog-surface">
+                                <header class="sysco-escalate-dialog-header">
+                                    <h2 class="sysco-escalate-dialog-title" th:text="#{myWork.escalate.menuSummary}">Escalader</h2>
+                                    <button type="button" class="sysco-escalate-dialog-x" data-sysco-close-escalate
+                                            th:attr="aria-label=#{myWork.escalate.closeDialog}">×</button>
+                                </header>
+                                <div class="sysco-escalate-dialog-body">
+                            <div th:if="${t.reassignmentReopensTicket()}"
+                                 class="my-work-reassign-reopen-notice"
+                                 role="status">
+                                <strong th:text="#{myWork.escalate.closedTicketReassignNoticeTitle}">Closed ticket</strong>
+                                <p class="muted" th:text="#{myWork.escalate.closedTicketReassignNoticeBody}">
+                                    Reassignment will reopen and assign.
+                                </p>
+                            </div>
+                            <div class="my-work-escalate-menu my-work-escalate-menu--in-dialog js-my-work-escalate-wizard"
+                                 th:attr="data-multi-sd-esc=${t.multiSousDirectionEscalateInternal},data-multi-sd-re=${t.multiSousDirectionReassignInternal}">
+                                <!-- Step 1 -->
+                                <div class="js-esc-panel" data-panel="root">
+                                    <p class="muted my-work-escalate-heading" th:text="#{myWork.escalate.chooseAction}">Choose</p>
+                                    <button type="button" class="my-work-escalate-option" data-esc-nav="esc-scope"
+                                            th:text="#{myWork.escalate.modeEscalate}">Escalader</button>
+                                    <button type="button" class="my-work-escalate-option my-work-reassign-option" data-esc-nav="re-scope"
+                                            th:text="#{myWork.escalate.modeReassign}">Réassigner</button>
+                                    <p class="muted"
+                                       th:if="${#lists.isEmpty(t.escalateChoicesSameDirection) && #lists.isEmpty(page.externalEscalationDirections)
+                                            && #lists.isEmpty(t.escalateChoicesOtherDirection)
+                                            && #lists.isEmpty(t.reassignChoicesSameDirection) && #lists.isEmpty(t.reassignChoicesOtherDirection)}"
+                                       th:text="#{myWork.escalate.noTargets}">No targets.</p>
+                                </div>
+                                <!-- Escalate: internal vs external -->
+                                <div class="js-esc-panel" data-panel="esc-scope" hidden>
+                                    <button type="button" class="my-work-escalate-option my-work-reassign-option" data-esc-nav="root"
+                                            th:text="#{myWork.escalate.back}">Back</button>
+                                    <p class="muted my-work-escalate-heading" th:text="#{myWork.escalate.escalateScopeTitle}">Escalade</p>
+                                    <th:block th:if="${#lists.isEmpty(t.escalateChoicesSameDirection) && #lists.isEmpty(page.externalEscalationDirections)
+                                            && #lists.isEmpty(t.escalateChoicesOtherDirection)}">
+                                        <p class="muted" th:text="#{myWork.escalate.noEscalatePath}">—</p>
+                                    </th:block>
+                                    <button type="button" class="my-work-escalate-option" data-esc-nav="esc-int"
+                                            th:if="${!#lists.isEmpty(t.escalateChoicesSameDirection)}"
+                                            th:text="#{myWork.escalate.internal}">Interne</button>
+                                    <button type="button" class="my-work-escalate-option" data-esc-nav="esc-ext"
+                                            th:if="${!#lists.isEmpty(page.externalEscalationDirections)}"
+                                            th:text="#{myWork.escalate.external}">Externe</button>
+                                    <button type="button" class="my-work-escalate-option" data-esc-nav="esc-od"
+                                            th:if="${!#lists.isEmpty(t.escalateChoicesOtherDirection)}"
+                                            th:text="#{myWork.escalate.otherDirectionAgents}">Autre direction (agents)</button>
+                                </div>
+                                <!-- Reassign: internal vs external -->
+                                <div class="js-esc-panel" data-panel="re-scope" hidden>
+                                    <button type="button" class="my-work-escalate-option my-work-reassign-option" data-esc-nav="root"
+                                            th:text="#{myWork.escalate.back}">Back</button>
+                                    <p class="muted my-work-escalate-heading" th:text="#{myWork.escalate.reassignScopeTitle}">Réassignation</p>
+                                    <th:block th:if="${#lists.isEmpty(t.reassignChoicesSameDirection) && #lists.isEmpty(t.reassignChoicesOtherDirection)}">
+                                        <p class="muted" th:text="#{myWork.escalate.noReassignPath}">—</p>
+                                    </th:block>
+                                    <button type="button" class="my-work-escalate-option" data-esc-nav="re-int"
+                                            th:if="${!#lists.isEmpty(t.reassignChoicesSameDirection)}"
+                                            th:text="#{myWork.escalate.internal}">Interne</button>
+                                    <button type="button" class="my-work-escalate-option" data-esc-nav="re-ext"
+                                            th:if="${!#lists.isEmpty(t.reassignChoicesOtherDirection)}"
+                                            th:text="#{myWork.escalate.externalOtherDirection}">Autre direction</button>
+                                </div>
+                                <!-- Escalate internal: sous-direction filter + targets -->
+                                <div class="js-esc-panel" data-panel="esc-int" hidden>
+                                    <button type="button" class="my-work-escalate-option my-work-reassign-option" data-esc-nav="esc-scope"
+                                            th:text="#{myWork.escalate.back}">Back</button>
+                                    <p class="muted my-work-escalate-heading"
+                                       th:if="${t.multiSousDirectionEscalateInternal}"
+                                       th:text="#{myWork.escalate.pickSousDirection}">Sous-direction</p>
+                                    <div class="my-work-sd-bar" th:if="${t.multiSousDirectionEscalateInternal}">
+                                        <button type="button" class="my-work-escalate-option js-sd-filter-btn"
+                                                th:each="sd : ${t.escalateInternalSousDirections}"
+                                                th:attr="data-sd=${sd.id != null ? sd.id : 'none'}">
+                                            <span th:if="${sd.id != null}" th:text="${sd.label}">SD</span>
+                                            <span th:if="${sd.id == null}" th:text="#{myWork.escalate.noSousDirection}">—</span>
+                                        </button>
+                                    </div>
+                                    <p class="muted my-work-escalate-sub" th:text="#{myWork.escalate.sameDirection}">Même direction</p>
+                                    <p class="muted my-work-escalate-sub" th:text="#{myWork.escalate.escalateUp}">Escalader</p>
+                                    <form method="post" th:action="@{/app/my-work/ticket/{id}/escalate(id=${t.id})}"
+                                          th:each="c : ${t.escalateChoicesSameDirection}"
+                                          class="inline-form js-esc-target-row"
+                                          data-flow="esc-int"
+                                          th:attr="data-sd=${c.sousDirectionId != null ? c.sousDirectionId : 'none'}">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="targetUserId" th:value="${c.id}"/>
+                                        <input type="hidden" name="crossDirection" value="false"/>
+                                        <input type="hidden" name="reassign" value="false"/>
+                                        <button type="submit" class="my-work-escalate-option" th:text="${c.label}">user</button>
+                                    </form>
+                                </div>
+                                <!-- Escalate external -->
+                                <div class="js-esc-panel" data-panel="esc-ext" hidden>
+                                    <button type="button" class="my-work-escalate-option my-work-reassign-option" data-esc-nav="esc-scope"
+                                            th:text="#{myWork.escalate.back}">Back</button>
+                                    <p class="muted my-work-escalate-heading" th:text="#{myWork.escalate.externalPickDirection}">Direction</p>
+                                    <form method="post" th:action="@{/app/my-work/ticket/{id}/escalate-external(id=${t.id})}" class="my-work-escalate-ext-form">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <select name="targetDirectionId" class="my-work-escalate-select" required>
+                                            <option value="" th:text="#{myWork.escalate.externalDirectionPlaceholder}">—</option>
+                                            <option th:each="d : ${page.externalEscalationDirections}"
+                                                    th:value="${d.id}" th:text="${d.label}">Dir</option>
+                                        </select>
+                                        <button type="submit" class="my-work-escalate-option" th:text="#{myWork.escalate.externalSend}">Envoyer</button>
+                                    </form>
+                                </div>
+                                <!-- Escalate to named user in another direction -->
+                                <div class="js-esc-panel" data-panel="esc-od" hidden>
+                                    <button type="button" class="my-work-escalate-option my-work-reassign-option" data-esc-nav="esc-scope"
+                                            th:text="#{myWork.escalate.back}">Back</button>
+                                    <p class="muted my-work-escalate-heading" th:text="#{myWork.escalate.otherDirection}">Autre direction</p>
+                                    <p class="muted my-work-escalate-sub" th:text="#{myWork.escalate.escalateUp}">Escalader</p>
+                                    <form method="post" th:action="@{/app/my-work/ticket/{id}/escalate(id=${t.id})}"
+                                          th:each="c : ${t.escalateChoicesOtherDirection}"
+                                          class="inline-form">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="targetUserId" th:value="${c.id}"/>
+                                        <input type="hidden" name="crossDirection" value="true"/>
+                                        <input type="hidden" name="reassign" value="false"/>
+                                        <button type="submit" class="my-work-escalate-option" th:text="${c.label}">user</button>
+                                    </form>
+                                </div>
+                                <!-- Reassign internal -->
+                                <div class="js-esc-panel" data-panel="re-int" hidden>
+                                    <button type="button" class="my-work-escalate-option my-work-reassign-option" data-esc-nav="re-scope"
+                                            th:text="#{myWork.escalate.back}">Back</button>
+                                    <p class="muted my-work-escalate-heading"
+                                       th:if="${t.multiSousDirectionReassignInternal}"
+                                       th:text="#{myWork.escalate.pickSousDirection}">Sous-direction</p>
+                                    <div class="my-work-sd-bar" th:if="${t.multiSousDirectionReassignInternal}">
+                                        <button type="button" class="my-work-escalate-option js-sd-filter-btn"
+                                                th:each="sd : ${t.reassignInternalSousDirections}"
+                                                th:attr="data-sd=${sd.id != null ? sd.id : 'none'}">
+                                            <span th:if="${sd.id != null}" th:text="${sd.label}">SD</span>
+                                            <span th:if="${sd.id == null}" th:text="#{myWork.escalate.noSousDirection}">—</span>
+                                        </button>
+                                    </div>
+                                    <p class="muted my-work-escalate-sub" th:text="#{myWork.escalate.sameDirection}">Même direction</p>
+                                    <p class="muted my-work-escalate-sub" th:text="#{myWork.escalate.reassign}">Réassigner</p>
+                                    <form method="post" th:action="@{/app/my-work/ticket/{id}/escalate(id=${t.id})}"
+                                          th:each="c : ${t.reassignChoicesSameDirection}"
+                                          class="inline-form js-esc-target-row"
+                                          data-flow="re-int"
+                                          th:attr="data-sd=${c.sousDirectionId != null ? c.sousDirectionId : 'none'},data-confirm-reopen=${t.reassignmentReopensTicket()}"
+                                          th:data-reopen-msg="#{myWork.escalate.closedTicketReassignConfirm}">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="targetUserId" th:value="${c.id}"/>
+                                        <input type="hidden" name="crossDirection" value="false"/>
+                                        <input type="hidden" name="reassign" value="true"/>
+                                        <button type="submit" class="my-work-escalate-option my-work-reassign-option" th:text="${c.label}">user</button>
+                                    </form>
+                                </div>
+                                <!-- Reassign other direction -->
+                                <div class="js-esc-panel" data-panel="re-ext" hidden>
+                                    <button type="button" class="my-work-escalate-option my-work-reassign-option" data-esc-nav="re-scope"
+                                            th:text="#{myWork.escalate.back}">Back</button>
+                                    <p class="muted my-work-escalate-heading" th:text="#{myWork.escalate.otherDirection}">Autre direction</p>
+                                    <p class="muted my-work-escalate-sub" th:text="#{myWork.escalate.reassign}">Réassigner</p>
+                                    <form method="post" th:action="@{/app/my-work/ticket/{id}/escalate(id=${t.id})}"
+                                          th:each="c : ${t.reassignChoicesOtherDirection}"
+                                          class="inline-form js-esc-target-row"
+                                          data-flow="re-ext"
+                                          data-sd="none"
+                                          th:attr="data-confirm-reopen=${t.reassignmentReopensTicket()}"
+                                          th:data-reopen-msg="#{myWork.escalate.closedTicketReassignConfirm}">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="targetUserId" th:value="${c.id}"/>
+                                        <input type="hidden" name="crossDirection" value="true"/>
+                                        <input type="hidden" name="reassign" value="true"/>
+                                        <button type="submit" class="my-work-escalate-option my-work-reassign-option" th:text="${c.label}">user</button>
+                                    </form>
+                                </div>
+                            </div>
+                                </div>
+                            </div>
+                        </dialog>
+                        <dialog class="sysco-escalate-dialog" th:id="${'sysco-close-request-mw-' + t.id}">
+                            <div class="sysco-escalate-dialog-surface">
+                                <header class="sysco-escalate-dialog-header">
+                                    <h2 class="sysco-escalate-dialog-title" th:text="#{myWork.closureRequest.dialogTitle}">
+                                        Closure request</h2>
+                                    <button type="button" class="sysco-escalate-dialog-x" data-sysco-close-escalate
+                                            th:attr="aria-label=#{myWork.escalate.closeDialog}">×</button>
+                                </header>
+                                <div class="sysco-escalate-dialog-body">
+                                    <p class="muted" th:text="#{myWork.closureRequest.dialogIntro}">Intro</p>
+                                    <p class="muted" th:text="#{myWork.closureRequest.aiGuide}">AI</p>
+                                    <a class="my-work-pill my-work-pill-view my-work-closure-chat-link"
+                                       th:href="@{/app/chat}"
+                                       th:text="#{myWork.closureRequest.openChatAssistant}">Chat</a>
+                                    <form method="post" class="my-work-closure-request-form"
+                                          th:action="@{/app/my-work/ticket/{id}/request-closure(id=${t.id})}">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <label th:if="${t.multiAssignCollaboration && !#lists.isEmpty(t.closureSeniorChoices)}"
+                                               class="my-work-closure-senior-label">
+                                            <span th:text="#{myWork.closureRequest.selectSenior}">Cadre</span>
+                                            <select name="notifySeniorUserId" class="my-work-escalate-select">
+                                                <option value="" th:text="#{myWork.closureRequest.poolOption}">Auto</option>
+                                                <option th:each="c : ${t.closureSeniorChoices}"
+                                                        th:value="${c.id}" th:text="${c.label}">User</option>
+                                            </select>
+                                        </label>
+                                        <p class="muted"
+                                           th:if="${!t.multiAssignCollaboration || #lists.isEmpty(t.closureSeniorChoices)}"
+                                           th:text="#{myWork.closureRequest.autoRouteHint}">Auto route</p>
+                                        <button type="submit" class="primary-btn btn-sm my-work-closure-submit"
+                                                th:text="#{myWork.closureRequest.submit}">Envoyer</button>
+                                    </form>
+                                    <p class="muted my-work-closure-after-submit-hint"
+                                       th:text="#{myWork.closureRequest.afterSubmitHint}">After</p>
+                                </div>
+                            </div>
+                        </dialog>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.myTickets)}"><td colspan="8" class="muted">No content in table</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="courier-subheading">Mes missions</h3>
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th>Code</th>
+                <th>Titre</th>
+                <th>Lieu / site</th>
+                <th>Responsable</th>
+                <th>Début</th>
+                <th>Fin</th>
+                <th th:text="#{myWork.col.status}">Status</th>
+                <th>Votre rôle</th>
+                <th>Participants</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${page.myMissions}">
+                <td th:text="${m.code}">M-2026-0001</td>
+                <td th:text="${m.title}">Mission</td>
+                <td th:text="${m.site}">Site</td>
+                <td th:text="${m.responsible}">admin</td>
+                <td th:text="${m.startDate}">2026-04-27</td>
+                <td th:text="${m.endDate}">2026-05-04</td>
+                <td th:text="${@uiLabels.missionStatus(m.status, #locale)}">PLANIFIEE</td>
+                <td>Participant</td>
+                <td>—</td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:href="@{/app/missions/{code}(code=${m.code})}">Voir</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.myMissions)}"><td colspan="10" class="muted">No content in table</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="courier-subheading">Mes tâches</h3>
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Titre</th>
+                <th th:text="#{myWork.col.status}">Status</th>
+                <th>Echeance</th>
+                <th th:text="#{myWork.col.priority}">Priority</th>
+                <th>Pièces jointes</th>
+                <th>Début</th>
+                <th>Fermer</th>
+                <th>Durée</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="j : ${page.myTasks}">
+                <td th:text="${j.id}">1</td>
+                <td th:text="${j.title}">Tâche</td>
+                <td th:text="${@uiLabels.taskStatus(j.status, #locale)}">CLOSED</td>
+                <td th:text="${j.dueAt}">2026-04-27 14:00</td>
+                <td th:text="${#strings.isEmpty(j.priority) ? '-' : @uiLabels.ticketPriority(j.priority, #locale)}">MEDIUM</td>
+                <td>
+                    <span th:if="${#lists.isEmpty(j.attachments)}">-</span>
+                    <span th:each="a,iter : ${j.attachments}" class="my-work-attachment-item">
+                        <a class="my-work-pill my-work-pill-view user-pill-btn"
+                           th:href="@{/app/my-work/task/{id}/attachment(id=${j.id},idx=${a.idx},mode='preview')}"
+                           th:text="#{myWork.attachment.preview}">Preview</a>
+                        <a class="my-work-pill my-work-pill-gray user-pill-btn"
+                           th:href="@{/app/my-work/task/{id}/attachment(id=${j.id},idx=${a.idx},mode='download')}"
+                           th:text="#{myWork.attachment.download}">Download</a>
+                        <span class="muted" th:text="${a.name}">file.pdf</span><span th:if="${!iter.last}">, </span>
+                    </span>
+                </td>
+                <td th:text="${#strings.isEmpty(j.startAt) ? '-' : j.startAt}">-</td>
+                <td th:text="${#strings.isEmpty(j.closeAt) ? '-' : j.closeAt}">-</td>
+                <td th:text="${#strings.isEmpty(j.duration) ? '-' : j.duration}">-</td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:href="@{/app/my-work/task/{id}(id=${j.id})}">Voir</a>
+                    <form method="post" th:action="@{/app/my-work/task/{id}/start(id=${j.id})}" class="inline-form">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="my-work-pill my-work-pill-alloc user-pill-btn">Démarrer</button>
+                    </form>
+                    <form method="post" th:action="@{/app/my-work/task/{id}/close(id=${j.id})}" class="inline-form">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="my-work-pill my-work-pill-close user-pill-btn">Fermer</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.myTasks)}"><td colspan="10" class="muted">No content in table</td></tr>
+            </tbody>
+        </table>
+
+        <h3 class="courier-subheading">Escalades externes</h3>
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th>Ticket</th>
+                <th>Depuis la direction</th>
+                <th>Vers la direction</th>
+                <th>Sous direction</th>
+                <th>Approbateur</th>
+                <th th:text="#{myWork.col.status}">Status</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="e : ${page.escalations}">
+                <td th:text="${e.ticketNumber}">TCK-1</td>
+                <td th:text="${e.fromDirection}">Direction A</td>
+                <td th:text="${e.toDirection}">Direction B</td>
+                <td th:text="${e.sousDirection}">-</td>
+                <td th:text="${e.approver}">-</td>
+                <td th:text="${@uiLabels.ticketStatus(e.status, #locale)}">ESCALATED</td>
+                <td>
+                    <a class="my-work-pill my-work-pill-view"
+                       th:href="@{/app/ticket-management/{id}(id=${e.id},returnTo='/app/my-work')}">Voir</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(page.escalations)}"><td colspan="7" class="muted">No content in table</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <script defer th:src="@{/js/my-work-escalate-wizard.js}"></script>
+</section>
+</body>
+</html>
+

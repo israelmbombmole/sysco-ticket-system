@@ -112,17 +112,17 @@ public class UserExcelEntryController {
 
                 Platform.runLater(() -> progressSave.setProgress(0.2));
 
-                // =========================
-                // SAVE EXCEL (SIMPLIFIED)
-                // =========================
-                ExcelService.append(
-                        dateEnreg.getValue().toString(),
-                        expediteur.getText().trim(),
-                        objet.getText().trim(),
-                        "N/A",
-                        "N/A",
-                        "N/A"
-                );
+                // New ticket only: append a row to the year sheet (same as sysco-ticket-system-preview; skip on edit to avoid duplicates).
+                if (editingTicket == null) {
+                    ExcelService.append(
+                            dateEnreg.getValue().toString(),
+                            expediteur.getText().trim(),
+                            objet.getText().trim(),
+                            "N/A",
+                            "N/A",
+                            "N/A"
+                    );
+                }
 
                 String title = expediteur.getText().trim();
                 String description = objet.getText().trim();

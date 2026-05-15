@@ -2,6 +2,7 @@ package com.app.controller;
 
 import com.app.auth.Session;
 import com.app.dao.AttachmentDAO;
+import com.app.dao.AutomationDAO;
 import com.app.dao.TicketDAO;
 import com.app.dao.TicketTaskDAO;
 import com.app.model.Attachment;
@@ -10,8 +11,13 @@ import com.app.model.TicketEvent;
 import com.app.model.TicketTask;
 import com.app.model.User;
 
+import com.app.util.AppUiStyles;
+import com.app.util.I18n;
+import com.app.util.TimelineEventDescriptionLocalizer;
+import com.app.util.LanguageManager;
 import com.app.util.SecurityUtil;
 import com.app.util.TicketUtil;
+import com.app.util.TimeUtil;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -27,24 +33,22 @@ import javafx.scene.control.TableView;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.awt.Desktop;
 
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.TextAlignment;
 
-import javafx.scene.SnapshotParameters;
-import javafx.scene.image.WritableImage;
-import javafx.embed.swing.SwingFXUtils;
-
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-
-import javax.imageio.ImageIO;
-import com.itextpdf.io.image.ImageDataFactory;
 
 
 import javafx.beans.property.SimpleStringProperty;
@@ -247,15 +251,15 @@ public class TicketDetailsController {
         lblReference.setText("REF: " + TicketUtil.formatTicketRef(ticket.getId()));
         lblTitle.setText(ticket.getTitle() == null ? "-" : ticket.getTitle());
 
-        lblCreatedBy.setText("Créé par : " + ticket.getCreatedBy());
-        lblUpdatedBy.setText("Dernière mise à jour : " + ticket.getUpdatedBy());
+        lblCreatedBy.setText(I18n.t("createdBy", "Created by") + ": " + ticket.getCreatedBy());
+        lblUpdatedBy.setText(I18n.t("lastUpdatedBy", "Last updated by") + ": " + ticket.getUpdatedBy());
 
         // PRIORITY BADGES
         String priority = ticket.getPriority();
 
         if (priority != null) {
 
-            lblPriority.setText(priority);
+            lblPriority.setText(I18n.t("priority." + priority.toUpperCase(), priority));
 
             switch(priority.toUpperCase()) {
 
@@ -271,13 +275,13 @@ public class TicketDetailsController {
         }
 
         String status = ticket.getStatus() == null ? "OPEN" : ticket.getStatus().toUpperCase();
-        lblStatus.setText(status);
+        lblStatus.setText(I18n.status(status));
 
         String agent = TicketDAO.getAssignedAgent(ticket.getId());
         String assignedUsers = TicketDAO.getAssignedUsersNames(ticket.getId());
 
 if (assignedUsers == null || assignedUsers.isEmpty()) {
-    lblAssigned.setText("Unassigned");
+    lblAssigned.setText(I18n.t("unassigned", "Unassigned"));
 } else {
     lblAssigned.setText(assignedUsers);
 }
@@ -293,7 +297,7 @@ if (ticket.getClosedAt() != null) {
 }
 
         if (ticket.getResolutionMinutes() != null)
-            lblResolution.setText(ticket.getResolutionMinutes() + " minutes");
+            lblResolution.setText(TimeUtil.formatDurationMinutes(ticket.getResolutionMinutes()));
 
         txtDescription.setText(ticket.getDescription());
 
@@ -301,15 +305,15 @@ if (ticket.getClosedAt() != null) {
         double usage = TicketDAO.getSlaUsagePercent(ticket.getId());
 
         if(usage < 80){
-            lblSla.setText("SLA OK");
+            lblSla.setText(I18n.t("slaOk", "SLA OK"));
             lblSla.setStyle("-fx-text-fill:#22c55e;");
         }
         else if(usage < 100){
-            lblSla.setText("SLA WARNING");
+            lblSla.setText(I18n.t("slaWarning", "SLA WARNING"));
             lblSla.setStyle("-fx-text-fill:#f59e0b;");
         }
         else{
-            lblSla.setText("SLA BREACHED");
+            lblSla.setText(I18n.t("slaBreached", "SLA BREACHED"));
             lblSla.setStyle("-fx-text-fill:#ef4444;");
         }
         
@@ -427,10 +431,12 @@ if (ticket.getClosedAt() != null) {
 
         VBox content = new VBox(3);
 
-        Label title = new Label(event.getUsername() + " • " + event.getType());
+        Label title = new Label(event.getUsername() + " • " + I18n.t("event." + event.getType(), event.getType()));
         title.setStyle("-fx-font-weight:bold; -fx-font-size:13px;");
 
-        Label description = new Label(event.getDescription());
+        Label description = new Label(
+                TimelineEventDescriptionLocalizer.localizeTicketTimelineDescription(
+                        event.getType(), event.getDescription()));
         description.setWrapText(true);
 
         Label time = new Label(event.getCreatedAt());
@@ -443,11 +449,85 @@ if (ticket.getClosedAt() != null) {
         timelineContainer.getChildren().add(row);
     }
 
+    @FXML
+    private void handleTrackTicket() {
+        if (ticket == null) return;
+        List<TicketEvent> events = TicketDAO.getTicketTrackingEvents(ticket.getId());
+        String title = I18n.t("trackTicketTitle", "Ticket Tracking") + " - " + TicketUtil.formatTicketRef(ticket.getId());
+        showTrackingDialog(title, events);
+    }
+
+    private void showTrackingDialog(String title, List<TicketEvent> events) {
+        TableView<TrackingRow> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setPrefSize(860, 430);
+
+        TableColumn<TrackingRow, String> colTime = new TableColumn<>(I18n.t("track.time", "Time"));
+        colTime.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().time()));
+
+        TableColumn<TrackingRow, String> colBy = new TableColumn<>(I18n.t("track.actionBy", "Action By"));
+        colBy.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().actionBy()));
+
+        TableColumn<TrackingRow, String> colAction = new TableColumn<>(I18n.t("track.action", "Action"));
+        colAction.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().action()));
+
+        TableColumn<TrackingRow, String> colTarget = new TableColumn<>(I18n.t("track.targetUser", "Target User"));
+        colTarget.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().targetUser()));
+
+        table.getColumns().setAll(colTime, colBy, colAction, colTarget);
+
+        if (events != null) {
+            for (TicketEvent event : events) {
+                String when = event.getCreatedAt() == null ? "-" : event.getCreatedAt();
+                String who = (event.getUsername() == null || event.getUsername().isBlank()) ? "-" : event.getUsername();
+                String rawDescription = event.getDescription() == null ? "-" : event.getDescription();
+                String what = I18n.t("track.action." + event.getType(), rawDescription);
+                String target = extractTargetUser(rawDescription);
+                table.getItems().add(new TrackingRow(when, who, what, target));
+            }
+        }
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(I18n.t("trackTicket", "Track Ticket"));
+        alert.setHeaderText(title);
+        alert.getDialogPane().setContent(table);
+        if (events == null || events.isEmpty()) {
+            alert.setContentText(I18n.t("track.noEvents", "No tracking events found."));
+        }
+        alert.showAndWait();
+    }
+
+    private String extractTargetUser(String description) {
+        if (description == null || description.isBlank()) return "-";
+        String[] markers = {
+                "assigned to ",
+                "Assigned ticket to ",
+                "Reassigned ticket to ",
+                "Escalated ticket to ",
+                "reassigned to ",
+                " and assigned to "
+        };
+        for (String marker : markers) {
+            int idx = description.indexOf(marker);
+            if (idx >= 0) {
+                String value = description.substring(idx + marker.length()).trim();
+                return value.isBlank() ? "-" : value;
+            }
+        }
+        return "-";
+    }
+
+    private record TrackingRow(String time, String actionBy, String action, String targetUser) {}
+
     private String getIconForType(String type) {
 
         return switch (type) {
             case "CREATED" -> "🟢";
             case "ASSIGNED" -> "🔵";
+            case "TICKET_ASSIGNED" -> "🔵";
+            case "TICKET_REASSIGNED" -> "🔁";
+            case "TICKET_ESCALATED" -> "⏫";
+            case "TICKET_MERGED" -> "🔀";
             case "STARTED" -> "🟡";
             case "COMMENT" -> "💬";
             case "MERGED" -> "🔀";
@@ -464,7 +544,7 @@ if (ticket.getClosedAt() != null) {
     private void handleAddComment() {
 
         if (!SecurityUtil.canAccessTicket(ticket.getId())) {
-            showMessage("You are not allowed to comment on this ticket");
+            showMessage(I18n.t("err.notAllowedCommentTicket", "You are not allowed to comment on this ticket"));
             return;
         }
         String comment = txtNewComment.getText().trim();
@@ -491,7 +571,7 @@ if (ticket.getClosedAt() != null) {
         try {
 
             FileChooser chooser = new FileChooser();
-            chooser.setTitle("Export Ticket PDF");
+            chooser.setTitle(I18n.t("exportTicketPdf", "Export Ticket PDF"));
 
             chooser.getExtensionFilters().add(
                     new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
@@ -506,57 +586,134 @@ if (ticket.getClosedAt() != null) {
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
 
-            document.add(new Paragraph("SYSCO TICKET REPORT")
+            document.add(new Paragraph(I18n.t("ticketDetails", "Ticket Details"))
                     .setBold()
                     .setFontSize(18)
                     .setTextAlignment(TextAlignment.CENTER));
+            document.add(new Paragraph(" "));
 
-            document.add(new Paragraph("\n"));
+            Table info = new Table(UnitValue.createPercentArray(new float[]{2, 5})).useAllAvailableWidth();
+            addInfoRow(info, I18n.t("reference", "Reference"), lblReference.getText());
+            addInfoRow(info, I18n.t("title", "Title"), lblTitle.getText());
+            addInfoRow(info, I18n.t("status", "Status"), lblStatus.getText());
+            addInfoRow(info, I18n.t("priority", "Priority"), lblPriority.getText());
+            addInfoRow(info, I18n.t("assignedTo", "Assigned To"), lblAssigned.getText());
+            addInfoRow(info, I18n.t("startedAt", "Started At"), lblStarted.getText());
+            addInfoRow(info, I18n.t("closedAt", "Closed At"), lblClosed.getText());
+            addInfoRow(info, I18n.t("duration", "Duration"), lblResolution.getText());
+            addInfoRow(info, I18n.t("sla", "SLA"), lblSla.getText());
+            addInfoRow(info, I18n.t("createdBy", "Created by"), lblCreatedBy.getText());
+            addInfoRow(info, I18n.t("lastUpdatedBy", "Last updated by"), lblUpdatedBy.getText());
+            document.add(info);
 
-            document.add(new Paragraph("Reference: " + lblReference.getText()));
-            document.add(new Paragraph("Title: " + lblTitle.getText()));
-            document.add(new Paragraph("Priority: " + lblPriority.getText()));
-            document.add(new Paragraph("Agent: " + lblAssigned.getText()));
-            document.add(new Paragraph("Started: " + lblStarted.getText()));
-            document.add(new Paragraph("Closed: " + lblClosed.getText()));
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(I18n.t("description", "Description")).setBold());
+            document.add(new Paragraph(safe(txtDescription.getText())));
 
-            document.add(new Paragraph("\nDESCRIPTION").setBold());
-            document.add(new Paragraph(txtDescription.getText()));
+            List<TicketTask> tasks = TicketTaskDAO.getTasksByTicket(ticket.getId());
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(I18n.t("tasks", "Tasks")).setBold());
+            Table taskTable = new Table(UnitValue.createPercentArray(new float[]{3, 2, 2, 2, 2, 2})).useAllAvailableWidth();
+            taskTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("title", "Title")).setBold()));
+            taskTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("assignedTo", "Assigned To")).setBold()));
+            taskTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("status", "Status")).setBold()));
+            taskTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("start", "Start")).setBold()));
+            taskTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("close", "Close")).setBold()));
+            taskTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("duration", "Duration")).setBold()));
+            if (tasks != null && !tasks.isEmpty()) {
+                for (TicketTask t : tasks) {
+                    taskTable.addCell(safe(t.getTitle()));
+                    taskTable.addCell(safe(t.getAssignedToName()));
+                    taskTable.addCell(I18n.status(safe(t.getStatus())));
+                    taskTable.addCell(t.getStartedAt() == null ? "-" : t.getStartedAt().format(TABLE_DATETIME_FORMAT));
+                    taskTable.addCell(t.getClosedAt() == null ? "-" : t.getClosedAt().format(TABLE_DATETIME_FORMAT));
+                    taskTable.addCell(TimeUtil.formatDurationMinutes(t.getDurationMinutes()));
+                }
+            } else {
+                taskTable.addCell(new Cell(1, 6).add(new Paragraph(I18n.t("noTasksAvailable", "No tasks available"))));
+            }
+            document.add(taskTable);
 
-            WritableImage timelineImage =
-                    timelineContainer.snapshot(new SnapshotParameters(), null);
+            List<Attachment> ticketAttachments = AttachmentDAO.getAttachments(ticket.getId());
+            List<Attachment> taskAttachments = AttachmentDAO.getAllTaskAttachmentsByTicket(ticket.getId());
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(I18n.t("attachments", "Attachments")).setBold());
+            Table attachmentTable = new Table(UnitValue.createPercentArray(new float[]{3, 5})).useAllAvailableWidth();
+            attachmentTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("fileName", "File Name")).setBold()));
+            attachmentTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("description", "Path")).setBold()));
+            int count = 0;
+            if (ticketAttachments != null) {
+                for (Attachment a : ticketAttachments) {
+                    attachmentTable.addCell(safe(a.getFileName()));
+                    attachmentTable.addCell(safe(a.getFilePath()));
+                    count++;
+                }
+            }
+            if (taskAttachments != null) {
+                for (Attachment a : taskAttachments) {
+                    attachmentTable.addCell(safe(a.getFileName()));
+                    attachmentTable.addCell(safe(a.getFilePath()));
+                    count++;
+                }
+            }
+            if (count == 0) {
+                attachmentTable.addCell(new Cell(1, 2).add(new Paragraph("-")));
+            }
+            document.add(attachmentTable);
 
-            File tempImage = File.createTempFile("timeline", ".png");
-
-            ImageIO.write(
-                    SwingFXUtils.fromFXImage(timelineImage, null),
-                    "png",
-                    tempImage
-            );
-
-            com.itextpdf.layout.element.Image pdfImage =
-                    new com.itextpdf.layout.element.Image(
-                            ImageDataFactory.create(tempImage.getAbsolutePath()));
-
-            pdfImage.setAutoScale(true);
-
-            document.add(pdfImage);
+            List<TicketEvent> events = TicketDAO.getEvents(ticket.getId());
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(I18n.t("activityComments", "Activity / Comments")).setBold());
+            Table eventTable = new Table(UnitValue.createPercentArray(new float[]{2, 2, 2, 5})).useAllAvailableWidth();
+            eventTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("dateTime", "Date & Time")).setBold()));
+            eventTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("user", "User")).setBold()));
+            eventTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("action", "Action")).setBold()));
+            eventTable.addHeaderCell(new Cell().add(new Paragraph(I18n.t("details", "Details")).setBold()));
+            if (events != null && !events.isEmpty()) {
+                for (TicketEvent e : events) {
+                    eventTable.addCell(safe(e.getCreatedAt()));
+                    eventTable.addCell(safe(e.getUsername()));
+                    eventTable.addCell(I18n.t("event." + safe(e.getType()), safe(e.getType())));
+                    eventTable.addCell(safe(TimelineEventDescriptionLocalizer.localizeTicketTimelineDescription(
+                            e.getType(), e.getDescription())));
+                }
+            } else {
+                eventTable.addCell(new Cell(1, 4).add(new Paragraph("-")));
+            }
+            document.add(eventTable);
 
             document.close();
-            tempImage.delete();
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static final DateTimeFormatter TABLE_DATETIME_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private static String safe(String value) {
+        return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private static void addInfoRow(Table table, String key, String value) {
+        table.addCell(new Cell().add(new Paragraph(safe(key)).setBold()));
+        table.addCell(new Cell().add(new Paragraph(safe(value))));
     }
     
     
     
     public void initTaskTree(int ticketId) {
 
-    List<TicketTask> tasks = TicketTaskDAO.getTasksByTicket(ticketId);
+    int resolvedTicketId = ticketId > 0
+            ? ticketId
+            : (currentTicketId > 0 ? currentTicketId : (ticket != null ? ticket.getId() : 0));
 
-    System.out.println("TASK COUNT: " + tasks.size());
+    List<TicketTask> tasks = resolvedTicketId > 0
+            ? TicketTaskDAO.getTasksByTicket(resolvedTicketId)
+            : new ArrayList<>();
+
+    System.out.println("TASK COUNT: " + tasks.size() + " (ticketId=" + resolvedTicketId + ")");
 
     for (TicketTask t : tasks) {
         System.out.println("TASK: " + t.getTitle());
@@ -607,24 +764,32 @@ if (ticket.getClosedAt() != null) {
 
         Integer d = t.getDurationMinutes(); // ✅ CORRECT FIELD
 
-        return new SimpleStringProperty(
-                d == null ? "-" : d + " min"
-        );
+        return new SimpleStringProperty(TimeUtil.formatDurationMinutes(d));
     });
 
     // =====================
-    // TREE
+    // TREE (flat list for ticket details)
     // =====================
-    TreeItem<TicketTask> root = TicketDAO.buildTaskTree(tasks);
-
+    TreeItem<TicketTask> root = new TreeItem<>();
+    root.setExpanded(true);
+    for (TicketTask task : tasks) {
+        root.getChildren().add(new TreeItem<>(task));
+    }
     taskTree.setRoot(root);
     taskTree.setShowRoot(false);
 
     // =====================
     // BASIC COLUMNS
     // =====================
-    colTask.setCellValueFactory(param ->
-            new SimpleStringProperty(param.getValue().getValue().getTitle()));
+    colTask.setCellValueFactory(param -> {
+        TicketTask t = param.getValue().getValue();
+        String title = t != null ? t.getTitle() : null;
+        if (title == null || title.isBlank()) {
+            int taskId = t != null ? t.getId() : 0;
+            title = taskId > 0 ? "Task #" + taskId : "-";
+        }
+        return new SimpleStringProperty(title);
+    });
 
     colUser.setCellValueFactory(param ->
             new SimpleStringProperty(param.getValue().getValue().getAssignedToName()));
@@ -646,7 +811,7 @@ if (ticket.getClosedAt() != null) {
                 return;
             }
 
-            setText(status);
+            setText(I18n.status(status));
 
             switch (status) {
                 case "PENDING" -> setStyle("-fx-text-fill: orange;");
@@ -665,7 +830,8 @@ if (ticket.getClosedAt() != null) {
     try {
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/TaskDetails.fxml")
+                getClass().getResource("/view/TaskDetails.fxml"),
+                LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
@@ -674,8 +840,10 @@ if (ticket.getClosedAt() != null) {
         controller.setTask(task);
 
         Stage stage = new Stage();
-        stage.setTitle("Task Details - " + task.getTitle());
-        stage.setScene(new Scene(root));
+        stage.setTitle(I18n.t("taskDetails", "Task Details") + " - " + task.getTitle());
+        Scene taskScene = new Scene(root);
+        AppUiStyles.applyToScene(taskScene);
+        stage.setScene(taskScene);
         stage.setMaximized(true);
         stage.show();
 
@@ -691,24 +859,19 @@ if (ticket.getClosedAt() != null) {
     ChoiceDialog<String> dialog = new ChoiceDialog<>("START",
             "START", "COMPLETE", "REASSIGN");
 
-    dialog.setTitle("Task Action");
-    dialog.setHeaderText("Task: " + task.getTitle());
-    dialog.setContentText("Choose action:");
+    dialog.setTitle(I18n.t("taskAction", "Task Action"));
+    dialog.setHeaderText(I18n.t("task", "Task") + ": " + task.getTitle());
+    dialog.setContentText(I18n.t("chooseAction", "Choose action:"));
 
     dialog.showAndWait().ifPresent(action -> {
 
         switch (action) {
 
-            case "START" -> {
-                TicketTaskDAO.updateStatus(task.getId(), "IN_PROGRESS");
-            }
+            case "START" -> TicketTaskDAO.startTask(task.getId());
 
-            case "COMPLETE" -> {
-                TicketTaskDAO.updateStatus(task.getId(), "COMPLETED");
-            }
+            case "COMPLETE" -> TicketTaskDAO.completeTask(task.getId());
 
             case "REASSIGN" -> {
-                // optional (we add later)
                 System.out.println("Reassign not implemented yet");
             }
         }
@@ -762,24 +925,29 @@ private void handleAddTask() {
 
     try {
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/view/AddTaskPopup.fxml")
+                getClass().getResource("/view/AddTaskPopup.fxml"),
+                LanguageManager.getBundle()
         );
 
         Parent root = loader.load();
 
         AddTaskPopupController controller = loader.getController();
 
-        // ✅ FIX: LOAD USERS BASED ON ROLE (NOT ASSIGNED USERS)
-        ObservableList<User> assignableUsers =
-                javafx.collections.FXCollections.observableArrayList(
-                        com.app.dao.UserDAO.getAssignableUsers()
-                );
+        ObservableList<User> combo =
+                com.app.dao.TicketDAO.getUsersInTicketDirectionForTasks(currentTicketId);
 
-        controller.initData(currentTicketId, assignableUsers);
+        if (combo.isEmpty()) {
+            showMessage("No available users found in this ticket direction.");
+            return;
+        }
+
+        controller.initData(currentTicketId, combo, null);
 
         Stage stage = new Stage();
-        stage.setTitle("Add Task");
-        stage.setScene(new Scene(root));
+        stage.setTitle(I18n.t("addTask", "Add Task"));
+        Scene addTaskScene = new Scene(root);
+        AppUiStyles.applyToScene(addTaskScene);
+        stage.setScene(addTaskScene);
         stage.showAndWait();
 
         // 🔥 refresh after closing popup
@@ -787,6 +955,80 @@ private void handleAddTask() {
 
     } catch (Exception e) {
         e.printStackTrace();
+    }
+}
+
+@FXML
+private void handleCreateJobFromTicket() {
+    if (ticket == null) return;
+    try {
+        ObservableList<User> users = TicketDAO.getTicketReassignCandidatesForCurrentUser();
+        if (users == null || users.isEmpty()) {
+            showMessage(I18n.t("err.noAssignableUsers", "No eligible users found for reassignment."));
+            return;
+        }
+
+        ChoiceDialog<User> assigneeDialog = new ChoiceDialog<>(users.get(0), users);
+        assigneeDialog.setTitle(I18n.t("createJobFromTicket", "Create Job From Ticket"));
+        assigneeDialog.setHeaderText(I18n.t("assignee", "Assignee"));
+        assigneeDialog.setContentText(I18n.t("selectUser", "Select User"));
+        assigneeDialog.showAndWait().ifPresent(assignee -> {
+            DatePicker dp = new DatePicker(java.time.LocalDate.now().plusDays(1));
+            Dialog<java.time.LocalDate> dateDialog = new Dialog<>();
+            dateDialog.setTitle(I18n.t("createJobFromTicket", "Create Job From Ticket"));
+            dateDialog.setHeaderText(I18n.t("dueDate", "Due Date"));
+            dateDialog.getDialogPane().setContent(dp);
+            dateDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+            dateDialog.setResultConverter(btn -> btn == ButtonType.OK ? dp.getValue() : null);
+            java.time.LocalDate dueDate = dateDialog.showAndWait().orElse(null);
+            if (dueDate == null) return;
+
+            TextInputDialog timeDialog = new TextInputDialog("09:00");
+            timeDialog.setTitle(I18n.t("createJobFromTicket", "Create Job From Ticket"));
+            timeDialog.setHeaderText(I18n.t("dueTime", "Due Time"));
+            String hhmm = timeDialog.showAndWait().orElse("09:00").trim();
+            LocalTime dueTime;
+            try {
+                dueTime = LocalTime.parse(hhmm.length() == 5 ? hhmm + ":00" : hhmm);
+            } catch (Exception ex) {
+                showMessage(I18n.t("invalidTimeFormat", "Invalid time format. Use HH:mm."));
+                return;
+            }
+
+            TextInputDialog reminderDialog = new TextInputDialog("60");
+            reminderDialog.setTitle(I18n.t("createJobFromTicket", "Create Job From Ticket"));
+            reminderDialog.setHeaderText(I18n.t("reminderMinutes", "Reminder (minutes before)"));
+            int parsedReminderMinutes = 60;
+            try {
+                parsedReminderMinutes = Integer.parseInt(reminderDialog.showAndWait().orElse("60").trim());
+            } catch (Exception ignored) {}
+            final int reminderMinutes = parsedReminderMinutes;
+
+            ChoiceDialog<String> recurrenceDialog = new ChoiceDialog<>("ONCE", "ONCE", "MONTHLY");
+            recurrenceDialog.setTitle(I18n.t("createJobFromTicket", "Create Job From Ticket"));
+            recurrenceDialog.setHeaderText(I18n.t("recurrence", "Recurrence"));
+            recurrenceDialog.showAndWait().ifPresent(recurrence -> {
+                LocalDateTime dueAt = LocalDateTime.of(dueDate, dueTime);
+                String jobTitle = "[From " + TicketUtil.formatTicketRef(ticket.getId()) + "] "
+                        + (ticket.getTitle() == null ? "Scheduled follow-up" : ticket.getTitle());
+                String jobDescription = ticket.getDescription() == null ? "" : ticket.getDescription();
+                try {
+                    AutomationDAO.createScheduledJob(
+                            jobTitle,
+                            jobDescription,
+                            dueAt,
+                            reminderMinutes,
+                            assignee.getId(),
+                            recurrence
+                    );
+                    showMessage(I18n.t("jobCreatedFromTicket", "Scheduled job created from ticket."));
+                } catch (RuntimeException ex) {
+                    showMessage(ex.getMessage());
+                }
+            });
+        });
+    } catch (Exception e) {
+        showMessage(e.getMessage());
     }
 }
     

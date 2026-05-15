@@ -28,9 +28,9 @@ public class EditEntryController {
     @FXML
     public void initialize() {
         cbSousDirection.getItems().addAll(
-                "SDMA",
-                "SDRM",
-                "SDSYD"
+                "Développement et Maintenance des Applications",
+                "Réseaux, Télécommunications et Maintenance Hardware",
+                "Sydonia"
         );
     }
 
@@ -42,12 +42,28 @@ public class EditEntryController {
         this.selectedEntry = entry;
         this.onSaveCallback = onSaveCallback;
 
-        dpDateEnreg.setValue(LocalDate.parse(entry.getDateEnregistrement()));
+        dpDateEnreg.setValue(parseDateOrNull(entry.getDateEnregistrement()));
         txtExpediteur.setText(entry.getExpediteur());
         txtObjet.setText(entry.getObjet());
         txtCotation.setText(entry.getCotation());
-        dpDateCotation.setValue(LocalDate.parse(entry.getDateCotation()));
-        cbSousDirection.setValue(entry.getSousDirection());
+        dpDateCotation.setValue(parseDateOrNull(entry.getDateCotation()));
+        String sd = entry.getSousDirection();
+        if (sd == null || sd.isBlank() || "N/A".equalsIgnoreCase(sd.trim())) {
+            cbSousDirection.setValue(null);
+        } else {
+            cbSousDirection.setValue(sd);
+        }
+    }
+
+    private static LocalDate parseDateOrNull(String raw) {
+        if (raw == null || raw.isBlank() || "N/A".equalsIgnoreCase(raw.trim())) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(raw.trim());
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // ===============================
@@ -66,14 +82,21 @@ public class EditEntryController {
     @FXML
     private void handleSave() {
 
+        String dEnr = dpDateEnreg.getValue() != null ? dpDateEnreg.getValue().toString() : "N/A";
+        String dCot = dpDateCotation.getValue() != null ? dpDateCotation.getValue().toString() : "N/A";
+        String sous = cbSousDirection.getValue();
+        if (sous == null || sous.isBlank()) {
+            sous = "N/A";
+        }
+
         ExcelService.update(
                 selectedEntry,
-                dpDateEnreg.getValue().toString(),
+                dEnr,
                 txtExpediteur.getText(),
                 txtObjet.getText(),
                 txtCotation.getText(),
-                dpDateCotation.getValue().toString(),
-                cbSousDirection.getValue()
+                dCot,
+                sous
         );
 
         if (onSaveCallback != null) {

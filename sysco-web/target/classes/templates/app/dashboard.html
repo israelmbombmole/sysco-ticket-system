@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:fragment="title" th:text="#{${pageTitleKey}}">SYSCO</title>
+</head>
+<body>
+<section th:fragment="section" class="gov-work-page dashboard-page">
+    <div class="jira-head">
+        <div>
+            <h1 th:text="#{nav.dashboard}">Dashboard</h1>
+            <p class="muted" th:text="${dash.roleKey()}">DIRECTEUR</p>
+        </div>
+        <div class="jira-head-actions">
+            <button type="button" class="secondary-btn btn-sm" th:text="#{dash.jira.btn.last7Days}">Last 7 days</button>
+            <button type="button" class="primary-btn btn-sm" th:text="#{dash.jira.btn.create}">Create</button>
+        </div>
+    </div>
+
+    <div class="jira-kpi-grid">
+        <div class="jira-kpi-card">
+            <span th:text="#{dash.tile.ticketsTotal}">Total tickets</span>
+            <strong th:text="${dash.ticketsTotal()}">0</strong>
+        </div>
+        <div class="jira-kpi-card">
+            <span th:text="#{dash.tile.ticketsOpen}">Open</span>
+            <strong th:text="${dash.ticketsOpen()}">0</strong>
+        </div>
+        <div class="jira-kpi-card">
+            <span th:text="#{dash.jira.kpi.assignedShort}">Assigned</span>
+            <strong th:text="${dash.ticketsAssigned()}">0</strong>
+        </div>
+        <div class="jira-kpi-card">
+            <span th:text="#{dash.tile.ticketsClosed}">Closed</span>
+            <strong th:text="${dash.ticketsClosed()}">0</strong>
+        </div>
+        <div class="jira-kpi-card">
+            <span th:text="#{dash.jira.kpi.slaConformity}">SLA Conformity</span>
+            <strong th:text="|${dash.slaConformityPct()}%|">0%</strong>
+        </div>
+        <div class="jira-kpi-card">
+            <span th:text="#{dash.jira.kpi.violations}">Violations</span>
+            <strong th:text="${dash.slaViolations()}">0</strong>
+        </div>
+    </div>
+
+    <div class="jira-main-grid">
+        <div class="jira-panel">
+            <h3 th:text="#{dash.jira.board.title}">Board Snapshot</h3>
+            <div class="jira-board">
+                <div class="jira-col">
+                    <h4 th:text="#{dash.jira.col.todo}">To Do</h4>
+                    <article class="jira-issue">
+                        <b th:text="#{dash.jira.count.open(${dash.ticketsOpen()})}">Open: 0</b>
+                        <span th:text="#{dash.jira.issue.todoCaption}">Backlog</span>
+                    </article>
+                </div>
+                <div class="jira-col">
+                    <h4 th:text="#{dash.jira.col.inProgress}">In Progress</h4>
+                    <article class="jira-issue">
+                        <b th:text="#{dash.jira.count.assigned(${dash.ticketsAssigned()})}">Assigned: 0</b>
+                        <span th:text="#{dash.jira.issue.inProgressCaption}">In progress</span>
+                    </article>
+                </div>
+                <div class="jira-col">
+                    <h4 th:text="#{dash.jira.col.done}">Done</h4>
+                    <article class="jira-issue">
+                        <b th:text="#{dash.jira.count.closed(${dash.ticketsClosed()})}">Closed: 0</b>
+                        <span th:text="#{dash.jira.issue.doneCaption}">Done</span>
+                    </article>
+                </div>
+            </div>
+        </div>
+        <div class="jira-panel">
+            <h3 th:text="#{dash.jira.sla.title}">SLA Health</h3>
+            <div class="jira-meter-wrap">
+                <div class="jira-meter">
+                    <span class="jira-meter-ok" th:style="|width:${dash.slaConformityPct()}%|"></span>
+                </div>
+                <p><strong th:text="#{dash.jira.sla.withinPct(${dash.slaConformityPct()})}">0%</strong></p>
+                <p><strong th:text="#{dash.jira.sla.breachCount(${dash.slaViolations()})}">0</strong></p>
+            </div>
+        </div>
+    </div>
+    <div class="jira-quick-filters">
+        <button type="button" class="secondary-btn btn-sm jira-filter-btn" data-filter="assigned"
+                th:text="#{dash.jira.filter.assigned}">Assigned to me</button>
+        <button type="button" class="secondary-btn btn-sm jira-filter-btn" data-filter="recent"
+                th:text="#{dash.jira.filter.recent}">Recently updated</button>
+        <button type="button" class="secondary-btn btn-sm jira-filter-btn" data-filter="created"
+                th:text="#{dash.jira.filter.created}">Created by me</button>
+    </div>
+
+    <div class="dash-pro-role-row" th:if="${dash.roleKey() == 'SUPER_ADMIN' or dash.roleKey() == 'ADMIN' or dash.roleKey() == 'DIRECTEUR'}">
+        <div class="dash-pro-role-card">
+            <h4 th:text="#{dash.jira.capacity.title}">Team capacity</h4>
+            <p><span th:text="#{dash.tile.inspecteurs}"></span>: <strong th:text="${dash.staffInspecteurs()}">0</strong></p>
+            <p><span th:text="#{dash.tile.controleurs}"></span>: <strong th:text="${dash.staffControleurs()}">0</strong></p>
+            <p><span th:text="#{dash.tile.verificateurs}"></span>: <strong th:text="${dash.staffVerificateurs()}">0</strong></p>
+            <p><span th:text="#{dash.tile.assistants}"></span>: <strong th:text="${dash.staffAssistants()}">0</strong></p>
+        </div>
+        <div class="dash-pro-role-card">
+            <h4 th:text="#{dash.jira.courierFlow.title}">Courier flow</h4>
+            <p><span th:text="#{dash.jira.courier.total}"></span> <strong th:text="${dash.courierTotal()}">0</strong></p>
+            <p><span th:text="#{dash.jira.courier.open}"></span> <strong th:text="${dash.courierOpenPipeline()}">0</strong></p>
+            <p><span th:text="#{dash.jira.courier.awaitSous}"></span> <strong th:text="${dash.courierAwaitSous()}">0</strong></p>
+            <p><span th:text="#{dash.jira.courier.resolved}"></span> <strong th:text="${dash.courierResolved()}">0</strong></p>
+        </div>
+        <div class="dash-pro-role-card">
+            <h4 th:text="#{dash.jira.agentHighlight.title}">Agent highlight</h4>
+            <p><span th:text="#{dash.jira.agentHighlight.topAgent}"></span> <strong th:text="${dash.topAgent()}">-</strong></p>
+            <p><span th:text="#{dash.jira.agentHighlight.escalations}"></span> <strong th:text="${dash.escaladesL1L2()}">0</strong></p>
+            <p><span th:text="#{dash.jira.agentHighlight.avgResolution}"></span> <strong th:text="${dash.avgResolutionMinutes()}">0</strong> <span th:text="#{dash.jira.agentHighlight.minutes}">min</span></p>
+        </div>
+    </div>
+
+    <div class="dash-pro-role-row" th:if="${dash.roleKey() == 'SECRETAIRE' or dash.roleKey() == 'COURIER'}">
+        <div class="dash-pro-role-card">
+            <h4 th:text="#{dash.jira.courierOnly.title}">Courier-only dashboard</h4>
+            <p th:text="#{dash.jira.courierOnly.scoped}">Scoped</p>
+            <p><span th:text="#{dash.jira.courierOnly.total}"></span> <strong th:text="${dash.courierTotal()}">0</strong></p>
+            <p><span th:text="#{dash.jira.courierOnly.resolved}"></span> <strong th:text="${dash.courierResolved()}">0</strong></p>
+        </div>
+    </div>
+
+    <div class="dash-pro-role-row" th:if="${dash.roleKey() == 'SOUS-DIRECTEUR' or dash.roleKey() == 'INSPECTEUR' or dash.roleKey() == 'CONTROLEUR' or dash.roleKey() == 'VERIFICATEUR' or dash.roleKey() == 'VERIFICATEUR-ASSISTANT'}">
+        <div class="dash-pro-role-card">
+            <h4 th:text="#{dash.jira.ops.title}">Operational dashboard</h4>
+            <p><span th:text="#{dash.jira.ops.openTasks}"></span> <strong th:text="${dash.ticketsOpen()}">0</strong></p>
+            <p><span th:text="#{dash.jira.ops.assignedTasks}"></span> <strong th:text="${dash.ticketsAssigned()}">0</strong></p>
+            <p><span th:text="#{dash.jira.ops.closedTasks}"></span> <strong th:text="${dash.ticketsClosed()}">0</strong></p>
+        </div>
+    </div>
+
+    <div class="card dash-table-card dash-section-card jira-panel">
+        <h2 class="dash-heading" th:text="#{dash.section.recentTickets}">Recent tickets</h2>
+        <div class="jira-sprint-mini">
+            <span th:text="#{dash.jira.sprint.summary}">Sprint mini summary</span>
+            <strong th:text="#{dash.jira.sprint.todo(${dash.ticketsOpen()})}">To Do 0</strong>
+            <strong th:text="#{dash.jira.sprint.inProgress(${dash.ticketsAssigned()})}">In Progress 0</strong>
+            <strong th:text="#{dash.jira.sprint.done(${dash.ticketsClosed()})}">Done 0</strong>
+        </div>
+        <table class="sysco-table">
+            <thead>
+            <tr>
+                <th th:text="#{dash.col.id}">ID</th>
+                <th th:text="#{dash.col.title}">Title</th>
+                <th th:text="#{dash.col.status}">Status</th>
+                <th th:text="#{dash.col.type}">Type</th>
+                <th th:text="#{dash.col.priority}">Priority</th>
+                <th th:text="#{dash.col.createdBy}">Created by</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row,stat : ${dash.recentTickets()}"
+                class="jira-row"
+                th:attr="data-status=${row.status()},data-created=${row.createdByUsername()},data-order=${stat.index}">
+                <td th:text="${row.id()}">1</td>
+                <td th:text="${row.title()}">—</td>
+                <td th:text="${@uiLabels.ticketStatus(row.status(), #locale)}">OPEN</td>
+                <td>
+                    <span class="jira-type-badge" th:if="${row.title() != null and #strings.containsIgnoreCase(row.title(),'bug')}"
+                          th:text="#{dash.jira.type.bug}">Bug</span>
+                    <span class="jira-type-badge"
+                          th:if="${row.title() != null and !#strings.containsIgnoreCase(row.title(),'bug') and #strings.containsIgnoreCase(row.title(),'story')}"
+                          th:text="#{dash.jira.type.story}">Story</span>
+                    <span class="jira-type-badge"
+                          th:if="${row.title() == null or (!#strings.containsIgnoreCase(row.title(),'bug') and !#strings.containsIgnoreCase(row.title(),'story'))}"
+                          th:text="#{dash.jira.type.task}">Task</span>
+                </td>
+                <td><span class="jira-priority-chip"
+                          th:text="${@uiLabels.ticketPriority((row.priority() == null || row.priority().isBlank()) ? 'MEDIUM' : row.priority(), #locale)}">MEDIUM</span></td>
+                <td th:text="${row.createdByUsername() != null ? row.createdByUsername() : '—'}">—</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(dash.recentTickets())}">
+                <td colspan="6" class="muted" th:text="#{dash.noRecentTickets}">No rows.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <script th:inline="javascript">
+        (function () {
+            const buttons = document.querySelectorAll('.jira-filter-btn');
+            const rows = document.querySelectorAll('.jira-row');
+            const authUsername = /*[[${authUsername}]]*/ '';
+            function applyFilter(mode) {
+                rows.forEach(function (row) {
+                    const status = (row.dataset.status || '').toUpperCase();
+                    const createdBy = (row.dataset.created || '').toLowerCase();
+                    const order = parseInt(row.dataset.order || '0', 10);
+                    let show = true;
+                    if (mode === 'assigned') show = status === 'ASSIGNED' || status === 'IN_PROGRESS';
+                    if (mode === 'recent') show = order < 8;
+                    if (mode === 'created') show = createdBy && authUsername && createdBy === String(authUsername).toLowerCase();
+                    row.style.display = show ? '' : 'none';
+                });
+            }
+            buttons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    applyFilter(button.dataset.filter);
+                });
+            });
+        })();
+    </script>
+</section>
+</body>
+</html>

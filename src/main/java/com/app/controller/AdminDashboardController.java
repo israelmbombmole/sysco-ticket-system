@@ -1,19 +1,29 @@
 package com.app.controller;
 
 import com.app.auth.Session;
+import com.app.dao.CourierPacketDAO;
 import com.app.dao.MessageDAO;
+import com.app.util.AccessContext;
 import com.app.dao.TicketDAO;
 import com.app.dao.UserDAO;
 import com.app.model.Ticket;
+import com.app.util.AppUiStyles;
+import com.app.util.DashboardDetailDialog;
+import com.app.util.I18n;
 import com.app.util.LanguageManager;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.application.Platform;
+import javafx.scene.Cursor;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.VBox;
 
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.ResourceBundle;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -22,6 +32,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 
 
 public class AdminDashboardController {
@@ -31,7 +42,10 @@ public class AdminDashboardController {
     @FXML private Label lblOpenTickets;
     @FXML private Label lblAssignedTickets;
     @FXML private Label lblClosedTickets;
-    @FXML private Label lblTotalAgents;
+    @FXML private Label lblInspecteurCount;
+    @FXML private Label lblControleurCount;
+    @FXML private Label lblVerificateurCount;
+    @FXML private Label lblAssistantCount;
     
 
     // ================= SLA / ANALYTICS =================
@@ -52,6 +66,31 @@ public class AdminDashboardController {
     @FXML private TableColumn<Ticket, String> colStatus;
     @FXML private TableColumn<Ticket, String> colCreated;
     //@FXML private TableView<Ticket> tableTickets;
+
+    @FXML private Label lblCourierDTotal;
+    @FXML private Label lblCourierDOpen;
+    @FXML private Label lblCourierDAwaitSous;
+    @FXML private Label lblCourierDResolved;
+
+    @FXML private VBox cardDashTotal;
+    @FXML private VBox cardDashOpen;
+    @FXML private VBox cardDashAssigned;
+    @FXML private VBox cardDashClosed;
+    @FXML private VBox cardDashInsp;
+    @FXML private VBox cardDashCtrl;
+    @FXML private VBox cardDashVerif;
+    @FXML private VBox cardDashAssist;
+    @FXML private VBox cardDashSlaCompliance;
+    @FXML private VBox cardDashSlaBreaches;
+    @FXML private VBox cardDashEscalations;
+    @FXML private VBox cardDashAvgResolution;
+    @FXML private VBox cardDashTopAgent;
+    @FXML private VBox cardCourierTotal;
+    @FXML private VBox cardCourierOpen;
+    @FXML private VBox cardCourierAwaitSous;
+    @FXML private VBox cardCourierResolved;
+
+    private volatile boolean dashboardCardHandlersInstalled;
 
     @FXML
 public void initialize() {
@@ -79,11 +118,194 @@ public void initialize() {
     loadDashboardData();
     loadAnalytics();
     loadMyTickets();
+    loadCourierBlock();
+    attachAdminDashboardClicksWhenSceneReady();
 }
+
+    /**
+     * {@code initialize()} runs during {@link FXMLLoader#load()} before this root is attached to the main window,
+     * so {@link Label#getScene()} is still null — wiring must wait until the scene exists.
+     */
+    private void attachAdminDashboardClicksWhenSceneReady() {
+        javafx.scene.Node anchor = lblTotalTickets != null ? lblTotalTickets : cardDashTotal;
+        if (anchor == null) {
+            return;
+        }
+        Runnable install = () -> {
+            if (dashboardCardHandlersInstalled) {
+                return;
+            }
+            if (dashboardWindow() == null) {
+                return;
+            }
+            dashboardCardHandlersInstalled = true;
+            wireDashboardCardClicks();
+        };
+        Platform.runLater(() -> {
+            install.run();
+            if (!dashboardCardHandlersInstalled) {
+                anchor.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                    if (newScene != null) {
+                        Platform.runLater(install);
+                    }
+                });
+            }
+        });
+    }
+
+    private Window dashboardWindow() {
+        return lblTotalTickets != null && lblTotalTickets.getScene() != null
+                ? lblTotalTickets.getScene().getWindow()
+                : null;
+    }
+
+    private void wireCard(VBox card, Runnable action) {
+        if (card == null || action == null) {
+            return;
+        }
+        card.setCursor(Cursor.HAND);
+        Tooltip.install(card, new Tooltip(I18n.t("dashboardCardClickHint", "Click to view details")));
+        card.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> action.run());
+    }
+
+    private void wireDashboardCardClicks() {
+        Window w = dashboardWindow();
+        if (w == null) {
+            return;
+        }
+
+        wireCard(cardDashTotal, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("TotalTickets"), TicketDAO.listDashboardTicketsAll()));
+        wireCard(cardDashOpen, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("Open"), TicketDAO.listDashboardTicketsByStatus("OPEN")));
+        wireCard(cardDashAssigned, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("Assigned"), TicketDAO.listDashboardTicketsByStatus("ASSIGNED")));
+        wireCard(cardDashClosed, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("Closed"), TicketDAO.listDashboardTicketsByStatus("CLOSED")));
+
+        wireCard(cardDashInsp, () -> DashboardDetailDialog.showUsers(w,
+                I18n.t("inspecteurs"), UserDAO.listActiveUsersByRoleForDashboard("INSPECTEUR")));
+        wireCard(cardDashCtrl, () -> DashboardDetailDialog.showUsers(w,
+                I18n.t("controleurs"), UserDAO.listActiveUsersByRoleForDashboard("CONTROLEUR")));
+        wireCard(cardDashVerif, () -> DashboardDetailDialog.showUsers(w,
+                I18n.t("verificateurs"), UserDAO.listActiveUsersByRoleForDashboard("VERIFICATEUR")));
+        wireCard(cardDashAssist, () -> DashboardDetailDialog.showUsers(w,
+                I18n.t("assistants"), UserDAO.listActiveUsersByRoleForDashboard("VERIFICATEUR-ASSISTANT")));
+
+        wireCard(cardDashSlaCompliance, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("slaCompliance"), TicketDAO.listDashboardClosedTicketsResolvedWithinSla()));
+        wireCard(cardDashSlaBreaches, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("SLABreaches"), TicketDAO.listDashboardTicketsSlaBreaches()));
+        wireCard(cardDashEscalations, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("escalations"), TicketDAO.listDashboardTicketsWithEscalations()));
+        wireCard(cardDashAvgResolution, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("avgResolution"), TicketDAO.listDashboardClosedTicketsWithResolution()));
+        wireCard(cardDashTopAgent, () -> DashboardDetailDialog.showTickets(w,
+                I18n.t("TopPerformingAgent"),
+                TicketDAO.listDashboardClosedTicketsForAssigneeUsername(lblTopAgent.getText())));
+
+        Integer[] dirs = UserDAO.getDirectionSousForUser(Session.getUserId());
+        Integer dirId = AccessContext.isSystemSuperAdmin()
+                ? null
+                : (dirs != null && dirs.length > 0 ? dirs[0] : null);
+
+        wireCard(cardCourierTotal, () -> {
+            if (AccessContext.isSystemSuperAdmin()) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("courierDashInDirection"),
+                        CourierPacketDAO.listPacketsCompanyDashboardBucket("total"));
+            } else if (dirId != null && dirId > 0) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("courierDashInDirection"),
+                        CourierPacketDAO.listPacketsDirectionDashboardBucket(dirId, "total"));
+            }
+        });
+        wireCard(cardCourierOpen, () -> {
+            if (AccessContext.isSystemSuperAdmin()) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("courierDashOpenInDirection"),
+                        CourierPacketDAO.listPacketsCompanyDashboardBucket("open"));
+            } else if (dirId != null && dirId > 0) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("courierDashOpenInDirection"),
+                        CourierPacketDAO.listPacketsDirectionDashboardBucket(dirId, "open"));
+            }
+        });
+        wireCard(cardCourierAwaitSous, () -> {
+            if (AccessContext.isSystemSuperAdmin()) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("courierDashAwaitSousInDirection"),
+                        CourierPacketDAO.listPacketsCompanyDashboardBucket("await_sous"));
+            } else if (dirId != null && dirId > 0) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("courierDashAwaitSousInDirection"),
+                        CourierPacketDAO.listPacketsDirectionDashboardBucket(dirId, "await_sous"));
+            }
+        });
+        wireCard(cardCourierResolved, () -> {
+            if (AccessContext.isSystemSuperAdmin()) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("resolvedInDirection"),
+                        CourierPacketDAO.listPacketsCompanyDashboardBucket("resolved"));
+            } else if (dirId != null && dirId > 0) {
+                DashboardDetailDialog.showCourierPackets(w,
+                        I18n.t("resolvedInDirection"),
+                        CourierPacketDAO.listPacketsDirectionDashboardBucket(dirId, "resolved"));
+            }
+        });
+
+        applyDashboardTileFallbackStyles();
+    }
+
+    /** Inline styles so KPI tiles stay visible even when scene stylesheets/CSS gradients fail to apply (JavaFX 17). */
+    private static final String DASHBOARD_TILE_FALLBACK_STYLE =
+            "-fx-background-color:#ffffff;"
+                    + "-fx-border-color:#64748b;"
+                    + "-fx-border-width:2px;"
+                    + "-fx-border-radius:8px;"
+                    + "-fx-background-radius:8px;"
+                    + "-fx-padding:14px 16px;"
+                    + "-fx-min-height:104px;"
+                    + "-fx-min-width:188px;"
+                    + "-fx-effect:dropshadow(gaussian,rgba(15,23,42,0.14),14,0.22,0,4);";
+
+    private void applyDashboardTileFallbackStyles() {
+        VBox[] tiles = {
+                cardDashTotal, cardDashOpen, cardDashAssigned, cardDashClosed,
+                cardDashInsp, cardDashCtrl, cardDashVerif, cardDashAssist,
+                cardDashSlaCompliance, cardDashSlaBreaches, cardDashEscalations,
+                cardDashAvgResolution, cardDashTopAgent,
+                cardCourierTotal, cardCourierOpen, cardCourierAwaitSous, cardCourierResolved
+        };
+        for (VBox v : tiles) {
+            if (v != null) {
+                v.setStyle(DASHBOARD_TILE_FALLBACK_STYLE);
+            }
+        }
+    }
+
+    private void loadCourierBlock() {
+        if (lblCourierDTotal == null) {
+            return;
+        }
+        CourierPacketDAO.HomeCourierStats st;
+        if (AccessContext.isSystemSuperAdmin()) {
+            st = CourierPacketDAO.statsCompany();
+        } else {
+            Integer[] ds = UserDAO.getDirectionSousForUser(Session.getUserId());
+            Integer d = ds != null && ds.length > 0 ? ds[0] : null;
+            st = d != null ? CourierPacketDAO.statsForDirection(d) : new CourierPacketDAO.HomeCourierStats(0, 0, 0, 0);
+        }
+        lblCourierDTotal.setText(String.valueOf(st.total()));
+        lblCourierDOpen.setText(String.valueOf(st.notResolved()));
+        lblCourierDAwaitSous.setText(String.valueOf(st.directedAwaitingSous()));
+        lblCourierDResolved.setText(String.valueOf(st.resolved()));
+    }
 
     // ================= DASHBOARD DATA =================
 
    private void loadDashboardData() {
+    // Org-wide totals for role ADMIN (TicketDAO.hasOrgWideTicketAccess()); DIRECTEUR and others are scoped to their direction.
 
     int total = TicketDAO.countAll();
     int open = TicketDAO.countByStatus("OPEN");
@@ -92,13 +314,19 @@ public void initialize() {
     int assigned = TicketDAO.countByStatus("ASSIGNED");
 
     int closed = TicketDAO.countByStatus("CLOSED");
-    int agents = UserDAO.countAgents();
+    int inspecteurs = UserDAO.countActiveUsersByRoleForDashboard("INSPECTEUR");
+    int controleurs = UserDAO.countActiveUsersByRoleForDashboard("CONTROLEUR");
+    int verificateurs = UserDAO.countActiveUsersByRoleForDashboard("VERIFICATEUR");
+    int assistants = UserDAO.countActiveUsersByRoleForDashboard("VERIFICATEUR-ASSISTANT");
 
     lblTotalTickets.setText(String.valueOf(total));
     lblOpenTickets.setText(String.valueOf(open));
     lblAssignedTickets.setText(String.valueOf(assigned));
     lblClosedTickets.setText(String.valueOf(closed));
-    lblTotalAgents.setText(String.valueOf(agents));
+    if (lblInspecteurCount != null) lblInspecteurCount.setText(String.valueOf(inspecteurs));
+    if (lblControleurCount != null) lblControleurCount.setText(String.valueOf(controleurs));
+    if (lblVerificateurCount != null) lblVerificateurCount.setText(String.valueOf(verificateurs));
+    if (lblAssistantCount != null) lblAssistantCount.setText(String.valueOf(assistants));
 
     // Ticket Distribution Chart
     ObservableList<PieChart.Data> pieData =
@@ -150,8 +378,8 @@ public void initialize() {
     // SLA Chart
     ObservableList<PieChart.Data> slaData =
             FXCollections.observableArrayList(
-                    new PieChart.Data("Compliant", total - breaches),
-                    new PieChart.Data("Breached", breaches)
+                    new PieChart.Data(I18n.t("dashboardChart.compliant", "Compliant"), total - breaches),
+                    new PieChart.Data(I18n.t("dashboardChart.breached", "Breached"), breaches)
             );
 
     slaChart.setData(slaData);
@@ -163,7 +391,7 @@ public void initialize() {
     private void loadAgentPerformance() {
 
     XYChart.Series<String, Number> series = new XYChart.Series<>();
-    series.setName("Closed Tickets");
+    series.setName(I18n.t("dashboardChart.seriesClosedTickets", "Closed tickets"));
 
     var performanceData = TicketDAO.getUserPerformance();
 
@@ -214,14 +442,14 @@ public void initialize() {
                 String username =
                         UserDAO.findById(senderId).getUsername();
 
-                message.append("• New message from ")
-                        .append(username)
-                        .append("\n");
+                message.append(MessageFormat.format(
+                        I18n.t("notif.msg.bulletNewMessageFrom", "• New message from {0}\n"),
+                        username));
             }
 
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("New Messages");
-            alert.setHeaderText("You have unread messages");
+            alert.setTitle(I18n.t("notif.popup.newMessagesTitle", "New Messages"));
+            alert.setHeaderText(I18n.t("notif.popup.unreadHeader", "You have unread messages"));
             alert.setContentText(message.toString());
             alert.show();
         }
@@ -238,8 +466,10 @@ private void openTicketManagement() {
         Parent root = loader.load();
 
         Stage stage = new Stage();
-        stage.setTitle("Ticket Management");
-        stage.setScene(new Scene(root));
+        stage.setTitle(I18n.t("ticketManagement", "Ticket Management"));
+        Scene tmScene = new Scene(root);
+        AppUiStyles.applyToScene(tmScene);
+        stage.setScene(tmScene);
         stage.show();
 
     } catch (Exception e) {

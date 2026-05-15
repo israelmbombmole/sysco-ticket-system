@@ -17,11 +17,19 @@
         <VBox alignment="TOP_CENTER"
               spacing="20"
               style="-fx-padding:30;">
-            <Button text="← Back"
-        onAction="#handleBack"
-        style="-fx-background-color:#6b7280; -fx-text-fill:white;"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Button text="%back"
+                        onAction="#handleBack"
+                        style="-fx-background-color:#6b7280; -fx-text-fill:white;"/>
+                <Button text="%trackTask"
+                        onAction="#handleTrackTask"
+                        style="-fx-background-color:#2563eb; -fx-text-fill:white;"/>
+                <Button text="%ExportPDF"
+                        onAction="#handleExportPDF"
+                        style="-fx-background-color:#7c3aed; -fx-text-fill:white;"/>
+            </HBox>
 
-            <VBox spacing="20"
+            <VBox fx:id="taskContainer" spacing="20"
                   maxWidth="800"
                   fillWidth="true"
                   style="-fx-background-color:white;
@@ -38,20 +46,20 @@
 
                 <!-- STATUS -->
                 <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="Status:"/>
+                    <Label text="%status"/>
                     <ComboBox fx:id="cmbStatus" prefWidth="200"/>
                 </HBox>
 
                 <!-- PROGRESS -->
                 <VBox spacing="5">
-                    <Label text="Progress"/>
+                    <Label text="%progress"/>
                     <Slider fx:id="sliderProgress" min="0" max="100"/>
                     <Label fx:id="lblProgress"/>
                 </VBox>
 
                 <!-- DESCRIPTION -->
                 <VBox spacing="5">
-                    <Label text="Description"/>
+                    <Label text="%description"/>
                     <TextArea fx:id="txtDescription"
                               prefRowCount="4"
                               wrapText="true"/>
@@ -60,7 +68,7 @@
                 <!-- ATTACHMENTS -->
                 <VBox spacing="10">
 
-                    <Label text="Attachments"
+                    <Label text="%attachments"
                            style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
                     <HBox spacing="15">
@@ -79,18 +87,18 @@
                                        style="-fx-background-color:#f3f4f6; -fx-padding:10; -fx-background-radius:6;">
 
                                 <Label fx:id="lblPreviewPlaceholder"
-                                       text="Select a file to preview"
+                                       text="%selectFilePreview"
                                        style="-fx-text-fill:gray;"/>
                             </StackPane>
 
                             <!-- ACTION BUTTONS -->
                             <HBox spacing="10" alignment="CENTER">
 
-                                <Button text="Open"
+                                <Button text="%button.open"
                                         onAction="#handleOpenAttachment"
                                         style="-fx-background-color:#3b82f6; -fx-text-fill:white;"/>
 
-                                <Button text="Download"
+                                <Button text="%download"
                                         onAction="#handleDownloadAttachment"
                                         style="-fx-background-color:#10b981; -fx-text-fill:white;"/>
 
@@ -105,15 +113,16 @@
                 <!-- 🔥 TASK LIST (NEW SECTION) -->
                 <VBox spacing="10">
 
-                    <Label text="Tasks"
+                    <Label text="%tasks"
                            style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
                     <TableView fx:id="tableTasks" prefHeight="200">
 
                         <columns>
-                            <TableColumn fx:id="colTitle" text="Title"/>
-                            <TableColumn fx:id="colAssigned" text="Assigned To"/>
-                            <TableColumn fx:id="colStatus" text="Status"/>
+                            <TableColumn fx:id="colTitle" text="%title"/>
+                            <TableColumn fx:id="colAssigned" text="%assignedTo"/>
+                            <TableColumn fx:id="colAssignedAt" text="%assignedAt"/>
+                            <TableColumn fx:id="colStatus" text="%status"/>
                         </columns>
 
                     </TableView>
@@ -123,7 +132,7 @@
                 <!-- 🔥 ESCALATIONS -->
                 <VBox spacing="10">
 
-                    <Label text="Escalations"
+                    <Label text="%escalations"
                            style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
                     <VBox fx:id="escalationBox"
@@ -135,7 +144,7 @@
                                  -fx-border-radius:6;">
 
                         <Label fx:id="lblNoEscalation"
-                               text="No escalation"
+                               text="%noEscalation"
                                style="-fx-text-fill:gray;"/>
 
                     </VBox>
@@ -145,7 +154,7 @@
                 <!-- ACTIVITY / COMMENTS -->
                 <VBox spacing="10">
 
-                    <Label text="Activity / Comments"
+                    <Label text="%activityComments"
                            style="-fx-font-size:16px; -fx-font-weight:bold;"/>
 
                     <ScrollPane fitToWidth="true"
@@ -162,10 +171,10 @@
 
                         <TextField fx:id="txtNewComment"
                                    HBox.hgrow="ALWAYS"
-                                   promptText="Write a comment..."
+                                   promptText="%writeComment"
                                    onAction="#handleAddComment"/>
 
-                        <Button text="Add"
+                        <Button text="%add"
                                 onAction="#handleAddComment"
                                 style="-fx-background-color:#3b82f6; -fx-text-fill:white;"/>
 
