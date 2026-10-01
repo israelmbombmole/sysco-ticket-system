@@ -129,10 +129,11 @@ Consult `application.yml` for the full set. Common categories:
 ## 9. Build & run (developer)
 
 ```text
-mvn -pl sysco-web spring-boot:run
+cd sysco-web
+./start-sysco-local.sh
 ```
 
-*Exact module coordinates depend on parent POM structure.*
+`sysco-web` is its own Maven project. The script runs `mvn spring-boot:run` and serves [http://localhost:8080/login](http://localhost:8080/login) on the local H2 database. See `18-Technical-Appendix-FAQ-for-IT-Staff.md` for seed accounts.
 
 ---
 
