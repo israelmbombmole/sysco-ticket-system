@@ -88,6 +88,7 @@
       }
       activeDriver = null;
     }
+    document.dispatchEvent(new CustomEvent("sysco-tour-start"));
     var labels = payload.labels || {};
     var steps = mapSteps(payload.steps);
     activeDriver = create({

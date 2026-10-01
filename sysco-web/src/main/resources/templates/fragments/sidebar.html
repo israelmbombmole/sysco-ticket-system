@@ -2,18 +2,40 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 <aside class="app-sidebar" th:fragment="sidebar">
-    <nav>
-        <a th:each="item, tourIter : ${navItems}"
-           th:href="${item.path}"
-           th:id="${'tour-nav-' + tourIter.index}"
-           th:classappend="${currentPath == item.path ? ' active' : ''}"
-           th:text="#{__${item.messageKey}__}">Nav</a>
+    <nav id="sysco-sidebar-nav">
+        <th:block th:each="group : ${navGroups}">
+            <a th:if="${group.links.size() == 1}"
+               th:href="${group.links[0].path}"
+               th:id="${'tour-nav-' + group.links[0].tourIndex}"
+               th:classappend="${group.links[0].active} ? ' active'"
+               th:text="#{__${group.links[0].messageKey}__}">Nav</a>
+
+            <div th:if="${group.links.size() > 1}"
+                 class="nav-group"
+                 th:classappend="${group.expanded} ? ' is-open'"
+                 th:data-group-id="${group.id}">
+                <button type="button"
+                        class="nav-group-toggle"
+                        th:attr="aria-expanded=${group.expanded}, aria-controls=${'nav-menu-' + group.id}">
+                    <span th:text="#{__${group.messageKey}__}">Module</span>
+                    <span class="nav-group-chevron" aria-hidden="true"></span>
+                </button>
+                <div class="nav-group-menu" th:id="${'nav-menu-' + group.id}">
+                    <a th:each="item : ${group.links}"
+                       th:href="${item.path}"
+                       th:id="${'tour-nav-' + item.tourIndex}"
+                       th:classappend="${item.active} ? ' active'"
+                       th:text="#{__${item.messageKey}__}">Nav</a>
+                </div>
+            </div>
+        </th:block>
     </nav>
     <div class="sidebar-logout">
         <button type="submit" form="syscoLogoutForm" class="danger-btn btn-block" th:text="#{logout}">
             Log out
         </button>
     </div>
+    <script th:src="@{/js/sidebar-nav.js}"></script>
 </aside>
 </body>
 </html>

@@ -9,7 +9,7 @@
     <meta sec:authorize="isAuthenticated()" th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}"/>
     <meta sec:authorize="isAuthenticated()" th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}"/>
     <th:block th:replace="${title}"/>
-    <link rel="stylesheet" th:href="@{/css/sysco-theme.css(v='formation-banner')}"/>
+    <link rel="stylesheet" th:href="@{/css/sysco-theme.css(v='sidebar-groups')}"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css"/>
     <link sec:authorize="isAuthenticated()" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
 </head>

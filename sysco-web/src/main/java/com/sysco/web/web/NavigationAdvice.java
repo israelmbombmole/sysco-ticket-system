@@ -1,7 +1,10 @@
 package com.sysco.web.web;
 
-import com.sysco.web.navigation.NavigationRegistry;
+import com.sysco.web.navigation.NavGroup;
 import com.sysco.web.navigation.NavItem;
+import com.sysco.web.navigation.NavigationRegistry;
+import com.sysco.web.navigation.SidebarGroup;
+import com.sysco.web.navigation.SidebarLink;
 import com.sysco.web.repo.UserAccountRepository;
 import com.sysco.web.security.WebSyscoPermissions;
 import com.sysco.web.service.ChatService;
@@ -9,6 +12,7 @@ import com.sysco.web.service.GuidedTourService;
 import com.sysco.web.service.NotificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +50,37 @@ public class NavigationAdvice {
 
     @ModelAttribute("navItems")
     public List<NavItem> navItems(Authentication authentication) {
+        return visibleNav(authentication);
+    }
+
+    /** Five sidebar modules. Groups the user cannot access are omitted; the active module starts open. */
+    @ModelAttribute("navGroups")
+    public List<SidebarGroup> navGroups(Authentication authentication, HttpServletRequest request) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return List.of();
+        }
+        String currentPath = request.getServletPath();
+        int tourIndex = 0;
+        List<SidebarGroup> groups = new ArrayList<>();
+        for (NavGroup group : NavigationRegistry.groups()) {
+            List<SidebarLink> links = new ArrayList<>();
+            for (NavItem item : group.items()) {
+                if (!WebSyscoPermissions.canAccessNavPath(authentication, item.path())) {
+                    continue;
+                }
+                boolean active = NavigationRegistry.matchesPath(currentPath, item.path());
+                links.add(new SidebarLink(item.path(), item.messageKey(), active, tourIndex++));
+            }
+            if (links.isEmpty()) {
+                continue;
+            }
+            boolean expanded = links.stream().anyMatch(SidebarLink::active);
+            groups.add(new SidebarGroup(group.id(), group.messageKey(), expanded, List.copyOf(links)));
+        }
+        return groups;
+    }
+
+    private static List<NavItem> visibleNav(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return List.of();
         }
@@ -116,9 +151,7 @@ public class NavigationAdvice {
         if (authentication == null || !authentication.isAuthenticated()) {
             return "{\"steps\":[],\"labels\":{}}";
         }
-        List<NavItem> items = NavigationRegistry.mainNav().stream()
-                .filter(item -> WebSyscoPermissions.canAccessNavPath(authentication, item.path()))
-                .toList();
+        List<NavItem> items = visibleNav(authentication);
         Locale locale = LocaleContextHolder.getLocale();
         return guidedTourService.buildTourPayloadJson(items, locale);
     }
