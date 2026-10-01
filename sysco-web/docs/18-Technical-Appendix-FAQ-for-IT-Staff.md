@@ -7,10 +7,26 @@
 ## Build & run
 
 **Q: Which Java version?**  
-A: Java **17** (see `pom.xml`).
+A: Java **17** (`java.version` in `sysco-web/pom.xml`). A newer JDK such as 21 also runs this app.
 
 **Q: How do I run locally?**  
-A: From the multi-module repo root, use Maven to run the `sysco-web` module per parent POM conventions (`mvn -pl sysco-web spring-boot:run` or your team’s wrapper script).
+A: `sysco-web` is a separate Maven project from the JavaFX client at the repo root. From the `sysco-web` directory:
+
+```bash
+./start-sysco-local.sh
+```
+
+That script runs `mvn spring-boot:run`. Then open [http://localhost:8080/login](http://localhost:8080/login).
+
+The default database is a local H2 file at `~/.sysco-web/h2/sysco-web-db` (override the path with `SYSCO_H2_FILE`). On an empty database the seed creates:
+
+| Username | Password | Notes |
+|----------|----------|--------|
+| `admin` | `sysco` | SUPER_ADMIN |
+| `directeur-demo` | `sysco` | DIRECTEUR |
+| `superadmin` | `123456` | Forced password change on first login |
+
+For an Oracle database on Windows, use `start-sysco.ps1` (`--spring.profiles.active=oracle`).
 
 ---
 
